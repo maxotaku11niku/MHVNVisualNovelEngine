@@ -9,7 +9,7 @@ SECTIONS
 {
     . = 0x100;
 	.text ALIGN(0x10) : { *(.text) } >segment
-	.data ALIGN(0x10) : { *(.data) *(.rodata) *(.bss) } >segment
-	.rdata ALIGN(0x10) : {} >segment
-	.reloc ALIGN(0x10) : {} >segment
+	.data ALIGN(0x10) : { *(.data) *(.rdata) } >segment
+	.bss (NOLOAD) :  ALIGN(0x10) { *(.bss) } >segment
+	/DISCARD/ : { *(.rdata$zzz) *(.reloc) } >segment
 }
