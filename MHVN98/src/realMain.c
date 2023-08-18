@@ -25,9 +25,9 @@ const char* testStrings[8] =
 	"Or perhaps you'd like a bit of\x1B\x19 bold text\x1B\xFF\r\nin your life.",
 	"Maybe some\x1B\x1A italics\x1B\xFF too, if you're good.",
 	"I can even put an \x1B\x1Cunderline\x1B\xFF on this text as well!",
-	"\x1B\x38Or perhaps you'd like some masked text?",
-	"\x1B\x20I wonder if you can tell what's different about this text?",
-	"Well that's all for now,\r\n\x1B\x1B\x1B\x47have a great day!"
+	"\x1B\x73\x1B\x38Or perhaps you'd like some masked text?",
+	"\x1B\x21I wonder if you can tell what's different about this text?",
+	"Well that's all for now, \x1B\x50.\r\n\x1B\x1B\x1B\x47\x1B\x65Have a great day!"
 };
 
 typedef struct
@@ -103,7 +103,7 @@ int realMain(void)
 	int result = openFile("ROOTINFO.DAT", FILE_OPEN_READ, &rinfHandle);
 	if (result)
 	{
-		writeString("Error! Could not find ROOTINFO.DAT!", 180, 184, FORMAT_SHADOW | FORMAT_COLOUR(0xF));
+		writeString("Error! Could not find ROOTINFO.DAT!", 180, 184, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF));
 		goto errorquit; //Error handler
 	}
 	readFile(rinfHandle, 0x7C, smallFileBuffer, &realReadLen);
@@ -111,7 +111,7 @@ int realMain(void)
 	{
 		if (smallFileBuffer[i] != magicNumber[i])
 		{
-			writeString("Error! ROOTINFO.DAT is not valid!", 188, 184, FORMAT_SHADOW | FORMAT_COLOUR(0xF));
+			writeString("Error! ROOTINFO.DAT is not valid!", 188, 184, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF));
 			result = 0xFF;
 			goto errorquit; //Wrong file format error
 		}
@@ -138,7 +138,7 @@ int realMain(void)
 	result = openFile(rootInfo.langDataPath, FILE_OPEN_READ, &sdHandle);
 	if (result)
 	{
-		writeString("Error! Could not find language data file!", 156, 184, FORMAT_SHADOW | FORMAT_COLOUR(0xF));
+		writeString("Error! Could not find language data file!", 156, 184, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF));
 		goto errorquit; //Error handler
 	}
 	readFile(sdHandle, 1024, smallFileBuffer, &realReadLen);
@@ -154,7 +154,8 @@ int realMain(void)
 	
 	//For now we are going to ignore the root info structure
 	
-	writeString("Hello, World!\r\n\x1B\x1FIt's time for some text!", 60, 60, FORMAT_BOLD | FORMAT_ITALIC | FORMAT_SHADOW | FORMAT_FONT_ALTERNATE | FORMAT_COLOUR(0xE));
+	setCustomInfo(0, "Player"); //For testing
+	writeString("Hello, World, \x1B\x50!\r\n\x1B\x1FIt's time for some text!", 60, 60, FORMAT_BOLD | FORMAT_ITALIC | FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xE));
 	
 	oldInterruptMask = getPrimaryInterruptMask();
 	intsoff();
@@ -163,7 +164,7 @@ int realMain(void)
 	addPrimaryInterrupts(INTERRUPT_MASK_VSYNC);
 	intson();
 	
-	startAnimatedStringToWrite(testStrings[0], 64, 128, FORMAT_SHADOW | FORMAT_FONT_ALTERNATE | FORMAT_COLOUR(0xB));
+	startAnimatedStringToWrite(testStrings[0], 64, 128, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xB));
 	
 	int hasFinshedStringAnim = 0;
 	int textSkip = 0;
@@ -191,7 +192,7 @@ int realMain(void)
 				egc_bitlen(32);
 				strnum++;
 				strnum %= 8;
-				startAnimatedStringToWrite(testStrings[strnum], 64, 128, FORMAT_SHADOW | FORMAT_FONT_ALTERNATE | FORMAT_COLOUR(0xB));
+				startAnimatedStringToWrite(testStrings[strnum], 64, 128, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xB));
 				hasFinshedStringAnim = 0;
 				textSkip = 0;
 			}
@@ -213,7 +214,7 @@ int realMain(void)
 	errorquit:
 	if (result)
 	{
-		writeString("Press Enter to quit.", 240, 200, FORMAT_SHADOW | FORMAT_COLOUR(0xF));
+		writeString("Press Enter to quit.", 240, 200, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF));
 		while (!key_is_down(K_ENTER))
 		{
 			updatePrevKeyStatus();

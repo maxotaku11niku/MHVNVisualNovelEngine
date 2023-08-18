@@ -16,7 +16,11 @@
 #define FORMAT_PART_FADE 0x0F00
 #define FORMAT_PART_COLOUR 0xF000
 
+//Set the indices of the shadow colours
 void setShadowColours(const unsigned char* cols);
+
+//Set the custom protagonist info item appropriately
+void setCustomInfo(int num, char* str);
 
 //Write a string (str) to the screen at position (x, y) with format given by 'format'.
 void writeString(const char* str, const short x, const short y, short format);
