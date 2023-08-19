@@ -243,7 +243,7 @@ int stringWriteAnimationFrame(int skip)
 		writeString(stringToAnimWrite, currentAnimWriteX, currentAnimWriteY, currentAnimDefaultFormat);
 		return 1;
 	}
-	char ch;
+	unsigned char ch;
 	unsigned short twobytecode;
 	const char* str = curAnimStringPos;
 	short defFormat = currentAnimDefaultFormat;

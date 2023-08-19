@@ -18,18 +18,6 @@ volatile unsigned char vsynced = 0;
 
 const char* magicNumber = "MHVN";
 
-const char* testStrings[8] =
-{
-	"Well, would you look at that, we've got ourselves\r\na good bunch of text in front of us.",
-	"Believe it or not, we can change the\x1B\x4F\r\ncolour\x1B\xFF of the text!",
-	"Or perhaps you'd like a bit of\x1B\x19 bold text\x1B\xFF\r\nin your life.",
-	"Maybe some\x1B\x1A italics\x1B\xFF too, if you're good.",
-	"I can even put an \x1B\x1Cunderline\x1B\xFF on this text as well!",
-	"\x1B\x73\x1B\x38Or perhaps you'd like some masked text?",
-	"\x1B\x21I wonder if you can tell what's different about this text?",
-	"Well that's all for now, \x1B\x50.\r\n\x1B\x1B\x1B\x47\x1B\x65Have a great day!"
-};
-
 typedef struct
 {
 	unsigned short VNFlags;
@@ -50,7 +38,30 @@ typedef struct
 	char systemDataPath[13];
 } RootInfo;
 
+typedef struct
+{
+	unsigned short numScenes;
+	unsigned short numChars;
+	unsigned long curSceneFilePtr;
+	unsigned short curScene;
+} SceneInfo;
+
+typedef struct
+{
+	unsigned long systemTextFilePtr;
+	unsigned long creditsTextFilePtr;
+	unsigned long characterNamesFilePtr;
+	unsigned long sceneTextFilePtr;
+	unsigned long CGTextFilePtr;
+	unsigned long musicTextFilePtr;
+	unsigned short curNumSceneText;
+} TextInfo;
+
+
+
 RootInfo rootInfo;
+SceneInfo sceneInfo;
+TextInfo textInfo;
 
 int sdHandle;
 int ldHandle;
@@ -62,6 +73,10 @@ int sfxHandle;
 int sysHandle;
 
 unsigned char smallFileBuffer[1024];
+unsigned char curSceneData[1024];
+unsigned short curSceneDataPC;
+char curCharName[64];
+char* curTextArray[256];
 
 int realMain(void)
 {
@@ -135,14 +150,15 @@ int realMain(void)
 	}
 	closeFile(rinfHandle);
 	//Read in current text data file path from langauge data descriptor file (number currently hardcoded)
-	result = openFile(rootInfo.langDataPath, FILE_OPEN_READ, &sdHandle);
+	result = openFile(rootInfo.langDataPath, FILE_OPEN_READ, &ldHandle);
 	if (result)
 	{
 		writeString("Error! Could not find language data file!", 156, 184, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF));
 		goto errorquit; //Error handler
 	}
-	readFile(sdHandle, 1024, smallFileBuffer, &realReadLen);
+	readFile(ldHandle, 1024, smallFileBuffer, &realReadLen);
 	rootInfo.numLang = *((unsigned short*)(smallFileBuffer));
+	rootInfo.curLang = 0;
 	char* tdPath = smallFileBuffer + smallFileBuffer[2 + 4 * rootInfo.curLang];
 	for (int i = 0; i < 12; i++)
 	{
@@ -150,12 +166,47 @@ int realMain(void)
 		if (ch) rootInfo.curTextDataPath[i] = ch;
 		else break;
 	}
-	closeFile(sdHandle);
-	
-	//For now we are going to ignore the root info structure
+	closeFile(ldHandle);
+	//Read in current scene data from file
+	result = openFile(rootInfo.sceneDataPath, FILE_OPEN_READ, &sdHandle);
+	if (result)
+	{
+		writeString("Error! Could not find scene data file!", 168, 184, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF));
+		goto errorquit; //Error handler
+	}
+	readFile(sdHandle, 8, smallFileBuffer, &realReadLen);
+	sceneInfo.numScenes = *((unsigned short*)(smallFileBuffer));
+	sceneInfo.numChars = *((unsigned short*)(smallFileBuffer + 0x02));
+	sceneInfo.curSceneFilePtr = *((unsigned long*)(smallFileBuffer + 0x04));
+	sceneInfo.curScene = 0;
+	readFile(sdHandle, 1024, curSceneData, &realReadLen);
+	closeFile(sdHandle); //Close for now since we only expect the test to have one scene.
+	//Read in current text data from file
+	result = openFile(rootInfo.curTextDataPath, FILE_OPEN_READ, &ctHandle);
+	if (result)
+	{
+		writeString("Error! Could not find text data file!", 172, 184, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF));
+		goto errorquit; //Error handler
+	}
+	readFile(ctHandle, 1024, smallFileBuffer, &realReadLen);
+	textInfo.systemTextFilePtr = *((unsigned long*)(smallFileBuffer));
+	textInfo.creditsTextFilePtr = *((unsigned long*)(smallFileBuffer + 0x04));
+	textInfo.characterNamesFilePtr = *((unsigned long*)(smallFileBuffer + 0x08));
+	textInfo.sceneTextFilePtr = *((unsigned long*)(smallFileBuffer + 0x0C));
+	textInfo.CGTextFilePtr = *((unsigned long*)(smallFileBuffer + 0x10));
+	textInfo.musicTextFilePtr = *((unsigned long*)(smallFileBuffer + 0x14));
+	memcpy32Seg(smallFileBuffer + textInfo.characterNamesFilePtr + (2 * sceneInfo.numChars), curCharName, 16); //Don't worry, null termination to the rescue!
+	textInfo.curNumSceneText = *((unsigned short*)(smallFileBuffer + textInfo.sceneTextFilePtr + (4 * sceneInfo.numScenes)));
+	char* startOfText = smallFileBuffer + textInfo.sceneTextFilePtr + (4 * sceneInfo.numScenes) + 2 * (textInfo.curNumSceneText + 1);
+	unsigned short* textPtrs = (unsigned short*)(smallFileBuffer + textInfo.sceneTextFilePtr + (4 * sceneInfo.numScenes) + 2);
+	for (int i = 0; i < textInfo.curNumSceneText; i++)
+	{
+		curTextArray[i] = startOfText + textPtrs[i];
+	}
+	closeFile(ctHandle); //Close for now since we only expect the test to have one scene.
 	
 	setCustomInfo(0, "Player"); //For testing
-	writeString("Hello, World, \x1B\x50!\r\n\x1B\x1FIt's time for some text!", 60, 60, FORMAT_BOLD | FORMAT_ITALIC | FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xE));
+	writeString(curCharName, 60, 60, rootInfo.defFormatCharName);
 	
 	oldInterruptMask = getPrimaryInterruptMask();
 	intsoff();
@@ -164,7 +215,7 @@ int realMain(void)
 	addPrimaryInterrupts(INTERRUPT_MASK_VSYNC);
 	intson();
 	
-	startAnimatedStringToWrite(testStrings[0], 64, 128, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xB));
+	startAnimatedStringToWrite(curTextArray[0], 64, 128, rootInfo.defFormatNormal);
 	
 	int hasFinshedStringAnim = 0;
 	int textSkip = 0;
@@ -191,8 +242,9 @@ int realMain(void)
 				egc_bitaddrbtmode(EGC_BLOCKTRANSFER_FORWARD);
 				egc_bitlen(32);
 				strnum++;
-				strnum %= 8;
-				startAnimatedStringToWrite(testStrings[strnum], 64, 128, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xB));
+				strnum %= textInfo.curNumSceneText;
+				if (!strnum) break;
+				startAnimatedStringToWrite(curTextArray[strnum], 64, 128, rootInfo.defFormatNormal);
 				hasFinshedStringAnim = 0;
 				textSkip = 0;
 			}

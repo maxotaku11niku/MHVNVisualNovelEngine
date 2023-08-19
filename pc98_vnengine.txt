@@ -194,9 +194,42 @@ Adding support for multiple languages is therefore a case of adding to this list
 
 This file contains all the text for a single language
 
-0x00000000	
+0x00000000	uint32	systext_ptr	Pointer to the system text strings
+0x00000004	uint32	credits_ptr	Pointer to credits text strings
+0x00000008	uint32	charnames_ptr	Pointer to character names
+0x0000000C	uint32	scenetext_ptr	Pointer to the scene texts structure
+0x00000010	uint32	cgtext_ptr	Pointer to the CG names structure (can be 0 if there is no CG gallery)
+0x00000014	uint32	musictext_ptr	Pointer to the music names and comments structure (can be 0 if there is no music room)
 
-Normal text may be given formatting information through 0x1B (the escape character). What the byte after 0x1B does depends:
+What immediately follows this header is all the system text strings (usually). Each section of this file contains text in different formats.
+
+System text:
+	char[]
+
+Credits text:
+	char[]	credits_text	The entire text of the original creator's credits. Note that at the end will be a hardcoded small note that I created the engine :)
+
+Character names:
+	uint16[num_chars]	charnames_ptrs	Pointers to each character's name
+	char[]			charnames_text	Array of character names
+
+CG text:
+	uint16[num_cg]	cgnames_ptrs	Pointers to all the CG names
+	char[numCGs][]	cgnames_text	The CG names
+
+Music names and comments:
+	uint16[num_songs]	musicinfo_ptrs	Pointers to all the music names and comments
+	char[num_songs][]	musicinfo_text	The name of each song followed by the comment for it (the pattern goes NCNCNCNC... and the pointer points to the name first)
+
+Scene text:
+	uint32[num_scenes]	scenetext_ptrs	Pointers to each scene's full text
+	For each scene:
+	uint16			num_strings	Total number of strings
+	uint16[num_strings]	text_ptrs	Pointers to each string in the scene
+	char[num_strings][]	text_array	Array of all text in the scene (compressed)
+	
+
+Text may be given formatting information through 0x1B (the escape character). What the byte after 0x1B does depends:
 
 0x0x	Doesn't do anything, acts as null terminate if x is 0
 0x1x	Main formatting flags (x -> SUIB: B - bold, I - italic, U - underline, S - shadow)
