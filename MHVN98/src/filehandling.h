@@ -3,6 +3,8 @@
 
 #include "doscalls.h"
 
+extern unsigned char smallFileBuffer[1024];
+
 int createFile(const char* path, unsigned char attributes, int* const handle);
 int openFile(const char* path, unsigned char attribute, int* const handle);
 int closeFile(int handle);

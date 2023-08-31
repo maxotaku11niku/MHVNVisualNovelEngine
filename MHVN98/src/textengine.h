@@ -16,8 +16,29 @@
 #define FORMAT_PART_FADE 0x0F00
 #define FORMAT_PART_COLOUR 0xF000
 
+typedef struct
+{
+	unsigned long systemTextFilePtr;
+	unsigned long creditsTextFilePtr;
+	unsigned long characterNamesFilePtr;
+	unsigned long sceneTextFilePtr;
+	unsigned long CGTextFilePtr;
+	unsigned long musicTextFilePtr;
+} TextInfo;
+
+extern TextInfo textInfo;
+
 //Set the indices of the shadow colours
 void setShadowColours(const unsigned char* cols);
+
+//Set up text info from the current language
+int setupTextInfo();
+
+//Load the given character's name
+int loadCurrentCharacterName(int charNumber, char* nameBuffer);
+
+//Load the given scene number's text
+int loadSceneText(int sceneNumber, char* textDataBuffer, char** textPtrsBuffer);
 
 //Set the custom protagonist info item appropriately
 void setCustomInfo(int num, char* str);

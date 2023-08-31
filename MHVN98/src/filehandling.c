@@ -3,6 +3,8 @@
 #include "x86segments.h"
 #include "doscalls.h"
 
+unsigned char smallFileBuffer[1024];
+
 //Creates a file (overwriting an existing file) and gives the handle back in 'handle' which is passed by reference and merely written to
 int createFile(const char* path, unsigned char attributes, int* const handle)
 {

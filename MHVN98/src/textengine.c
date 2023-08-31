@@ -7,9 +7,15 @@
 #include "pc98_chargen.h"
 #include "pc98_keyboard.h"
 #include "pc98_egc.h"
+#include "filehandling.h"
 #include "unrealhwaddr.h"
+#include "rootinfo.h"
+#include "sceneengine.h"
 #include "textengine.h"
 
+TextInfo textInfo;
+
+int ctHandle;
 unsigned long charbuf[16];
 
 unsigned long animCharBuf[16 * 16]; //For fade in animation, ring buffer
@@ -60,6 +66,73 @@ char stringBuffer[512];
 void setShadowColours(const unsigned char* cols)
 {
 	memcpy32Seg(cols, shadowColours, 4);
+}
+
+int setupTextInfo()
+{
+	int realReadLen;
+	int result = openFile(rootInfo.curTextDataPath, FILE_OPEN_READ, &ctHandle);
+	if (result)
+	{
+		writeString("Error! Could not find text data file!", 172, 184, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF));
+		return result; //Error handler
+	}
+	readFile(ctHandle, 0x18, smallFileBuffer, &realReadLen);
+	textInfo.systemTextFilePtr = *((unsigned long*)(smallFileBuffer));
+	textInfo.creditsTextFilePtr = *((unsigned long*)(smallFileBuffer + 0x04));
+	textInfo.characterNamesFilePtr = *((unsigned long*)(smallFileBuffer + 0x08));
+	textInfo.sceneTextFilePtr = *((unsigned long*)(smallFileBuffer + 0x0C));
+	textInfo.CGTextFilePtr = *((unsigned long*)(smallFileBuffer + 0x10));
+	textInfo.musicTextFilePtr = *((unsigned long*)(smallFileBuffer + 0x14));
+	closeFile(ctHandle);
+	return 0;
+}
+
+int loadCurrentCharacterName(int charNumber, char* nameBuffer)
+{
+	int realReadLen;
+	unsigned long curfilepos;
+	unsigned short charnamepos;
+	int result = openFile(rootInfo.curTextDataPath, FILE_OPEN_READ, &ctHandle);
+	if (result)
+	{
+		writeString("Error! Could not find text data file!", 172, 184, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF));
+		return result; //Error handler
+	}
+	seekFile(ctHandle, FILE_SEEK_ABSOLUTE, textInfo.characterNamesFilePtr + 2 * charNumber, &curfilepos);
+	readFile(ctHandle, 2, &charnamepos, &realReadLen);
+	seekFile(ctHandle, FILE_SEEK_ABSOLUTE, textInfo.characterNamesFilePtr + 2 * sceneInfo.numChars + charnamepos, &curfilepos);
+	readFile(ctHandle, 64, nameBuffer, &realReadLen);
+	closeFile(ctHandle);
+	return 0;
+}
+
+int loadSceneText(int sceneNumber, char* textDataBuffer, char** textPtrsBuffer)
+{
+	int realReadLen;
+	unsigned long curfilepos;
+	unsigned long scenedatpos;
+	unsigned short numTexts;
+	int result = openFile(rootInfo.curTextDataPath, FILE_OPEN_READ, &ctHandle);
+	if (result)
+	{
+		writeString("Error! Could not find text data file!", 172, 184, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF));
+		return result; //Error handler
+	}
+	seekFile(ctHandle, FILE_SEEK_ABSOLUTE, textInfo.sceneTextFilePtr + 4 * sceneNumber, &curfilepos);
+	readFile(ctHandle, 4, &scenedatpos, &realReadLen);
+	seekFile(ctHandle, FILE_SEEK_ABSOLUTE, textInfo.sceneTextFilePtr + 4 * sceneInfo.numScenes, &curfilepos);
+	readFile(ctHandle, 2, &numTexts, &realReadLen);
+	readFile(ctHandle, 1024, smallFileBuffer, &realReadLen);
+	for(int i = 0; i < numTexts; i++)
+	{
+		textPtrsBuffer[i] = *((unsigned short*)(smallFileBuffer) + i) + textDataBuffer;
+	}
+	seekFile(ctHandle, FILE_SEEK_ABSOLUTE, textInfo.sceneTextFilePtr + 4 * sceneInfo.numScenes + 2 * (numTexts + 1), &curfilepos);
+	readFile(ctHandle, 0x8000, textDataBuffer, &realReadLen);
+	if (realReadLen == 0x8000) readFile(ctHandle, 0x8000, textDataBuffer + 0x8000, &realReadLen);
+	closeFile(ctHandle);
+	return 0;
 }
 
 //Char data must be in 'edit-friendly' format

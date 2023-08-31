@@ -57,3 +57,10 @@
 #define int21_deletefile(pathseg, path, errorcode, errorflag) asm inline ("movb $65, %%ah\n\tmovw %w2, %%dx\n\tmovw %w3, %%ds\n\tint $33\n\tmovw %%cs, %%dx\n\tmovw %%dx, %%ds\n\tmovw %%ax, %w0" : "=rm" (errorcode), "=@ccc" (errorflag) : "rmi" (path), "rmi" (pathseg) : "ah", "ax", "dx")
 //INT 21 function 42 - Seek In File (given by handle in 'handle', moves the file pointer by chunklen:len bytes, according to the method in 'method', returns the new file position in poschunk:pos, can return an error code)
 #define int21_seekfile(handle, method, chunklen, len, poschunk, pos, errorflag) asm inline ("movb $66, %%ah\n\tmovw %w3, %%bx\n\tmovb %b4, %%al\n\tmovw %w5, %%cx\n\tmovw %w6, %%dx\n\tint $33\n\tmovw %%dx, %w0\n\tmovw %%ax, %w1" : "=rm" (poschunk), "=rm" (pos), "=@ccc" (errorflag) : "rmi" (handle), "rmi" (method), "rmi" (chunklen), "rmi" (len) : "ah", "al", "ax", "bx", "cx", "dx")
+//Supporting defines
+//From the beginning of the file
+#define FILE_SEEK_ABSOLUTE 0x00
+//From the current file pointer position
+#define FILE_SEEK_RELATIVE 0x01
+//From the end of the file
+#define FILE_SEEK_REVERSE 0x02
