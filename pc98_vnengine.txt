@@ -155,7 +155,7 @@ var		scene_data[num_scenes]	scenedats	A list of compressed scene datas. The unco
 
 For each scene, when the data is uncompressed, it takes the form of a bytecode, where we have the following opcodes:
 
-0x00	gotoscene [uint16 scene_num]	Ends the current scene and goes to another scene. Scene number 0xFFFF is reserved for the end of the story.
+0x00	gotoscene [uint16 scene_num]	Ends the current scene and goes to another scene. Scene number 0xFFFF is reserved for the end of the story (vnend pseudoinstruction).
 0x01	jmp [int16 relative_offset]	Jumps by some relative offset unconditionally. The offset is relative to the end of this instruction.
 0x02	jz, je  [int16 relative_offset]	Jumps by some relative offset if the Z flag is set. The offset is relative to the end of this instruction.
 0x03	jnz, jne  [int16 relative_offset]	Jumps by some relative offset if the Z flag is not set. The offset is relative to the end of this instruction.
@@ -164,7 +164,7 @@ For each scene, when the data is uncompressed, it takes the form of a bytecode, 
 0x06	jle [int16 relative_offset]	Jumps by some relative offset if the N flag is set or the Z flag is set. The offset is relative to the end of this instruction.
 0x07	jg [int16 relative_offset]	Jumps by some relative offset if the N flag is not set and the Z flag is not set. The offset is relative to the end of this instruction.
 0x10	text [uint16 textnum]		Displays the text given in the following local string reference and waits for user input before continuing.
-0x11	charname [uint16 charnum]	Sets the current character name to the string pointed to by charnum. Character number 0xFFFF is reserved for wiping the character name entirely.
+0x11	charname [uint16 charnum]	Sets the current character name to the string pointed to by charnum. Character number 0xFFFF is reserved for wiping the character name entirely (nocharname pseudoinstruction).
 0x1F	deltext				Wipes the text from the text box. Implied by a 'text' instruction if not called beforehand.
 0x20	lut [uint8 numopts], [uint16 statevar], [numopts int16s] Converts choice indices to the given numbers for each state variable.
 0x21	multichoice [uint8 numopts], [uint16 statevar], [uint16 firsttextnum]	Displays a number of choices to the user (up to some specified limit), and puts the number chosen into the state variable pointed to by statevar. The first option's text is pointed to by the given local string reference, and subsequent options use the next references.

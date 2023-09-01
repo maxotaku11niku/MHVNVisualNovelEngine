@@ -1,0 +1,48 @@
+@[SCENE_TEST_0000
+Well, would you look at that, we've got ourselves a good bunch of text in front of us.@]
+
+@[SCENE_TEST_0001
+Believe it or not, we can change the @c(b)colour@r(c) of the text!@]
+
+@[SCENE_TEST_0002
+Or perhaps you'd like a bit of@f(sb) bold text@r(f) in your life.@]
+
+@[SCENE_TEST_0003
+Maybe some@f(si) italics@r(f) too, if you're good.@]
+
+@[SCENE_TEST_0004
+I can even put an @f(su)underline@r(f) on this text as well!@]
+
+@[SCENE_TEST_0005
+@w(3)@m(8)Or perhaps you'd like some masked text?@]
+
+@[SCENE_TEST_0006
+@t(1)I wonder if you can tell what's different about this text?@]
+
+@[SCENE_TEST_0007
+Well that's all for now, @p(0).
+@f(sbi)@c(7)@d(5)Have a great day!@]
+
+@[SCENE_TEST_0008
+Suddenly, someone new appears.@]
+
+@[SCENE_TEST_0009
+Wait, wait, wait, this runs on a PC-98?@]
+
+@[SCENE_TEST_000A
+Well, it appears that, indeed, it does.@]
+
+@[SCENE_TEST_000B
+Well, that's @f(si)completely unsurprising!@]
+
+@[SCENE_TEST_000C
+@f(sb)Of course you're not surprised!@]
+
+@[SCENE_TEST_000D
+Ah well, I'll come back when we have some actual graphics, instead of nothing at all.@]
+
+@[SCENE_TEST_000E
+Yes, well we'll just have to wait for the developer to get to it, then.@]
+
+@[SCENE_TEST_000F
+So come on developer! Can't you program more for us? Jesus.@]

@@ -1,0 +1,2 @@
+@n(NARRATOR)ナレーター
+@n(CONFUSED)混乱させた人
