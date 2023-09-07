@@ -251,6 +251,24 @@ Text may be given formatting information through 0x1B (the escape character). Wh
 0xEx	Reserved
 0xFx	Reset formatting to default for some parameter (x -> CFTM: M - main, T - font, F - fade, C - colour)
 
+* Text archiver input *
+
+Most of this will be literal text, though of course there are control sequences in the input files to do formatting etc. All control sequences start with an '@':
+
+@@	Becomes a single @.
+@[	Opens a normal text entry. The text between this and the next newline is the entry's label, and after the newline until the end of the entry is the text of the entry. If a reserved label is used, then it corresponds to system text. Otherwise, a scene has to be declared beforehand.
+@]	Ends a normal text entry. @[ and EOF can be taken as the end of an entry if @] is not found first.
+@s(l)	Declares a scene with label 'l' and makes the text in every following normal entry associated with that scene.
+@n(l)	Declares a character with label 'l' and all the immediately following text until the next newline is that character's display name.
+@f(f)	Sets the text formatting, where 'f' is a formatting flag (b -> bold, i -> italic, u -> underline, s -> shadow). Combine multiple letters to set multiple formatting flags at once.
+@t(n)	Sets the font to font number 'n'.
+@m(n)	Sets the fade level to 'n'.
+@c(n)	Sets the colour to index 'n'.
+@p(n)	Insert custom protagonist information unit 'n'.
+@d(n)	Wait for 10*(n+1) frames before continuing.
+@w(n)	Set the wait between characters to (n+1) frames.
+@r(f)	Reset formatting to default for some parameter (f -> format, t -> font, m -> fade, c -> colour). Combine multiple letters to reset multiple format parameters at once.
+
 * BG data archive (bgdat_file) *
 
 This file contains all 'background' images. A 'CG' image is just another kind of background image, but by convention no sprites are shown in front of one. The corresponding variant patches are also stored here.
@@ -279,8 +297,9 @@ This file contains settings and global save data. The latter allows previous pla
 
 These files contain individual data for playthroughs, sufficient to restore the state of the VN to how it was before the save.
 
-0x00000000	uint16		scenenum	The scene number at the time of saving
-0x00000002	uint16		scenepc		The scene bytecode program counter to return to upon loading
-0x00000004	int64		timestamp	Unix-style timestamp recording the time this file was written to
-0x0000000C	int16[numstvar]	statevar	Stores the current value of all state variables
+0x00000000	uint32		checksum	Checksum of all the data in this file (from 0x00000004 onwards) to check data integrity
+0x00000004	uint16		scenenum	The scene number at the time of saving
+0x00000006	uint16		scenepc		The scene bytecode program counter to return to upon loading
+0x00000008	int64		timestamp	Unix-style timestamp recording the time this file was written to
+0x00000010	int16[numstvar]	statevar	Stores the current value of all state variables
 var		char[]		bootstrap_code	Bytecode required to restore the state as it was when this file was saved. Null terminated

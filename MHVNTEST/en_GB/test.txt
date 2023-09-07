@@ -1,8 +1,10 @@
+@s(SCENE_TEST)
+
 @[SCENE_TEST_0000
 Well, would you look at that, we've got ourselves a good bunch of text in front of us.@]
 
 @[SCENE_TEST_0001
-Believe it or not, we can change the @c(b)colour@r(c) of the text!@]
+Believe it or not, we can change the @c(6)colour@r(c) of the text!@]
 
 @[SCENE_TEST_0002
 Or perhaps you'd like a bit of@f(sb) bold text@r(f) in your life.@]
@@ -21,7 +23,7 @@ I can even put an @f(su)underline@r(f) on this text as well!@]
 
 @[SCENE_TEST_0007
 Well that's all for now, @p(0).
-@f(sbi)@c(7)@d(5)Have a great day!@]
+@f(sbi)@c(a)@d(5)Have a great day!@]
 
 @[SCENE_TEST_0008
 Suddenly, someone new appears.@]

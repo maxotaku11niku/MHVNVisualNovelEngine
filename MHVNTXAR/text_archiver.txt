@@ -1,0 +1,18 @@
+-- * MHVNTXAR usage * --
+
+mhvntxar -o [output filename] <options> [list of files, space separated]
+
+Takes the contents of each of the input files, parses them as text description files, then archives their contents into the output which will be read for linking with MHVNLINK.
+
+Options:
+
+-o [filename]	Defines the filename of the output file, with extension.
+-s		Convert input format text to Shift-JIS, which is currently necessary for valid text on MHVN98.
+
+-- * .otxa object file format * --
+
+0x00000000	uint64	link_info	File pointer to the linking info block
+0x00000008	Literal contents of the generated .txa file, with placeholders for any links that couldn't be resolved at this stage
+
+The start of the link info block
+0x00000000	

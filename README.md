@@ -12,6 +12,12 @@ This repository contains project files for:
 
 - MHVNTEST, a simple test of the executable with some dummy data.
 
+- MHVNLINK, links all data files together
+
+- MHVNSCAS, scene script assembler
+
+- MHVNTXAR, text archiver
+
 This repository will contain project files for MHVN-specific tools in the future.
 
 ## What's NOT in this repository?
