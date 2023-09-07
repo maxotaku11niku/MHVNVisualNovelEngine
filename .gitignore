@@ -8,3 +8,7 @@ MHVN98/putandrun.bat
 MHVN98/run.bat
 MHVNTEST/bin/
 MHVNTEST/out/
+MHVNTEST/tools/
+MHVNTXAR/bin/
+MHVNTXAR/genasm/
+MHVNTXAR/build.bat
