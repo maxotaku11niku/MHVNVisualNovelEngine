@@ -261,12 +261,12 @@ Most of this will be literal text, though of course there are control sequences 
 @s(l)	Declares a scene with label 'l' and makes the text in every following normal entry associated with that scene.
 @n(l)	Declares a character with label 'l' and all the immediately following text until the next newline is that character's display name.
 @f(f)	Sets the text formatting, where 'f' is a formatting flag (b -> bold, i -> italic, u -> underline, s -> shadow). Combine multiple letters to set multiple formatting flags at once.
-@t(n)	Sets the font to font number 'n'.
-@m(n)	Sets the fade level to 'n'.
-@c(n)	Sets the colour to index 'n'.
-@p(n)	Insert custom protagonist information unit 'n'.
-@d(n)	Wait for 10*(n+1) frames before continuing.
-@w(n)	Set the wait between characters to (n+1) frames.
+@tn	Sets the font to font number 'n'.
+@mn	Sets the fade level to 'n'.
+@cn	Sets the colour to index 'n'.
+@pn	Insert custom protagonist information unit 'n'.
+@dn	Wait for 10*(n+1) frames before continuing.
+@wn	Set the wait between characters to (n+1) frames.
 @r(f)	Reset formatting to default for some parameter (f -> format, t -> font, m -> fade, c -> colour). Combine multiple letters to reset multiple format parameters at once.
 
 * BG data archive (bgdat_file) *

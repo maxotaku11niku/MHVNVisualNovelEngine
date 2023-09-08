@@ -21,12 +21,12 @@ int main(int argc, char** argv)
 
     if (argc < 2)
     {
-        printf("You haven't specified any files or options!\n");
+        printf("CRITICAL ERROR - You haven't specified any files or options!\n");
         DisplayHelp();
         return 1;
     }
 
-    char* outputFilename;
+    char* outputFilename = NULL;
     bool isShiftJIS = false;
     char** inputFilenames;
     int numInputFiles = 0;
@@ -40,7 +40,7 @@ int main(int argc, char** argv)
             i++;
             if (i >= argc)
             {
-                printf("Where's the output filename?!\n");
+                printf("CRITICAL ERROR - Where's the output filename?!\n");
                 DisplayHelp();
                 free(inputFilenames);
                 return 1;
@@ -61,21 +61,28 @@ int main(int argc, char** argv)
         }
     }
 
-    if (numInputFiles <= 0)
+    if (outputFilename == NULL)
     {
-        printf("We've got no input files to work with!");
+        printf("CRITICAL ERROR - Where's the output filename?!\n");
         DisplayHelp();
         free(inputFilenames);
         return 1;
     }
 
-    for (int i = 0; i < numInputFiles; i++)
+    if (numInputFiles <= 0)
     {
-        printf("%s\n", inputFilenames[i]);
+        printf("CRITICAL ERROR - We've got no input files to work with!");
+        DisplayHelp();
+        free(inputFilenames);
+        return 1;
     }
 
     int result = ArchiveText(outputFilename, (const char**)inputFilenames, numInputFiles, isShiftJIS);
 
     free(inputFilenames);
+    if (!result)
+    {
+        printf("Success! Text archive %s prepared!", outputFilename);
+    }
     return result;
 }
