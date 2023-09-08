@@ -392,10 +392,10 @@ int stringWriteAnimationFrame(int skip)
 								case 0x0E: //unassigned
 									break;
 								case 0x0F: //reset sections
-									format  = ((ch & 0x1 ? defFormat : format) & FORMAT_PART_MAIN);
-									format |= ((ch & 0x2 ? defFormat : format) & FORMAT_PART_FONT);
-									format |= ((ch & 0x4 ? defFormat : format) & FORMAT_PART_FADE);
-									format |= ((ch & 0x8 ? defFormat : format) & FORMAT_PART_COLOUR);
+									format = (format & (~FORMAT_PART_MAIN)) | ((ch & 0x1 ? defFormat : format) & FORMAT_PART_MAIN);
+									format = (format & (~FORMAT_PART_FONT)) | ((ch & 0x2 ? defFormat : format) & FORMAT_PART_FONT);
+									format = (format & (~FORMAT_PART_FADE)) | ((ch & 0x4 ? defFormat : format) & FORMAT_PART_FADE);
+									format = (format & (~FORMAT_PART_COLOUR)) | ((ch & 0x8 ? defFormat : format) & FORMAT_PART_COLOUR);
 									break;
 							}
 							break;
