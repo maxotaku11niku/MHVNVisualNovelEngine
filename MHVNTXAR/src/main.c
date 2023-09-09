@@ -17,7 +17,7 @@ void DisplayHelp(void)
 
 int main(int argc, char** argv)
 {
-    printf("MHVNTXAR - MHVN text archiver tool - Version 0.0.1 - Maxim Hoxha 2023\n");
+    printf("MHVNTXAR - MHVN text archiver tool - Version 0.1.0 - Maxim Hoxha 2023\n");
 
     if (argc < 2)
     {

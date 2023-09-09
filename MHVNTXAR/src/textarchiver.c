@@ -12,6 +12,7 @@
 #define DEFAULT_ALLOCBLOCK_CNB 65536
 #define DEFAULT_ALLOCBLOCK_SEP 256
 #define DEFAULT_ALLOCBLOCK_TXA 1048576
+#define DEFAULT_ALLOCBLOCK_LINK 1048576
 
 #define EOT ((char)0x04)
 
@@ -53,6 +54,9 @@ size_t charNamesBufferAllocSize;
 char* txaFileOutputBuffer;
 char* txaFileOutputBufPtr;
 size_t txaFileOutputBufferAllocSize;
+char* linkInfoOutputBuffer;
+char* linkInfoOutputBufPtr;
+size_t linkInfoOutputBufferAllocSize;
 
 typedef enum
 {
@@ -644,6 +648,9 @@ int ArchiveText(const char* outputFilename, const char** inputFilenames, const i
     txaFileOutputBufferAllocSize = DEFAULT_ALLOCBLOCK_TXA;
     txaFileOutputBuffer = malloc(txaFileOutputBufferAllocSize);
     txaFileOutputBufPtr = txaFileOutputBuffer;
+    linkInfoOutputBufferAllocSize = DEFAULT_ALLOCBLOCK_LINK;
+    linkInfoOutputBuffer = malloc(linkInfoOutputBufferAllocSize);
+    linkInfoOutputBufPtr = linkInfoOutputBuffer;
 
     //Write character names
     charnamesPtr = (intptr_t)txaFileOutputBufPtr - (intptr_t)txaFileOutputBuffer + 0x00000018;
@@ -692,14 +699,77 @@ int ArchiveText(const char* outputFilename, const char** inputFilenames, const i
         }
     }
 
+    size_t sizeOfTXA = (intptr_t)txaFileOutputBufPtr - (intptr_t)txaFileOutputBuffer;
+    uint64_t linkInfoPtr = 0x00000008 + sizeOfTXA + 0x00000018;
+
+    //Write link info
+    tempPtr1 = (uint16_t*)linkInfoOutputBufPtr;
+    tempPtr1[0] = (uint16_t)numChars;
+    tempPtr1[1] = (uint16_t)numScenes;
+    linkInfoOutputBufPtr += 4;
+    for (int i = 0; i < numChars; i++)
+    {
+        char* namePtr = charNames[i].label;
+        char curChar = '!';
+        while (curChar)
+        {
+            curChar = *namePtr++;
+            *linkInfoOutputBufPtr++ = curChar;
+        }
+    }
+    uint64_t* tempPtr3 = (uint64_t*)linkInfoOutputBufPtr;
+    linkInfoOutputBufPtr += 8 * numScenes;
+    uint64_t curRealPtr3 = 0;
+    for (int i = 0; i < numScenes; i++)
+    {
+        char* namePtr = scenes[i].sceneName;
+        char curChar = '!';
+        while (curChar)
+        {
+            curChar = *namePtr++;
+            *linkInfoOutputBufPtr++ = curChar;
+        }
+    }
+    for (int i = 0; i < numScenes; i++)
+    {
+        tempPtr1 = (uint16_t*)linkInfoOutputBufPtr;
+        SceneText* curSceneInf = &scenes[i];
+        int nEnt = curSceneInf->numEntries;
+        tempPtr1[0] = (uint16_t)nEnt;
+        *tempPtr3++ = curRealPtr3;
+        linkInfoOutputBufPtr += 2;
+        curRealPtr3 += 2;
+        for (int j = 0; j < nEnt; j++)
+        {
+            char* namePtr = curSceneInf->entryNames[j];
+            char curChar = '!';
+            while (curChar)
+            {
+                curChar = *namePtr++;
+                *linkInfoOutputBufPtr++ = curChar;
+                curRealPtr3++;
+            }
+        }
+    }
+
+    size_t sizeOfLinkInfo = (intptr_t)linkInfoOutputBufPtr - (intptr_t)linkInfoOutputBuffer;
+
+    fwrite(&linkInfoPtr, sizeof(uint64_t), 1, outputFileHandle);
     fwrite(&systextPtr, sizeof(uint32_t), 1, outputFileHandle);
     fwrite(&creditsPtr, sizeof(uint32_t), 1, outputFileHandle);
     fwrite(&charnamesPtr, sizeof(uint32_t), 1, outputFileHandle);
     fwrite(&scenetextPtr, sizeof(uint32_t), 1, outputFileHandle);
     fwrite(&cgtextPtr, sizeof(uint32_t), 1, outputFileHandle);
     fwrite(&musictextPtr, sizeof(uint32_t), 1, outputFileHandle);
-    fwrite(txaFileOutputBuffer, 1, (intptr_t)txaFileOutputBufPtr - (intptr_t)txaFileOutputBuffer, outputFileHandle);
+    fwrite(txaFileOutputBuffer, 1, sizeOfTXA, outputFileHandle);
+    fwrite(linkInfoOutputBuffer, 1, sizeOfLinkInfo, outputFileHandle);
     fclose(outputFileHandle);
+    for (int i = 0; i < numScenes; i++)
+    {
+        free(scenes[i].entryNames);
+        free(scenes[i].entryTexts);
+    }
+    free(linkInfoOutputBuffer);
     free(txaFileOutputBuffer);
     free(charLabelsBuffer);
     free(charNamesBuffer);
