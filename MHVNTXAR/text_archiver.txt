@@ -17,4 +17,11 @@ Options:
 0x00000008  Literal contents of the generated .txa file, with placeholders for any links that couldn't be resolved at this stage
 
 The start of the link info block
-0x00000000  
+0x00000000  uint16               num_chars          Number of character names defined in THIS file
+0x00000002  uint16               num_scenes         Number of scenes for which there is text defined in THIS file
+0x00000004  char[num_chars][]    charname_labels    All the defined character name labels in order
+var         uint64[num_scenes]   scene_linkdatptrs  Array of pointers to the starts of each scene's text entry labels
+var         char[num_scenes][]   scene_labels       All the defined scene labels in order
+For each scene:
+0x00000000  uint16               num_entries        Number of text entries
+0x00000002  char[num_entries][]  entry_labels       All the defined text entry labels in this scene in order

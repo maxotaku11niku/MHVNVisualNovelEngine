@@ -12,8 +12,11 @@ This is the root of the project, where both the main executable and supporting t
 
 MHVN98: The PC-98 executable project folder. This is what a user would run to read a VN on a PC-98.
 MHVNTEST: A testing space for the executables, with a minimal VN for purely testing purposes. Actual VNs would NOT be hosted here.
+MHVNLINK: Links together the object versions of each data file, with a root descriptor to make all the required data files work properly.
+MHVNTXAR: Bundles together all the text associated with one language to make a single .TXA file (output is embedded in an object file with linking information).
+MHVNSCAS: Assembles scene scripts and bundles all of them together to make a single .DAT file (output is embedded in an object file with linking information).
 
-Certain to come are authoring tools specific to this project (script compiler, data packager etc.).
+Certain to come are authoring tools specific to this project (data packagers etc.).
 
 What may come is a 'modern platform' executable so that people don't have to emulate a PC-98 (or use a real one) to read a VN.
 
@@ -23,7 +26,7 @@ What won't be hosted here are tools that are NOT specific to this project (image
 
 At minimum, I'm looking to put the following things into this engine:
 
-* Rich text rendering (nearly ready-to-go)
+* Rich text rendering (mostly done, just need to handle newlines and drawing to a proper graphical box)
 * Changeable character sprites and CG images (I've already made a format and encoder/decoder)
 * Music provided through PMD (I haven't programmed anything like this so this is the best way forward)
 * Branching paths and the possibility of non-linear storylines (i.e. we want more than to just make 'kinetic' VNs)
@@ -65,7 +68,7 @@ Things only start to get interesting when we get to the storytime
 When starting storytime, parameters relating to control of the system need to be set. These parameters are:
 
 * The ID of the current scene
-* The ID of the current text point
+* The PC of the scene script interpreter
 * The background image
 * The background variant
 * The character sprites to include
@@ -77,7 +80,7 @@ On loading from a save file, of course these values are all set from the stored 
 
 What should this system be doing every frame? First of all, on loading the following events occur:
 
-* The appropriate scene data is loaded and the current text point located
+* The appropriate scene data is loaded and the PC zeroed
 * The background image is loaded and drawn and the appropriate variant is applied
 * The music is loaded and starts to fade in (after fade out from the menu is complete)
 * The fade in begins and the effect is slowly applied over some time (about a second or two?)
@@ -88,7 +91,7 @@ What should this system be doing every frame? First of all, on loading the follo
 
 And after this first text box has been fully drawn and when the engine is idle, what happens next depends on the user's input:
 
-* If the user simply presses the 'advance' key then the engine attempts to go to the next text point (more on that later)
+* If the user simply presses the 'advance' key then the engine restarts script processing
 * If the user presses the 'quick save' key, then the engine quickly saves the story state into a file
 * If the user presses the 'quick load' key, then the engine prompts the user to confirm quick load. After receiving confirmation, the engine fades out and does the usual load from save file behaviour
 * If the user presses the 'save' key, then the engine shows the save dialog, listing files to save to or asking to save to a new file. By default, the last saved to file is chosen, unless there has been no saves yet this session then it will be the file loaded from, unless the story was started anew. After confirmation, the save is carried out
@@ -96,7 +99,7 @@ And after this first text box has been fully drawn and when the engine is idle, 
 * If the user presses the 'view log' key, then the engine shows the chat log, which can be scrolled through
 * If the user presses the 'quit' key, then the engine prompts the user to confirm the quit, After confirmation, the engine fades out and quits to menu
 
-When the next text point is requested by the user pressing the 'advance' key, one thing that should always happen is that the text in the text box be wiped. The following actions may also happen:
+When a restart of script processing is requested by the user pressing the 'advance' key, one thing that should always happen is that the text in the text box be wiped. The following actions may also happen:
 
 * By default the next set of text is written over time
 * If the character name is to be changed, the old name is wiped from the name box and the new name written in (instantly, as usual)
@@ -104,7 +107,7 @@ When the next text point is requested by the user pressing the 'advance' key, on
 * If the music is to be changed, it can be changed with a fade out or instant cut, it can even be silenced completely
 * If a special effect is to be applied, it can take place before the text wipe or after. This includes sound effects
 * Delays between actions can be specified arbitrarily
-* If the next text point includes a decision point, then all the valid decisions are presented to the user in a nice box. The decisions presented may depend on state variables. State variables can be changed based on the decision made by the user, and these state variables can control which text point to go to next
+* If the script execution reaches a decision point, then all the valid decisions are presented to the user in a nice box. The decisions presented may depend on state variables. State variables can be changed based on the decision made by the user, and these state variables can control where script execution goes next
 * If the end of the scene has been reached, then the engine wipes character sprites, then the text box itself and then fades out. The music may fade out or cut, or simply continue into the next scene. Upon loading the next scene, the sequence presented before is applied
 
 If the end of the scene has been reached, but that end of scene specifies that it's now the end of the whole story, then the credits will roll. Remember to do the wrap-up *before* the technical end!
@@ -115,7 +118,7 @@ What follows are some details on the data formats for this engine
 
 * External requirements *
 
-For the purposes of playing music, the executable expects to be able to call PMD, so some PMD instance should already be loaded. This instance must be unloaded when the user quits. Handle this through a batch file or something.
+For the purposes of playing music, the executable expects to be able to call PMD, so some PMD instance should already be loaded. This instance must be unloaded when the user quits. Handle this through a batch file or something. PMDWin or something similar should be used for a 'modern system' executable (i.e. emulating the YM2608 and interpreting .M and .M2 files as PMD would do)
 
 * Master VN descriptor (ROOTINFO.DAT) *
 
@@ -180,6 +183,10 @@ For each scene, when the data is uncompressed, it takes the form of a bytecode, 
 0x2A	subvi [uint16 statevar], [int16 imm]	Performs *statevar -= imm, and sets the flags according to the result.
 0x2B	subvv [uint16 statevar1], [uint16 statevar2]	Performs *statevar1 -= *statevar2, and sets the flags according to the result.
 
+The scene assembler also has the following directives:
+.scene [scene_name]     Declares a scene with the following name. Make sure that scene has the appropriate text entries for all supported languages. Every line until the next .scene directive or the end of the file is assumed to be part of the declared scene.
+.vnentry                Declares that this scene is the first scene in the VN, that is, the scene that will be loaded when the user wishes to start a new save file. Put this directly after the .scene directive of the scene you want to come first. Do not declare this more than once across the whole project.
+
 * Language data descriptors (langdat_file) *
 
 This file contains a list of filenames of associated text data archives. 
@@ -204,7 +211,16 @@ This file contains all the text for a single language
 What immediately follows this header is all the system text strings (usually). Each section of this file contains text in different formats.
 
 System text:
-	char[]
+	char[]	system_text	Every system-relevant text string, in the prescribed order, given below:
+
+	SYS_MENU_NEWSTORY	"Start New", in the main menu
+	SYS_MENU_CONTINUE	"Continue", in the main menu
+	SYS_MENU_CONFIG		"Options", in the main menu
+	SYS_MENU_QUIT		"Quit", in the main menu
+	SYS_MENU_GALLERY	"CG Gallery", in the main menu
+	SYS_MENU_MUSICROOM	"Music Room", in the main menu
+
+	Note that this only the order the strings must appear in the final text archive, they can be specified in any order in the source files (though I recommend putting all of them into one file) MHVNTXAR will substitute the appropriate English strings if these strings aren't found in the source files. So don't forget them if you're writing for non-English speakers, or if you want to add some *flair* to your menus.
 
 Credits text:
 	char[]	credits_text	The entire text of the original creator's credits. Note that at the end will be a hardcoded small note that I created the engine :)
@@ -251,9 +267,9 @@ Text may be given formatting information through 0x1B (the escape character). Wh
 0xEx	Reserved
 0xFx	Reset formatting to default for some parameter (x -> CFTM: M - main, T - font, F - fade, C - colour)
 
-* Text archiver input *
+* MHVNTXAR input *
 
-Most of this will be literal text, though of course there are control sequences in the input files to do formatting etc. All control sequences start with an '@':
+Most of this will be literal text, though of course there are control sequences in the input files to do formatting etc. All control sequences start with an '@', and numerical inputs are currently hex only (sorry):
 
 @@	Becomes a single @.
 @[	Opens a normal text entry. The text between this and the next newline is the entry's label, and after the newline until the end of the entry is the text of the entry. If a reserved label is used, then it corresponds to system text. Otherwise, a scene has to be declared beforehand.
