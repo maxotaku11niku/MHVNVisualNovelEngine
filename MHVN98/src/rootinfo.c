@@ -15,7 +15,7 @@ int readInRootInfo()
 	int result = openFile("ROOTINFO.DAT", FILE_OPEN_READ, &handle);
 	if (result)
 	{
-		writeString("Error! Could not find ROOTINFO.DAT!", 180, 184, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF));
+		writeString("Error! Could not find ROOTINFO.DAT!", 180, 184, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF), 0);
 		return result; //Error handler
 	}
 	readFile(handle, 0x7C, smallFileBuffer, &realReadLen);
@@ -23,7 +23,7 @@ int readInRootInfo()
 	{
 		if (smallFileBuffer[i] != magicNumber[i])
 		{
-			writeString("Error! ROOTINFO.DAT is not valid!", 188, 184, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF));
+			writeString("Error! ROOTINFO.DAT is not valid!", 188, 184, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF), 0);
 			result = 0xFF;
 			return result; //Wrong file format error
 		}
@@ -56,7 +56,7 @@ int initLanguage(unsigned int lang)
 	int result = openFile(rootInfo.langDataPath, FILE_OPEN_READ, &handle);
 	if (result)
 	{
-		writeString("Error! Could not find language data file!", 156, 184, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF));
+		writeString("Error! Could not find language data file!", 156, 184, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF), 0);
 		return result; //Error handler
 	}
 	readFile(handle, 1024, smallFileBuffer, &realReadLen);
@@ -81,7 +81,7 @@ int changeLanguage(unsigned int newLang)
 	int result = openFile(rootInfo.langDataPath, FILE_OPEN_READ, &handle);
 	if (result)
 	{
-		writeString("Error! Could not find language data file!", 156, 184, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF));
+		writeString("Error! Could not find language data file!", 156, 184, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF), 0);
 		return result; //Error handler
 	}
 	readFile(handle, 1024, smallFileBuffer, &realReadLen);

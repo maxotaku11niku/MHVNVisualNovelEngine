@@ -75,7 +75,11 @@ int realMain(void)
 	setInterruptFunction(INTERRUPT_VECTOR_VSYNC, vsyncInterrupt);
 	addPrimaryInterrupts(INTERRUPT_MASK_VSYNC);
 	intson();
-	
+
+	textBoxlX = 64;
+	textBoxtY = 128;
+	textBoxrX = 576;
+	textBoxbY = 192;
 	int hasFinshedStringAnim = 0;
 	int textSkip = 0;
 	int strnum = 0;
@@ -132,7 +136,7 @@ int realMain(void)
 	errorquit:
 	if (result)
 	{
-		writeString("Press Enter to quit.", 240, 200, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF));
+		writeString("Press Enter to quit.", 240, 200, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF), 0);
 		while (!key_is_down(K_ENTER))
 		{
 			updatePrevKeyStatus();

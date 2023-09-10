@@ -27,6 +27,10 @@ typedef struct
 } TextInfo;
 
 extern TextInfo textInfo;
+extern short textBoxlX;
+extern short textBoxrX;
+extern short textBoxtY;
+extern short textBoxbY;
 
 //Set the indices of the shadow colours
 void setShadowColours(const unsigned char* cols);
@@ -44,7 +48,7 @@ int loadSceneText(int sceneNumber, char* textDataBuffer, char** textPtrsBuffer);
 void setCustomInfo(int num, char* str);
 
 //Write a string (str) to the screen at position (x, y) with format given by 'format'.
-void writeString(const char* str, const short x, const short y, short format);
+void writeString(const char* str, const short x, const short y, short format, int autolb);
 
 //Start an animated string write of string 'str', starting from position (x, y) with format given by 'format'
 void startAnimatedStringToWrite(const char* str, const short x, const short y, short format);

@@ -30,7 +30,7 @@ int loadNewScene(unsigned int sceneNum)
     int result = openFile(rootInfo.sceneDataPath, FILE_OPEN_READ, &sdHandle);
     if (result)
 	{
-		writeString("Error! Could not find scene data file!", 168, 184, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF));
+		writeString("Error! Could not find scene data file!", 168, 184, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF), 0);
 		return result; //Error handler
 	}
     seekFile(sdHandle, FILE_SEEK_ABSOLUTE, 4 + 4 * sceneNum, &curfilepos);
@@ -53,7 +53,7 @@ int setupSceneEngine()
     int result = openFile(rootInfo.sceneDataPath, FILE_OPEN_READ, &sdHandle);
 	if (result)
 	{
-		writeString("Error! Could not find scene data file!", 168, 184, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF));
+		writeString("Error! Could not find scene data file!", 168, 184, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF), 0);
 		return result; //Error handler
 	}
 	readFile(sdHandle, 4, smallFileBuffer, &realReadLen);
@@ -73,7 +73,7 @@ void controlProcess(int process)
 
 void clearTextBox()
 {
-    clearLinesEGC(128, 65);
+    clearLinesEGC(textBoxtY, textBoxbY - textBoxtY + 1);
     egc_patdatandreadmode(EGC_PATTERNSOURCE_FGCOLOUR);
     egc_rwmode(EGC_WRITE_ROPSHIFT | EGC_SOURCE_CPU | EGC_ROP((EGC_ROP_SRC & EGC_ROP_PAT) | ((~EGC_ROP_SRC) & EGC_ROP_DST)));
     egc_bitaddrbtmode(EGC_BLOCKTRANSFER_FORWARD);
@@ -151,7 +151,7 @@ int sceneDataProcess()
                 curSceneDataPC--; //compensation
                 goto delText;
             }
-            startAnimatedStringToWrite(curTextArray[*((unsigned short*)(curSceneData + curSceneDataPC))], 64, 128, rootInfo.defFormatNormal);
+            startAnimatedStringToWrite(curTextArray[*((unsigned short*)(curSceneData + curSceneDataPC))], textBoxlX, textBoxtY, rootInfo.defFormatNormal);
             vmFlags |= VMFLAG_TEXTINBOX;
             vmFlags &= ~VMFLAG_PROCESS;
             returnStatus |= SCENE_STATUS_RENDERTEXT;
@@ -171,7 +171,7 @@ int sceneDataProcess()
                         vmFlags &= ~VMFLAG_PROCESS;
                         break;
                     }
-                    writeString(curCharName, 60, 60, rootInfo.defFormatCharName);
+                    writeString(curCharName, 60, 60, rootInfo.defFormatCharName, 0);
                 }
                 curCharNum = charNum;
             }

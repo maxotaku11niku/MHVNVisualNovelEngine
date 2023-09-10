@@ -13,3 +13,9 @@ MHVNTEST/tools/
 MHVNTXAR/bin/
 MHVNTXAR/genasm/
 MHVNTXAR/build.bat
+MHVNSCAS/bin/
+MHVNSCAS/genasm/
+MHVNSCAS/build.bat
+MHVNLINK/bin/
+MHVNLINK/genasm/
+MHVNLINK/build.bat

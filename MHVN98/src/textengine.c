@@ -38,6 +38,11 @@ int animLength;
 short waitFrames;
 short waitPerChar;
 
+short textBoxlX;
+short textBoxrX;
+short textBoxtY;
+short textBoxbY;
+
 unsigned char shadowColours[16];
 
 const unsigned short bayer4x4masks[64] =
@@ -61,7 +66,8 @@ const unsigned short bayer4x4masks[64] =
 };
 
 char* customInfos[16];
-char stringBuffer[512];
+char stringBuffer1[512];
+char stringBuffer2[512];
 
 void setShadowColours(const unsigned char* cols)
 {
@@ -74,7 +80,7 @@ int setupTextInfo()
 	int result = openFile(rootInfo.curTextDataPath, FILE_OPEN_READ, &ctHandle);
 	if (result)
 	{
-		writeString("Error! Could not find text data file!", 172, 184, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF));
+		writeString("Error! Could not find text data file!", 172, 184, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF), 0);
 		return result; //Error handler
 	}
 	readFile(ctHandle, 0x18, smallFileBuffer, &realReadLen);
@@ -96,7 +102,7 @@ int loadCurrentCharacterName(int charNumber, char* nameBuffer)
 	int result = openFile(rootInfo.curTextDataPath, FILE_OPEN_READ, &ctHandle);
 	if (result)
 	{
-		writeString("Error! Could not find text data file!", 172, 184, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF));
+		writeString("Error! Could not find text data file!", 172, 184, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF), 0);
 		return result; //Error handler
 	}
 	seekFile(ctHandle, FILE_SEEK_ABSOLUTE, textInfo.characterNamesFilePtr + 2 * charNumber, &curfilepos);
@@ -116,7 +122,7 @@ int loadSceneText(int sceneNumber, char* textDataBuffer, char** textPtrsBuffer)
 	int result = openFile(rootInfo.curTextDataPath, FILE_OPEN_READ, &ctHandle);
 	if (result)
 	{
-		writeString("Error! Could not find text data file!", 172, 184, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF));
+		writeString("Error! Could not find text data file!", 172, 184, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF), 0);
 		return result; //Error handler
 	}
 	seekFile(ctHandle, FILE_SEEK_ABSOLUTE, textInfo.sceneTextFilePtr + 4 * sceneNumber, &curfilepos);
@@ -255,10 +261,11 @@ void setCustomInfo(int num, char* str)
 	customInfos[num] = str;
 }
 
-const char* preprocessString(const char* str)
+const char* preprocessString(const char* str, int autolb, short lx, short rx, short ty, short by)
 {
+	//Inject variable strings
 	char ch = *str++;
-	char* pch = stringBuffer;
+	char* pch = stringBuffer1;
 	while (ch) //stop when the parent string's null terminator is reached
 	{
 		if (ch == 0x1B)
@@ -284,12 +291,82 @@ const char* preprocessString(const char* str)
 		ch = *str++;
 	}
 	*pch = 0; //null terminate, as usual
-	return stringBuffer;
+	if (!autolb) return stringBuffer1;
+	//Insert automatic line breaks
+	pch = stringBuffer2;
+	char* sspch = stringBuffer1;
+	char* bpp = 0;
+	ch = *sspch++;
+	short curX = lx;
+	short curY = ty;
+	while (ch)
+	{
+		if (ch < 0x21) //control characters
+		{
+			switch (ch)
+			{
+				case 0x09: //Tab
+					bpp = pch;
+					short delX = curX - lx + 32;
+					delX &= 0xFFE0; //Tab stops every 4 halfwidth characters
+					curX = lx + delX;
+					break;
+				case 0x0A: //LF
+					curY += 16;
+					break;
+				case 0x0D: //CR
+					curX = lx;
+					break;
+				case 0x20: //Space
+					bpp = pch;
+					curX += 8;
+					break;
+			}
+		}
+		else if (ch <= 0x7F || (ch > 0x9F && ch < 0xE0)) //Single byte
+		{
+			if (ch == '-') bpp = pch + 1;
+			curX += 8;
+		}
+		else //double byte
+		{
+			unsigned short twobytecode = ch << 8;
+			ch = *str++;
+			if (!ch)
+			{
+				break; //Standard null termination
+			}
+			twobytecode |= ch;
+			twobytecode = sjisToInternalCode(twobytecode);
+			curX += (twobytecode >= 0x0900 && twobytecode < 0x0C00) ? 8 : 16; //The characters in this range are logically halfwidth
+		}
+		if (curY >= by) //Do not allow text to overflow the box
+		{
+			break;
+		}
+		else if (curX >= rx)
+		{
+			if (!bpp) bpp = pch; //Emergency newline if the break point was not set earlier
+			else
+			{
+				sspch -= pch - bpp;
+			}
+			*bpp++ = 0x0D; *bpp++ = 0x0A; //Insert newline in the most appropriate position if the string is about to overflow the box
+			pch = bpp;
+			bpp = 0;
+			curX = lx;
+			curY += 16;
+		}
+		else *pch++ = ch;
+		ch = *sspch++;
+	}
+	*pch = 0; //null terminate, as usual
+	return stringBuffer2;
 }
 
 void startAnimatedStringToWrite(const char* str, const short x, const short y, short format)
 {
-	const char* pstr = preprocessString(str);
+	const char* pstr = preprocessString(str, 1, x, textBoxrX, y, textBoxbY);
 	stringToAnimWrite = pstr;
 	curAnimStringPos = pstr;
 	currentAnimWriteX = x;
@@ -304,7 +381,7 @@ void startAnimatedStringToWrite(const char* str, const short x, const short y, s
 	waitFrames = 0;
 	waitPerChar = 0;
 	memset32Seg(0, animCharBuf, 256);
-	memset32Seg(0xFF, charFade, 4);
+	memset32Seg(0xFFFFFFFF, charFade, 4);
 }
 
 int stringWriteAnimationFrame(int skip)
@@ -313,7 +390,7 @@ int stringWriteAnimationFrame(int skip)
 	{
 		animReachedEndOfString = 1;
 		animLength = 0;
-		writeString(stringToAnimWrite, currentAnimWriteX, currentAnimWriteY, currentAnimDefaultFormat);
+		writeString(stringToAnimWrite, currentAnimWriteX, currentAnimWriteY, currentAnimDefaultFormat, 0);
 		return 1;
 	}
 	unsigned char ch;
@@ -529,9 +606,9 @@ int stringWriteAnimationFrame(int skip)
 	else return 0;
 }
 
-void writeString(const char* str, const short x, const short y, short format)
+void writeString(const char* str, const short x, const short y, short format, int autolb)
 {
-	const char* pstr = preprocessString(str);
+	const char* pstr = preprocessString(str, autolb, x, textBoxrX, y, textBoxbY);
 	unsigned char ch = 0xFF;
 	short twobytecode;
 	short curX = x;
@@ -598,10 +675,10 @@ void writeString(const char* str, const short x, const short y, short format)
 							case 0x0E: //unassigned
 								break;
 							case 0x0F: //reset sections
-								format  = ((ch & 0x1 ? defFormat : format) & FORMAT_PART_MAIN);
-								format |= ((ch & 0x2 ? defFormat : format) & FORMAT_PART_FONT);
-								format |= ((ch & 0x4 ? defFormat : format) & FORMAT_PART_FADE);
-								format |= ((ch & 0x8 ? defFormat : format) & FORMAT_PART_COLOUR);
+								format = (format & (~FORMAT_PART_MAIN)) | ((ch & 0x1 ? defFormat : format) & FORMAT_PART_MAIN);
+								format = (format & (~FORMAT_PART_FONT)) | ((ch & 0x2 ? defFormat : format) & FORMAT_PART_FONT);
+								format = (format & (~FORMAT_PART_FADE)) | ((ch & 0x4 ? defFormat : format) & FORMAT_PART_FADE);
+								format = (format & (~FORMAT_PART_COLOUR)) | ((ch & 0x8 ? defFormat : format) & FORMAT_PART_COLOUR);
 								break;
 						}
 						break;
