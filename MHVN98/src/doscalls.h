@@ -20,20 +20,20 @@
 //INT 21 function 00 - Terminate Program (do not actually use this, as it was superseded by function 4C)
 #define int21_oldTerminate() asm volatile ("movb $0, %%ah\n\tint $33" : : : "ah")
 //INT 21 function 01 - Input Single Character From Console (put into 'char')
-#define int21_conReadChar(char) asm volatile ("movb $1, %%ah\n\tint $33\n\tmovb %%al, %0" : "=rm" (char) : : "ah", "al")
+#define int21_conReadChar(char) asm volatile ("movb $1, %%ah\n\tint $33" : "=a" (char) : )
 //INT 21 function 02 - Output Single Character (char) To Console
-#define int21_conWriteChar(char) asm volatile ("movb $2, %%ah\n\tmovb %0, %%dl\n\tint $33" : : "rmi" (char) : "ah", "dl")
+#define int21_conWriteChar(char) asm volatile ("movb $2, %%ah\n\tint $33" : : "d" (char))
 //INT 21 function 03 - Input Single Character From Aux Port (put into 'char')
-#define int21_auxReadChar(char) asm volatile ("movb $3, %%ah\n\tint $33\n\tmovb %%al, %0" : "=rm" (char) : : "ah", "al")
+#define int21_auxReadChar(char) asm volatile ("movb $3, %%ah\n\tint $33" : "=a" (char) : )
 //INT 21 function 04 - Output Single Character (char) To Aux Port
-#define int21_auxWriteChar(char) asm volatile ("movb $4, %%ah\n\tmovb %0, %%dl\n\tint $33" : : "rmi" (char) : "ah", "dl")
+#define int21_auxWriteChar(char) asm volatile ("movb $4, %%ah\n\tint $33" : : "d" (char))
 //INT 21 function 05 - Output Single Character (char) To Printer Port
-#define int21_printerWriteChar(char) asm volatile ("movb $5, %%ah\n\tmovb %0, %%dl\n\tint $33" : : "rmi" (char) : "ah", "dl")
+#define int21_printerWriteChar(char) asm volatile ("movb $5, %%ah\n\tint $33" : : "d" (char))
 //INT 21 function 09 - Output String (pointed to by strptr) To Console (must be terminated by '$')
-#define int21_conWriteString(strptr) asm volatile ("movb $9, %%ah\n\tmovw %0, %%dx\n\tint $33" : : "rmi" (strptr) : "ah", "dx")
+#define int21_conWriteString(strptr) asm volatile ("movb $9, %%ah\n\tint $33" : : "d" (strptr))
 
 //INT 21 function 3C - Create File (pathname pointed to by 'path' (null-terminated), attributes in 'attrs', returns a handle in 'handle', can return an error code)
-#define int21_createfile(pathseg, path, attrs, handle, errorflag) asm inline ("movb $60, %%ah\n\tmovw %w2, %%dx\n\tmovw %w3, %%cx\n\tmovw %w4, %%ds\n\tint $33\n\tmovw %%cs, %%cx\n\tmovw %%cx, %%ds\n\tmovw %%ax, %w0" : "=rm" (handle), "=@ccc" (errorflag) : "rmi" (path), "rmi" (attrs), "rmi" (pathseg) : "ah", "ax", "cx", "dx")
+#define int21_createfile(pathseg, path, attrs, handle, errorflag) asm inline ("movw %w2, %%ds\n\tmovb $60, %%ah\n\tint $33\n\tmovw %%cs, %w2\n\tmovw %w2, %%ds" : "=a" (handle), "=@ccc" (errorflag), "+r" (pathseg) : "d" (path), "c" (attrs))
 //Supporting defines
 #define FILE_ATTRIBUTE_READONLY 0x0001
 #define FILE_ATTRIBUTE_HIDDEN 0x0002
@@ -42,21 +42,21 @@
 #define FILE_ATTRIBUTE_SUBDIR 0x0010
 #define FILE_ATTRIBUTE_ARCHIVE 0x0020
 //INT 21 function 3D - Open File (pathname pointed to by 'path' (null-terminated), attribute in 'attr', returns a handle in 'handle', can return an error code)
-#define int21_openfile(pathseg, path, attr, handle, errorflag) asm inline ("movb $61, %%ah\n\tmovw %w2, %%dx\n\tmovb %b3, %%al\n\tmovw %w4, %%ds\n\tint $33\n\tmovw %%cs, %%dx\n\tmovw %%dx, %%ds\n\tmovw %%ax, %w0" : "=rm" (handle), "=@ccc" (errorflag) : "rmi" (path), "rmi" (attr), "rmi" (pathseg) : "ah", "ax", "al", "dx")
+#define int21_openfile(pathseg, path, attr, handle, errorflag) asm inline ("movw %w2, %%ds\n\tmovb $61, %%ah\n\tint $33\n\tmovw %%cs, %w2\n\tmovw %w2, %%ds" : "=a" (handle), "=@ccc" (errorflag), "+r" (pathseg) : "d" (path), "a" (attr))
 //Supporting defines
 #define FILE_OPEN_READ 0x00
 #define FILE_OPEN_WRITE 0x01
 #define FILE_OPEN_READWRITE 0x02
 //INT 21 function 3E - Close File (given by handle in 'handle', can return an error code)
-#define int21_closefile(handle, errorcode, errorflag) asm inline ("movb $62, %%ah\n\tmovw %w2, %%bx\n\tint $33\n\tmovw %%ax, %w0\n\t" : "=rm" (errorcode), "=@ccc" (errorflag) : "rmi" (handle) : "ah", "bx", "ax")
+#define int21_closefile(handle, errorcode, errorflag) asm inline ("movb $62, %%ah\n\tint $33" : "=a" (errorcode), "=@ccc" (errorflag) : "b" (handle))
 //INT 21 function 3F - Read From a File (given by handle in 'handle', puts 'len' bytes into array pointed to by 'buffer', returns the number of bytes actually read in 'readbytes', can return an error code)
-#define int21_readfile(handle, len, bufseg, buffer, readbytes, errorflag) asm inline ("movb $63, %%ah\n\tmovw %w2, %%bx\n\tmovw %w3, %%cx\n\tmovw %w4, %%dx\n\tmovw %w5, %%ds\n\tint $33\n\tmovw %%cs, %%dx\n\tmovw %%dx, %%ds\n\tmovw %%ax, %w0" : "=rm" (readbytes), "=@ccc" (errorflag) : "rmi" (handle), "rmi" (len), "rmi" (buffer), "rmi" (bufseg) : "ah", "ax", "bx", "cx", "dx")
+#define int21_readfile(handle, len, bufseg, buffer, readbytes, errorflag) asm inline ("movw %w2, %%ds\n\tmovb $63, %%ah\n\tint $33\n\tmovw %%cs, %w2\n\tmovw %w2, %%ds" : "=a" (readbytes), "=@ccc" (errorflag), "+r" (bufseg) : "b" (handle), "c" (len), "d" (buffer))
 //INT 21 function 40 - Write To a File (given by handle in 'handle', puts 'len' bytes into the file from the array pointed to by 'buffer', returns the number of bytes actually written in 'writebytes', can return an error code)
-#define int21_writefile(handle, len, bufseg, buffer, writebytes, errorflag) asm inline ("movb $64, %%ah\n\tmovw %w2, %%bx\n\tmovw %w3, %%cx\n\tmovw %w4, %%dx\n\tmovw %w5, %%ds\n\tint $33\n\tmovw %%cs, %%dx\n\tmovw %%dx, %%ds\n\tmovw %%ax, %w0" : "=rm" (writebytes), "=@ccc" (errorflag) : "rmi" (handle), "rmi" (len), "rmi" (buffer), "rmi" (bufseg) : "ah", "ax", "bx", "cx", "dx")
+#define int21_writefile(handle, len, bufseg, buffer, writebytes, errorflag) asm inline ("movw %w2, %%ds\n\tmovb $64, %%ah\n\tint $33\n\tmovw %%cs, %w2\n\tmovw %w2, %%ds" : "=a" (writebytes), "=@ccc" (errorflag), "+r" (bufseg) : "b" (handle), "c" (len), "d" (buffer))
 //INT 21 function 41 - Delete File (pathname pointed to by 'path' (null-terminated), can return an error code)
-#define int21_deletefile(pathseg, path, errorcode, errorflag) asm inline ("movb $65, %%ah\n\tmovw %w2, %%dx\n\tmovw %w3, %%ds\n\tint $33\n\tmovw %%cs, %%dx\n\tmovw %%dx, %%ds\n\tmovw %%ax, %w0" : "=rm" (errorcode), "=@ccc" (errorflag) : "rmi" (path), "rmi" (pathseg) : "ah", "ax", "dx")
+#define int21_deletefile(pathseg, path, errorcode, errorflag) asm inline ("movw %w2, %%ds\n\tmovb $65, %%ah\n\tint $33\n\tmovw %%cs, %w2\n\tmovw %w2, %%ds" : "=a" (errorcode), "=@ccc" (errorflag), "+r" (pathseg) : "d" (path))
 //INT 21 function 42 - Seek In File (given by handle in 'handle', moves the file pointer by chunklen:len bytes, according to the method in 'method', returns the new file position in poschunk:pos, can return an error code)
-#define int21_seekfile(handle, method, chunklen, len, poschunk, pos, errorflag) asm inline ("movb $66, %%ah\n\tmovw %w3, %%bx\n\tmovb %b4, %%al\n\tmovw %w5, %%cx\n\tmovw %w6, %%dx\n\tint $33\n\tmovw %%dx, %w0\n\tmovw %%ax, %w1" : "=rm" (poschunk), "=rm" (pos), "=@ccc" (errorflag) : "rmi" (handle), "rmi" (method), "rmi" (chunklen), "rmi" (len) : "ah", "al", "ax", "bx", "cx", "dx")
+#define int21_seekfile(handle, method, chunklen, len, poschunk, pos, errorflag) asm inline ("movb $66, %%ah\n\tint $33" : "=d" (poschunk), "=a" (pos), "=@ccc" (errorflag) : "b" (handle), "a" (method), "c" (chunklen), "d" (len))
 //Supporting defines
 //From the beginning of the file
 #define FILE_SEEK_ABSOLUTE 0x00

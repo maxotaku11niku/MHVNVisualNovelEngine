@@ -1,5 +1,6 @@
 //PC-98 EGC interface
 
+#include "pc98_grcg.h"
 #include "pc98_egc.h"
 #include "x86strops.h"
 #include "x86segments.h"
@@ -29,16 +30,16 @@ void clearLinesEGC(int startLine, int numLines)
 
 void egcEnable()
 {
-	portOutB(0x7C, 0x80);
-	egc_writegrcgmode(EGC_MODE_MODIFY);
-	egc_writegrcgmode(EGC_MODE_EGC);
-	egc_writegrcgmode(EGC_MODE_NOMODIFY);
+	grcgEnable();
+	graphicsSetMode2(GDC_MODE2_MODIFY);
+	graphicsSetMode2(GDC_MODE2_EGC);
+	graphicsSetMode2(GDC_MODE2_NOMODIFY);
 }
 
 void egcDisable()
 {
-	egc_writegrcgmode(EGC_MODE_MODIFY);
-	egc_writegrcgmode(EGC_MODE_GRCG);
-	egc_writegrcgmode(EGC_MODE_NOMODIFY);
-	portOutB(0x7C, 0x00);
+	graphicsSetMode2(GDC_MODE2_MODIFY);
+	graphicsSetMode2(GDC_MODE2_GRCG);
+	graphicsSetMode2(GDC_MODE2_NOMODIFY);
+	grcgDisable();
 }

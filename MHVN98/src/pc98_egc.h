@@ -2,14 +2,8 @@
 #pragma once
 
 #include "x86ports.h"
+#include "pc98_gdc.h"
 
-//OUTPORT 6A - Write EGC/GRCG Mode
-#define egc_writegrcgmode(mode) portOutB(0x6A, mode)
-//Supporting defines
-#define EGC_MODE_GRCG 0x04
-#define EGC_MODE_EGC 0x05
-#define EGC_MODE_NOMODIFY 0x06
-#define EGC_MODE_MODIFY 0x07
 //OUTPORT 04A0 - EGC Plane Access Register
 //For convenience, as hardware uses bit = 0 to indicate access, we NOT a mask where bit = 1 indicates access
 #define egc_planeaccess(planemask) portOutWExt(0x04A0, ~(planemask))
@@ -59,7 +53,9 @@
 //There is an implicit +1 to the length, so we account for that
 #define egc_bitlen(len) portOutWExt(0x4AE, (len)-1)
 
+//Clears the screen very fast using the EGC (must enable beforehand)
 void clearScreenEGC();
+//Clears some lines very fast using the EGC (must enable beforehand)
 void clearLinesEGC(int startLine, int numLines);
 void egcEnable();
 void egcDisable();

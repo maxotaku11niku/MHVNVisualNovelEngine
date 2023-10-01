@@ -3,23 +3,23 @@
 
 //16-bit pointers
 //Memcpy routines (movs-based)
-#define smemcpy8(src, dst, count) asm volatile ("movw %w0, %%cx\n\tmovw %w1, %%si\n\tmovw %w2, %%di\n\trep movsb" : : "rmi" (count), "rmi" (src), "rmi" (dst) : "cx", "si", "di")
-#define smemcpy16(src, dst, count) asm volatile ("movw %w0, %%cx\n\tmovw %w1, %%si\n\tmovw %w2, %%di\n\trep movsw" : : "rmi" (count), "rmi" (src), "rmi" (dst) : "cx", "si", "di")
-#define smemcpy32(src, dst, count) asm volatile ("movw %w0, %%cx\n\tmovw %w1, %%si\n\tmovw %w2, %%di\n\trep movsl" : : "rmi" (count), "rmi" (src), "rmi" (dst) : "cx", "si", "di")
+#define smemcpy8(src, dst, count) asm volatile ("rep movsb" : "+c" (count), "+S" (src), "+D" (dst) : )
+#define smemcpy16(src, dst, count) asm volatile ("rep movsw" : "+c" (count), "+S" (src), "+D" (dst) : )
+#define smemcpy32(src, dst, count) asm volatile ("rep movsl" : "+c" (count), "+S" (src), "+D" (dst) : )
 //Memset routines (stos-based)
-#define smemset8(num, dst, count) asm volatile ("movw %w0, %%cx\n\tmovw %w1, %%di\n\trep stosb" : : "rmi" (count), "rmi" (dst), "a" (num) : "cx", "di")
-#define smemset16(num, dst, count) asm volatile ("movw %w0, %%cx\n\tmovw %w1, %%di\n\trep stosw" : : "rmi" (count), "rmi" (dst), "a" (num) : "cx", "di")
-#define smemset32(num, dst, count) asm volatile ("movw %w0, %%cx\n\tmovw %w1, %%di\n\trep stosl" : : "rmi" (count), "rmi" (dst), "a" (num) : "cx", "di")
+#define smemset8(num, dst, count) asm volatile ("rep stosb" : "+c" (count), "+D" (dst) : "a" (num))
+#define smemset16(num, dst, count) asm volatile ("rep stosw" : "+c" (count), "+D" (dst) : "a" (num))
+#define smemset32(num, dst, count) asm volatile ("rep stosl" : "+c" (count), "+D" (dst) : "a" (num))
 
 //32-bit pointers
 //Memcpy routines (movs-based)
-#define wmemcpy8(src, dst, count) asm volatile ("movl %k0, %%ecx\n\tmovl %k1, %%esi\n\tmovl %k2, %%edi\n\trep movsb (%%esi), (%%edi)" : : "rmi" (count), "rmi" (src), "rmi" (dst) : "ecx", "esi", "edi")
-#define wmemcpy16(src, dst, count) asm volatile ("movl %k0, %%ecx\n\tmovl %k1, %%esi\n\tmovl %k2, %%edi\n\trep movsw (%%esi), (%%edi)" : : "rmi" (count), "rmi" (src), "rmi" (dst) : "ecx", "esi", "edi")
-#define wmemcpy32(src, dst, count) asm volatile ("movl %k0, %%ecx\n\tmovl %k1, %%esi\n\tmovl %k2, %%edi\n\trep movsl (%%esi), (%%edi)" : : "rmi" (count), "rmi" (src), "rmi" (dst) : "ecx", "esi", "edi")
+#define wmemcpy8(src, dst, count) asm volatile ("rep movsb (%%esi), (%%edi)" : "+c" (count), "+S" (src), "+D" (dst) : )
+#define wmemcpy16(src, dst, count) asm volatile ("rep movsw (%%esi), (%%edi)" : "+c" (count), "+S" (src), "+D" (dst) : )
+#define wmemcpy32(src, dst, count) asm volatile ("rep movsl (%%esi), (%%edi)" : "+c" (count), "+S" (src), "+D" (dst) : )
 //Memset routines (stos-based)
-#define wmemset8(num, dst, count) asm volatile ("movl %k0, %%ecx\n\tmovl %k1, %%edi\n\trep stosb (%%edi)" : : "rmi" (count), "rmi" (dst), "a" (num) : "ecx", "edi")
-#define wmemset16(num, dst, count) asm volatile ("movl %k0, %%ecx\n\tmovl %k1, %%edi\n\trep stosw (%%edi)" : : "rmi" (count), "rmi" (dst), "a" (num) : "ecx", "edi")
-#define wmemset32(num, dst, count) asm volatile ("movl %k0, %%ecx\n\tmovl %k1, %%edi\n\trep stosl (%%edi)" : : "rmi" (count), "rmi" (dst), "a" (num) : "ecx", "edi")
+#define wmemset8(num, dst, count) asm volatile ("rep stosb (%%edi)" : "+c" (count), "+D" (dst) : "a" (num))
+#define wmemset16(num, dst, count) asm volatile ("rep stosw (%%edi)" : "+c" (count), "+D" (dst) : "a" (num))
+#define wmemset32(num, dst, count) asm volatile ("rep stosl (%%edi)" : "+c" (count), "+D" (dst) : "a" (num))
 
 //The following wrappers allow for compile time type checking
 
@@ -41,6 +41,17 @@ __attribute__((always_inline)) inline void memcpy32Seg(const void* src, void* ds
     smemcpy32(src, dst, count);
 }
 
+//Fast copy memory with count always in bytes, set segments before use
+__attribute__((always_inline)) inline void memcpySeg(const void* src, void* dst, unsigned int count)
+{
+	unsigned int mincount = count & 0x3;
+    smemcpy8(src, dst, mincount);
+	const unsigned char* movsrc = src; movsrc += mincount;
+	const unsigned char* movdst = dst; movdst += mincount;
+	unsigned int intcount = count >> 2;
+	smemcpy32(movsrc, movdst, intcount);
+}
+
 //Fast set memory 8 bits at a time, set segments before use
 __attribute__((always_inline)) inline void memset8Seg(unsigned char num, void* dst, unsigned int count)
 {
@@ -57,6 +68,18 @@ __attribute__((always_inline)) inline void memset16Seg(unsigned short num, void*
 __attribute__((always_inline)) inline void memset32Seg(unsigned long num, void* dst, unsigned int count)
 {
     smemset32(num, dst, count);
+}
+
+//Fast set memory with count always in bytes, set segments before use, can only fill with the same byte
+__attribute__((always_inline)) inline void memsetSeg(unsigned char num, void* dst, unsigned int count)
+{
+	num |= num << 8;
+	num |= num << 16;
+	unsigned int mincount = count & 0x3;
+    smemset8(num, dst, mincount);
+	const unsigned char* movdst = dst; movdst += mincount;
+	unsigned int intcount = count >> 2;
+	smemset32(num, movdst, intcount);
 }
 
 //Fast copy memory 8 bits at a time, uses 32-bit offsets
@@ -77,6 +100,17 @@ __attribute__((always_inline)) inline void memcpy32Flat(const void* src, void* d
     wmemcpy32(src, dst, count);
 }
 
+//Fast copy memory with count always in bytes, uses 32-bit offsets
+__attribute__((always_inline)) inline void memcpyFlat(const void* src, void* dst, unsigned int count)
+{
+	unsigned int mincount = count & 0x3;
+    wmemcpy8(src, dst, mincount);
+	const unsigned char* movsrc = src; movsrc += mincount;
+	const unsigned char* movdst = dst; movdst += mincount;
+	unsigned int intcount = count >> 2;
+	wmemcpy32(movsrc, movdst, intcount);
+}
+
 //Fast set memory 8 bits at a time, uses 32-bit offsets
 __attribute__((always_inline)) inline void memset8Flat(unsigned char num, void* dst, unsigned int count)
 {
@@ -93,4 +127,16 @@ __attribute__((always_inline)) inline void memset16Flat(unsigned short num, void
 __attribute__((always_inline)) inline void memset32Flat(unsigned long num, void* dst, unsigned int count)
 {
     wmemset32(num, dst, count);
+}
+
+//Fast set memory with count always in bytes, uses 32-bit offsets, can only fill with the same byte
+__attribute__((always_inline)) inline void memsetFlat(unsigned char num, void* dst, unsigned int count)
+{
+	num |= num << 8;
+	num |= num << 16;
+	unsigned int mincount = count & 0x3;
+    wmemset8(num, dst, mincount);
+	const unsigned char* movdst = dst; movdst += mincount;
+	unsigned int intcount = count >> 2;
+	wmemset32(num, movdst, intcount);
 }

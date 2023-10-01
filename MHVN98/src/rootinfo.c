@@ -9,7 +9,7 @@ static const char* magicNumber = "MHVN";
 
 int readInRootInfo()
 {
-    memset8Seg(0, &rootInfo, sizeof(RootInfo)); //Zero out the root info structure
+    memsetSeg(0, &rootInfo, sizeof(RootInfo)); //Zero out the root info structure
 	int handle;
 	int realReadLen;
 	int result = openFile("ROOTINFO.DAT", FILE_OPEN_READ, &handle);

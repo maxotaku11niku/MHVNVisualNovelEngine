@@ -2,7 +2,7 @@
 #pragma once
 
 //INT 18 function 0A - Text Mode Set (with 'mode')
-#define pc98crt_textmodeset(mode) asm volatile ("movb $10, %%ah\n\tmovb %0, %%al\n\tint $24" : : "rmi" (mode) : "ah", "al")
+#define pc98crt_textmodeset(mode) asm volatile ("movb $10, %%ah\n\tint $24" : : "a" (mode))
 //Supporting defines
 #define CRT_MODE_TEXT_25_ROWS    	0x00
 #define CRT_MODE_TEXT_20_ROWS    	0x01
@@ -13,7 +13,7 @@
 #define CRT_MODE_TEXT_CGACCESS_CODE	0x00
 #define CRT_MODE_TEXT_CGACCESS_DOT	0x08
 //INT 18 function 0B - Text Mode Get (put in 'mode')
-#define pc98crt_textmodeget(mode) asm volatile ("movb $11, %%ah\n\tint $24\n\tmovb %%al, %0" : "=rm" (mode) : : "ah")
+#define pc98crt_textmodeget(mode) asm volatile ("movb $11, %%ah\n\tint $24" : "=a" (mode) : )
 //Supporting defines
 #define CRT_MODE_CRTTYPE_STANDARD	0x00
 #define CRT_MODE_CRTTYPE_HIGH    	0x80
