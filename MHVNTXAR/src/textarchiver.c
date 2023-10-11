@@ -159,7 +159,7 @@ int ParseInputFile(const char* contents, const long length, const char* filename
                         curChar = *contents++; i++;
                         tlbufPtr++;
                     }
-                    if (contents[-1] == '\r') //LF normalisation
+                    if (contents[-2] == '\r') //LF normalisation
                     {
                         tempLabelBuffer[tlbufPtr - 1] = '\0';
                     }

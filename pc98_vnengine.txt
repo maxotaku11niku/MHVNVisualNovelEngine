@@ -144,7 +144,6 @@ VNflags has the following definition:
 0000 0000 0000 PPMC
 C - Present CG gallery? Option is hidden from the menu if 0
 M - Present music room? Option is hidden from the menu if 0
-N - Support custom protagonist? (name)
 P - Custom protagonist support (0 -> none, protagonist is fixed, 1 -> name only, gender is fixed, 2 -> name and gender, but no custom pronouns, 3 -> name and gender, custom pronouns)
 
 * Scene data archive (scenedat_file) *
@@ -213,6 +212,7 @@ What immediately follows this header is all the system text strings (usually). E
 System text:
 	char[]	system_text	Every system-relevant text string, in the prescribed order, given below:
 
+	LANGNAME		The native name of the language (e.g. for ja_JP this should be 日本語)
 	SYS_MENU_NEWSTORY	"Start New", in the main menu
 	SYS_MENU_CONTINUE	"Continue", in the main menu
 	SYS_MENU_CONFIG		"Options", in the main menu
@@ -255,7 +255,7 @@ Text may be given formatting information through 0x1B (the escape character). Wh
 0x5x	Custom protagonist information inject
 	0: Name
 	1: Nickname
-	2-F: Relevant pronouns (language defined)
+	2-F: Relevant pronouns (language defined)... or whatever I guess
 0x6x	Wait for 10*(x+1) frames before continuing
 0x7x	Set wait between characters to (x+1) frames
 0x8x	Reserved
