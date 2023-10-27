@@ -157,30 +157,30 @@ var		scene_data[num_scenes]	scenedats	A list of compressed scene datas. The unco
 
 For each scene, when the data is uncompressed, it takes the form of a bytecode, where we have the following opcodes:
 
-0x00	gotoscene [uint16 scene_num]	Ends the current scene and goes to another scene. Scene number 0xFFFF is reserved for the end of the story (vnend pseudoinstruction).
-0x01	jmp [int16 relative_offset]	Jumps by some relative offset unconditionally. The offset is relative to the end of this instruction.
-0x02	jz, je  [int16 relative_offset]	Jumps by some relative offset if the Z flag is set. The offset is relative to the end of this instruction.
-0x03	jnz, jne  [int16 relative_offset]	Jumps by some relative offset if the Z flag is not set. The offset is relative to the end of this instruction.
-0x04	jn, jl [int16 relative_offset]	Jumps by some relative offset if the N flag is set. The offset is relative to the end of this instruction.
-0x05	jp, jge [int16 relative_offset]	Jumps by some relative offset if the N flag is not set. The offset is relative to the end of this instruction.
-0x06	jle [int16 relative_offset]	Jumps by some relative offset if the N flag is set or the Z flag is set. The offset is relative to the end of this instruction.
-0x07	jg [int16 relative_offset]	Jumps by some relative offset if the N flag is not set and the Z flag is not set. The offset is relative to the end of this instruction.
-0x10	text [uint16 textnum]		Displays the text given in the following local string reference and waits for user input before continuing.
-0x11	charname [uint16 charnum]	Sets the current character name to the string pointed to by charnum. Character number 0xFFFF is reserved for wiping the character name entirely (nocharname pseudoinstruction).
-0x1F	deltext				Wipes the text from the text box. Implied by a 'text' instruction if not called beforehand.
-0x20	lut [uint8 numopts], [uint16 statevar], [numopts int16s] Converts choice indices to the given numbers for each state variable.
-0x21	multichoice [uint8 numopts], [uint16 statevar], [uint16 firsttextnum]	Displays a number of choices to the user (up to some specified limit), and puts the number chosen into the state variable pointed to by statevar. The first option's text is pointed to by the given local string reference, and subsequent options use the next references.
-(multichoice [uint16 statevar], [label opt1], [label opt2]... is accepted by the scene script assembler, and automatically converted)
-0x22	ynchoicefl			Displays a yes/no choice to the user. Sets the Z flag to 0 if no, or to 1 in if yes.
-0x23	ynchoicest [uint16 statevar]	Displays a yes/no choice to the user. Puts 0 into the state variable pointed to by statevar if no, or puts 1 in if yes, and sets Z according to the result.
-0x24	setvi [uint16 statevar], [int16 imm]	Sets *statevar to equal imm.
-0x25	setvv [uint16 statevar1], [uint16 statevar2]	Sets *statevar1 to equal *statevar2.
-0x26	cmpvi [uint16 statevar], [int16 imm]	Sets flags according to the result of *statevar - imm.
-0x27	cmpvv [uint16 statevar1], [uint16 statevar2]	Sets flags according to the result of *statevar1 - *statevar2.
-0x28	addvi [uint16 statevar], [int16 imm]	Performs *statevar += imm, and sets the flags according to the result.
-0x29	addvv [uint16 statevar1], [uint16 statevar2]	Performs *statevar1 += *statevar2, and sets the flags according to the result.
-0x2A	subvi [uint16 statevar], [int16 imm]	Performs *statevar -= imm, and sets the flags according to the result.
-0x2B	subvv [uint16 statevar1], [uint16 statevar2]	Performs *statevar1 -= *statevar2, and sets the flags according to the result.
+0x00	gotoscene [uint16 scene_num]       Ends the current scene and goes to another scene. Scene number 0xFFFF is reserved for the end of the story (vnend pseudoinstruction).
+0x01	jmp [int16 relative_offset]        Jumps by some relative offset unconditionally. The offset is relative to the end of this instruction.
+0x02	jz, je [int16 relative_offset]    Jumps by some relative offset if the Z flag is set. The offset is relative to the end of this instruction.
+0x03	jnz, jne [int16 relative_offset]  Jumps by some relative offset if the Z flag is not set. The offset is relative to the end of this instruction.
+0x04	jn, jl [int16 relative_offset]     Jumps by some relative offset if the N flag is set. The offset is relative to the end of this instruction.
+0x05	jp, jge [int16 relative_offset]    Jumps by some relative offset if the N flag is not set. The offset is relative to the end of this instruction.
+0x06	jle [int16 relative_offset]        Jumps by some relative offset if the N flag is set or the Z flag is set. The offset is relative to the end of this instruction.
+0x07	jg [int16 relative_offset]         Jumps by some relative offset if the N flag is not set and the Z flag is not set. The offset is relative to the end of this instruction.
+0x10	nexttext                           Displays the next text. Cannot actually be used in scene assembly, generated automatically by the assembler from sequential 'text' commands.
+0x11	text [uint16 textnum]              Displays the text given in the following local string reference and waits for user input before continuing.
+0x12	charname [uint16 charnum]          Sets the current character name to the string pointed to by charnum. Character number 0xFFFF is reserved for wiping the character name entirely (nocharname pseudoinstruction).
+0x1F	deltext                            Wipes the text from the text box. Implied by a 'text' instruction if not called beforehand.
+0x20	lut [uint8 numopts], [uint16 statevar], [numopts int16s]      Converts choice indices to the given numbers for each state variable.
+0x21	multichoice [uint16 statevar], [label opt1], [label opt2]...  Displays a number of choices to the user (up to some specified limit), and puts the number chosen into the state variable pointed to by statevar. Converted by the assembler into the more space efficient encoding which is what is actually parsed by the scene processor: multichoice [uint8 numopts], [uint16 statevar], [uint16 firstchoicetext].
+0x22	ynchoicefl                                    Displays a yes/no choice to the user. Sets the Z flag to 0 if no, or to 1 in if yes.
+0x23	ynchoicest [uint16 statevar]                  Displays a yes/no choice to the user. Puts 0 into the state variable pointed to by statevar if no, or puts 1 in if yes, and sets Z according to the result.
+0x24	setvi [uint16 statevar], [int16 imm]          Sets *statevar to equal imm.
+0x25	setvv [uint16 statevar1], [uint16 statevar2]  Sets *statevar1 to equal *statevar2.
+0x26	cmpvi [uint16 statevar], [int16 imm]          Sets flags according to the result of *statevar - imm.
+0x27	cmpvv [uint16 statevar1], [uint16 statevar2]  Sets flags according to the result of *statevar1 - *statevar2.
+0x28	addvi [uint16 statevar], [int16 imm]          Performs *statevar += imm, and sets the flags according to the result.
+0x29	addvv [uint16 statevar1], [uint16 statevar2]  Performs *statevar1 += *statevar2, and sets the flags according to the result.
+0x2A	subvi [uint16 statevar], [int16 imm]          Performs *statevar -= imm, and sets the flags according to the result.
+0x2B	subvv [uint16 statevar1], [uint16 statevar2]  Performs *statevar1 -= *statevar2, and sets the flags according to the result.
 
 The scene assembler also has the following directives:
 .scene [scene_name]     Declares a scene with the following name. Make sure that scene has the appropriate text entries for all supported languages. Every line until the next .scene directive or the end of the file is assumed to be part of the declared scene.

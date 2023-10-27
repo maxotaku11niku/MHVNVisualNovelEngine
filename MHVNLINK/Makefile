@@ -10,6 +10,9 @@ export GENASMFILES	:= $(addprefix $(GENASM)/,$(CFILES:.c=.asm))
 
 .PHONY : win64rel, win64dbg, showasm
 
+all : $(FULLCFILES)
+	gcc -o $(TARGET)/mhvnlink.exe -O3 -march=native -Wl,-O,-s,--gc-sections $^
+
 win64rel : $(FULLCFILES)
 	gcc -o $(TARGET)/mhvnlink.exe -O3 -Wl,-O,-s,--gc-sections $^
 

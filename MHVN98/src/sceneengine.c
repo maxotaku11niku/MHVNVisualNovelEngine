@@ -16,6 +16,7 @@ unsigned short curSceneDataPC;
 unsigned char vmFlags;
 int returnStatus;
 unsigned int curCharNum;
+unsigned int nextTextNum;
 char curCharName[64];
 char* curTextArray[256];
 char sceneTextBuffer[1024];
@@ -145,19 +146,27 @@ int sceneDataProcess()
             curSceneDataPC += 2;
             if (vmFlags & (VMFLAG_Z | VMFLAG_N)) break;
             else goto vmJump;
-        case 0x10: //text
+        case 0x11: //text
             if (vmFlags & VMFLAG_TEXTINBOX)
             {
                 curSceneDataPC--; //compensation
                 goto delText;
             }
-            startAnimatedStringToWrite(curTextArray[*((unsigned short*)(curSceneData + curSceneDataPC))], textBoxlX, textBoxtY, rootInfo.defFormatNormal);
+            nextTextNum = *((unsigned short*)(curSceneData + curSceneDataPC));
+            curSceneDataPC += 2;
+        case 0x10: //nexttext
+            if (vmFlags & VMFLAG_TEXTINBOX)
+            {
+                curSceneDataPC--; //compensation
+                goto delText;
+            }
+            startAnimatedStringToWrite(curTextArray[nextTextNum], textBoxlX, textBoxtY, rootInfo.defFormatNormal);
+            nextTextNum++;
             vmFlags |= VMFLAG_TEXTINBOX;
             vmFlags &= ~VMFLAG_PROCESS;
             returnStatus |= SCENE_STATUS_RENDERTEXT;
-            curSceneDataPC += 2;
             break;
-        case 0x11: //charname
+        case 0x12: //charname
             unsigned int charNum = *((unsigned short*)(curSceneData + curSceneDataPC));
             if (charNum != curCharNum)
             {

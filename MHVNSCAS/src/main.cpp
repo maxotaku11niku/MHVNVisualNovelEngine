@@ -28,7 +28,7 @@ int main(int argc, char** argv)
     char** inputFilenames;
     int numInputFiles = 0;
 
-    inputFilenames = malloc(sizeof(char*) * argc); //Overallocation is expected to be minimal
+    inputFilenames = (char**)malloc(sizeof(char*) * argc); //Overallocation is expected to be minimal
 
     for (int i = 1; i < argc; i++)
     {

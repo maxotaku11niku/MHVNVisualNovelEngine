@@ -6,17 +6,26 @@ GENASM	:= genasm
 # Find source files
 export CFILES	:= $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
 export FULLCFILES	:= $(addprefix $(SOURCES)/,$(CFILES))
-export GENASMFILES	:= $(addprefix $(GENASM)/,$(CFILES:.c=.asm))
+export CPPFILES	:= $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
+export FULLCPPFILES	:= $(addprefix $(SOURCES)/,$(CPPFILES))
+export GENASMFILESC	:= $(addprefix $(GENASM)/,$(CFILES:.c=.asm))
+export GENASMFILESCPP	:= $(addprefix $(GENASM)/,$(CPPFILES:.cpp=.asm))
 
 .PHONY : win64rel, win64dbg, showasm
 
-win64rel : $(FULLCFILES)
-	gcc -o $(TARGET)/mhvnscas.exe -O3 -Wl,-O,-s,--gc-sections $^
+all : $(FULLCFILES) $(FULLCPPFILES)
+	g++ -o $(TARGET)/mhvnscas.exe -O3 -march=native -Wl,-O,-s,--gc-sections $^
 
-win64dbg : $(FULLCFILES)
-	gcc -o $(TARGET)/mhvnscas.exe -Og $^
+win64rel : $(FULLCFILES) $(FULLCPPFILES)
+	g++ -o $(TARGET)/mhvnscas.exe -O3 -Wl,-O,-s,--gc-sections $^
 
-showasm	: $(GENASMFILES)
+win64dbg : $(FULLCFILES) $(FULLCPPFILES)
+	g++ -o $(TARGET)/mhvnscas.exe -Og $^
+
+showasm	: $(GENASMFILESC) $(GENASMFILESCPP)
 
 $(GENASM)/%.asm	: $(SOURCES)/%.c
 	gcc $< -S -o $@ -O3 -c
+
+$(GENASM)/%.asm	: $(SOURCES)/%.cpp
+	g++ $< -S -o $@ -O3 -c

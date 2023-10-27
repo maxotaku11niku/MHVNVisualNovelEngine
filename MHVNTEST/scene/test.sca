@@ -1,12 +1,14 @@
 .scene SCENE_TEST
 .vnentry
 
+;This is a very minimal scene assembly file
+
 _start:
 charname NARRATOR
 text SCENE_TEST_0000
-text SCENE_TEST_0001
-text SCENE_TEST_0002
-text SCENE_TEST_0003
+text SCENE_TEST_0001 ;This and all the other 'text' commands should be converted to nexttext instructions
+    text SCENE_TEST_0002 ;Whitespace detection tests
+text    SCENE_TEST_0003
 text SCENE_TEST_0004
 text SCENE_TEST_0005
 text SCENE_TEST_0006
