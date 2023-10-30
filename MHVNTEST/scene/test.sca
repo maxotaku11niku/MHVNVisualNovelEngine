@@ -23,9 +23,23 @@ charname CONFUSED
 text SCENE_TEST_000B
 charname NARRATOR
 text SCENE_TEST_000C
-charname CONFUSED
 text SCENE_TEST_000D
-charname NARRATOR
+ynchoice
+stflg f0
+jne 98nosurprise
+text SCENE_TEST_000D_YES_0
+charname CONFUSED
+text SCENE_TEST_000D_YES_1
+jmp endsurprise
+
+98surprise:
+text SCENE_TEST_000D_NO_0
+charname CONFUSED
+text SCENE_TEST_000D_NO_1
+
+endsurprise:
 text SCENE_TEST_000E
+charname NARRATOR
 text SCENE_TEST_000F
+text SCENE_TEST_0010
 vnend

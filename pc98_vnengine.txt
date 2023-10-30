@@ -126,22 +126,25 @@ This file contains references to all other data files needed and some info on gl
 
 0x00	char[4]		magic_num	"MHVN" in ASCII. This magic number is here just as a sanity check to make sure that this ROOTINFO.DAT is actually valid before finding out the hard way.
 0x04	uint16		VNflags		Some flags to control high-level behaviour
-0x06	uint16		numstvar	Number of state variables to reserve
-0x08	uint16		def_format_norm	Default format number for normal text
-0x0A	uint16		format_char	Format number for character name text
-0x0C	uint16		format_menu_n	Format number for menu text that is not selected
-0x0E	uint16		format_menu_S	Format number for menu text that is selected
-0x10	char[12]	scenedat_file	The filename of the scene data archive, where all scene data is stored. Null terminated
-0x1C	char[12]	langdat_file	The filename of the language metadata archive, where every language supported is listed and all corresponding text files given. Null terminated
-0x28	char[12]	bgdat_file	The filename of the background image data archive, where all BGs and CGs are stored. Null terminated
-0x34	char[12]	sprdat_file	The filename of the sprite data archive, where all sprite data is stored. Null terminated
-0x40	char[12]	musdat_file	The filename of the music data archive, where all music data is stored. Null terminated
-0x4C	char[12]	sedat_file	The filename of the sound effect data archive, where all sound effect data is stored. Null terminated
-0x58	char[12]	systemdat_file	The filename of the system data archive, where the menu image, intro sequence and text box images are stored, for example. Null terminated
+0x06	uint16		numstvar_glob	Number of global (save independent) variables to reserve
+0x08	uint16		numflags_glob	Number of global (save independent) bitflags to reserve
+0x0A	uint16		numstvar_loc	Number of save-local state variables to reserve
+0x0C	uint16		numflags_loc	Number of save-local bitflags to reserve
+0x0E	uint16		def_format_norm	Default format number for normal text
+0x10	uint16		format_char	Format number for character name text
+0x12	uint16		format_menu_n	Format number for menu text that is not selected
+0x14	uint16		format_menu_S	Format number for menu text that is selected
+0x16	char[12]	scenedat_file	The filename of the scene data archive, where all scene data is stored. Null terminated
+0x22	char[12]	langdat_file	The filename of the language metadata archive, where every language supported is listed and all corresponding text files given. Null terminated
+0x2E	char[12]	bgdat_file	The filename of the background image data archive, where all BGs and CGs are stored. Null terminated
+0x3A	char[12]	sprdat_file	The filename of the sprite data archive, where all sprite data is stored. Null terminated
+0x46	char[12]	musdat_file	The filename of the music data archive, where all music data is stored. Null terminated
+0x52	char[12]	sedat_file	The filename of the sound effect data archive, where all sound effect data is stored. Null terminated
+0x5E	char[12]	systemdat_file	The filename of the system data archive, where the menu image, intro sequence and text box images are stored, for example. Null terminated
 
 VNflags has the following definition:
 
-0000 0000 0000 PPMC
+0000 PPMC
 C - Present CG gallery? Option is hidden from the menu if 0
 M - Present music room? Option is hidden from the menu if 0
 P - Custom protagonist support (0 -> none, protagonist is fixed, 1 -> name only, gender is fixed, 2 -> name and gender, but no custom pronouns, 3 -> name and gender, custom pronouns)
@@ -159,8 +162,8 @@ For each scene, when the data is uncompressed, it takes the form of a bytecode, 
 
 0x00	gotoscene [uint16 scene_num]       Ends the current scene and goes to another scene. Scene number 0xFFFF is reserved for the end of the story (vnend pseudoinstruction).
 0x01	jmp [int16 relative_offset]        Jumps by some relative offset unconditionally. The offset is relative to the end of this instruction.
-0x02	jz, je [int16 relative_offset]    Jumps by some relative offset if the Z flag is set. The offset is relative to the end of this instruction.
-0x03	jnz, jne [int16 relative_offset]  Jumps by some relative offset if the Z flag is not set. The offset is relative to the end of this instruction.
+0x02	jz, je [int16 relative_offset]     Jumps by some relative offset if the Z flag is set. The offset is relative to the end of this instruction.
+0x03	jnz, jne [int16 relative_offset]   Jumps by some relative offset if the Z flag is not set. The offset is relative to the end of this instruction.
 0x04	jn, jl [int16 relative_offset]     Jumps by some relative offset if the N flag is set. The offset is relative to the end of this instruction.
 0x05	jp, jge [int16 relative_offset]    Jumps by some relative offset if the N flag is not set. The offset is relative to the end of this instruction.
 0x06	jle [int16 relative_offset]        Jumps by some relative offset if the N flag is set or the Z flag is set. The offset is relative to the end of this instruction.
@@ -169,22 +172,54 @@ For each scene, when the data is uncompressed, it takes the form of a bytecode, 
 0x11	text [uint16 textnum]              Displays the text given in the following local string reference and waits for user input before continuing.
 0x12	charname [uint16 charnum]          Sets the current character name to the string pointed to by charnum. Character number 0xFFFF is reserved for wiping the character name entirely (nocharname pseudoinstruction).
 0x1F	deltext                            Wipes the text from the text box. Implied by a 'text' instruction if not called beforehand.
-0x20	lut [uint8 numopts], [uint16 statevar], [numopts int16s]      Converts choice indices to the given numbers for each state variable.
+0x20	lut [uint16 statevar], [int16 lut1], [int16 lut2]...          Converts choice indices to the given numbers for each state variable. Converted by the assembler into the encoding which is what is actually parsed by the scene processor: lut [uint8 numopts], [uint16 statevar], [numopts int16s]
 0x21	multichoice [uint16 statevar], [label opt1], [label opt2]...  Displays a number of choices to the user (up to some specified limit), and puts the number chosen into the state variable pointed to by statevar. Converted by the assembler into the more space efficient encoding which is what is actually parsed by the scene processor: multichoice [uint8 numopts], [uint16 statevar], [uint16 firstchoicetext].
-0x22	ynchoicefl                                    Displays a yes/no choice to the user. Sets the Z flag to 0 if no, or to 1 in if yes.
-0x23	ynchoicest [uint16 statevar]                  Displays a yes/no choice to the user. Puts 0 into the state variable pointed to by statevar if no, or puts 1 in if yes, and sets Z according to the result.
+0x22	ynchoice                                      Displays a yes/no choice to the user. Sets the Z flag to 0 if no, or to 1 in if yes.
+0x23	swapzn                                        Swaps the Z and N flags.
 0x24	setvi [uint16 statevar], [int16 imm]          Sets *statevar to equal imm.
 0x25	setvv [uint16 statevar1], [uint16 statevar2]  Sets *statevar1 to equal *statevar2.
-0x26	cmpvi [uint16 statevar], [int16 imm]          Sets flags according to the result of *statevar - imm.
-0x27	cmpvv [uint16 statevar1], [uint16 statevar2]  Sets flags according to the result of *statevar1 - *statevar2.
-0x28	addvi [uint16 statevar], [int16 imm]          Performs *statevar += imm, and sets the flags according to the result.
-0x29	addvv [uint16 statevar1], [uint16 statevar2]  Performs *statevar1 += *statevar2, and sets the flags according to the result.
-0x2A	subvi [uint16 statevar], [int16 imm]          Performs *statevar -= imm, and sets the flags according to the result.
-0x2B	subvv [uint16 statevar1], [uint16 statevar2]  Performs *statevar1 -= *statevar2, and sets the flags according to the result.
+0x26	csetvi [uint16 statevar], [int16 imm]         Sets *statevar to equal imm if the Z flag is set, otherwise don't do anything.
+0x27	csetvv [uint16 statevar1], [uint16 statevar2] Sets *statevar1 to equal *statevar2 if the Z flag is set, otherwise don't do anything.
+0x28	cmpvi [uint16 statevar], [int16 imm]          Sets flags according to the result of *statevar - imm.
+0x29	cmpvv [uint16 statevar1], [uint16 statevar2]  Sets flags according to the result of *statevar1 - *statevar2.
+0x2A	addvi [uint16 statevar], [int16 imm]          Performs *statevar += imm, and sets the flags according to the result.
+0x2B	addvv [uint16 statevar1], [uint16 statevar2]  Performs *statevar1 += *statevar2, and sets the flags according to the result.
+0x2C	subvi [uint16 statevar], [int16 imm]          Performs *statevar -= imm, and sets the flags according to the result.
+0x2D	subvv [uint16 statevar1], [uint16 statevar2]  Performs *statevar1 -= *statevar2, and sets the flags according to the result.
+0x2E	ldflg [uint16 flag]                           Loads flag into the Z flag. If 'flag' actually refers to a variable, then Z is set only if the variable is nonzero, otherwise Z is unset.
+0x2F	stflg [uint16 flag]                           Puts the Z flag into the given flag. If 'flag' actually refers to a variable, then the operation is forbidden (for safety reasons).
 
 The scene assembler also has the following directives:
 .scene [scene_name]     Declares a scene with the following name. Make sure that scene has the appropriate text entries for all supported languages. Every line until the next .scene directive or the end of the file is assumed to be part of the declared scene.
 .vnentry                Declares that this scene is the first scene in the VN, that is, the scene that will be loaded when the user wishes to start a new save file. Put this directly after the .scene directive of the scene you want to come first. Do not declare this more than once across the whole project.
+.globvar [name]         Declares a new global variable with the following name. These variables are shared between save files, so you can use them for funky cross-save shenaningans. You can delete your save, but the game always remembers...
+.globflag [name]        Declares a new global flag with the following name.
+.localvar [name]        Declares a new local variable with the following name. These variables are kept separately for each save file.
+.localflag [name]       Declares a new local flag with the following name.
+
+
+* State variable address space *
+
+All variables that can be accessed with instructions live in a 16-bit address space, thus there can be a maximum of 65536 in theory.
+However, the address space is heterogenous, and the following table lays out the address assignments:
+
+ Address range | Assignment
+---------------|----------------------------
+ 0x0000-0x001F | Scratch variables (therefore there are 32)
+ 0x0020-0x007F | Scratch flags (therefore there are 96)
+ 0x0080-0x00FF | Global variables (therefore limit is 128)
+ 0x0100-0x03FF | Global flags (therefore limit is 768)
+ 0x0400-0x05FF | Local variables (therefore limit is 512)
+ 0x0600-0x0FFF | Local flags (therefore limit is 2560)
+
+Now for some definitions:
+Scratch  - Meant to be used as temporary scratch space, available by default (as r0-r31 and f0-f95).
+Global   - Saved across save files, must be allocated for use.
+Local    - Saved separately to each save file, must be allocated for use.
+Variable - 16 bit signed integer.
+Flag     - A single bit, which functions as a boolean value (true/false, yes/no).
+
+The upper 4 bits are unused for compatibilty with text escape codes 0x8x and 0xAx.
 
 * Language data descriptors (langdat_file) *
 
@@ -258,14 +293,31 @@ Text may be given formatting information through 0x1B (the escape character). Wh
 	2-F: Relevant pronouns (language defined)... or whatever I guess
 0x6x	Wait for 10*(x+1) frames before continuing
 0x7x	Set wait between characters to (x+1) frames
-0x8x	Reserved
-0x9x	Reserved
-0xAx	Reserved
-0xBx	Reserved
+0x8x	Insert variable value as signed integer (x indicates bits 8-11 of the address, byte following this one indicates bits 0-7)
+0x9x	Reserved (may be used to double the variable address space)
+0xAx	Use flag to switch between texts (x indicates bits 8-11 of the address, byte following this one indicates bits 0-7)
+0xBx	Reserved (may be used to double the variable address space)
 0xCx	Reserved
 0xDx	Reserved
 0xEx	Reserved
 0xFx	Reset formatting to default for some parameter (x -> CFTM: M - main, T - font, F - fade, C - colour)
+
+The operation of the 0xAx escape code is quite different to other escape codes.
+The two texts to switch between are separated by a 0x1A (SUB control) and a 0x03 (ETX control) ends the escape block.
+The first text displays if the flag is unset, and the second displays if the flag is set. For example:
+
+Am I right? \x1B\xA0\x20No, heck no.\x1AYESYESYES!\x03 ...Anyway.
+
+would display as:
+
+Am I right? No, heck no. ...Anyway.
+
+if f0 was unset and as:
+
+Am I right? YESYESYES! ... Anyway.
+
+if f0 was set.
+The format implies that you can use other escape codes just fine, and yes you can nest these. But don't be crazy.
 
 * MHVNTXAR input *
 
@@ -283,6 +335,8 @@ Most of this will be literal text, though of course there are control sequences 
 @pn	Insert custom protagonist information unit 'n'.
 @dn	Wait for 10*(n+1) frames before continuing.
 @wn	Set the wait between characters to (n+1) frames.
+@v(l)	Insert the value of the variable named 'l' as a signed 16-bit integer.
+@b(f)n@yy	Switch between the text 'n' and 'y' depending on the state of flag 'f': 'n' if 'f' is unset, 'y' if 'f' is set.
 @r(f)	Reset formatting to default for some parameter (f -> format, t -> font, m -> fade, c -> colour). Combine multiple letters to reset multiple format parameters at once.
 
 * BG data archive (bgdat_file) *

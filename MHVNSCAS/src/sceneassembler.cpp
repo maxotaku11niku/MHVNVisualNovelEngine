@@ -43,19 +43,159 @@ const std::unordered_map<std::string, int> mnemonicsToOpcodes =
     {std::string("deltext"),     0x1F},
     {std::string("lut"),         0x20},
     {std::string("multichoice"), 0x21},
-    {std::string("ynchoicefl"),  0x22},
-    {std::string("ynchoicest"),  0x23},
+    {std::string("ynchoice"),    0x22},
+    {std::string("swapzn"),      0x23},
     {std::string("setvi"),       0x24},
     {std::string("setvv"),       0x25},
-    {std::string("cmpvi"),       0x26},
-    {std::string("cmpvv"),       0x27},
-    {std::string("addvi"),       0x28},
-    {std::string("addvv"),       0x29},
-    {std::string("subvi"),       0x2A},
-    {std::string("subvv"),       0x2B},
+    {std::string("csetvi"),      0x26},
+    {std::string("csetvv"),      0x27},
+    {std::string("cmpvi"),       0x28},
+    {std::string("cmpvv"),       0x29},
+    {std::string("addvi"),       0x2A},
+    {std::string("addvv"),       0x2B},
+    {std::string("subvi"),       0x2C},
+    {std::string("subvv"),       0x2D},
+    {std::string("ldflg"),       0x2E},
+    {std::string("stflg"),       0x2F},
     //Directives included as well for ease of programming
     {std::string(".scene"),   0x10000},
     {std::string(".vnentry"), 0x10001},
+    {std::string(".globvar"), 0x10002},
+    {std::string(".globflag"), 0x10003},
+    {std::string(".localvar"), 0x10004},
+    {std::string(".localflag"), 0x10005},
+};
+
+const std::unordered_map<std::string, int> defaultVarNames =
+{
+    {std::string("r0"),  0x0000},
+    {std::string("r1"),  0x0001},
+    {std::string("r2"),  0x0002},
+    {std::string("r3"),  0x0003},
+    {std::string("r4"),  0x0004},
+    {std::string("r5"),  0x0005},
+    {std::string("r6"),  0x0006},
+    {std::string("r7"),  0x0007},
+    {std::string("r8"),  0x0008},
+    {std::string("r9"),  0x0009},
+    {std::string("r10"), 0x000A},
+    {std::string("r11"), 0x000B},
+    {std::string("r12"), 0x000C},
+    {std::string("r13"), 0x000D},
+    {std::string("r14"), 0x000E},
+    {std::string("r15"), 0x000F},
+    {std::string("r16"), 0x0010},
+    {std::string("r17"), 0x0011},
+    {std::string("r18"), 0x0012},
+    {std::string("r19"), 0x0013},
+    {std::string("r20"), 0x0014},
+    {std::string("r21"), 0x0015},
+    {std::string("r22"), 0x0016},
+    {std::string("r23"), 0x0017},
+    {std::string("r24"), 0x0018},
+    {std::string("r25"), 0x0019},
+    {std::string("r26"), 0x001A},
+    {std::string("r27"), 0x001B},
+    {std::string("r28"), 0x001C},
+    {std::string("r29"), 0x001D},
+    {std::string("r30"), 0x001E},
+    {std::string("r31"), 0x001F},
+    {std::string("f0"),  0x0020},
+    {std::string("f1"),  0x0021},
+    {std::string("f2"),  0x0022},
+    {std::string("f3"),  0x0023},
+    {std::string("f4"),  0x0024},
+    {std::string("f5"),  0x0025},
+    {std::string("f6"),  0x0026},
+    {std::string("f7"),  0x0027},
+    {std::string("f8"),  0x0028},
+    {std::string("f9"),  0x0029},
+    {std::string("f10"), 0x002A},
+    {std::string("f11"), 0x002B},
+    {std::string("f12"), 0x002C},
+    {std::string("f13"), 0x002D},
+    {std::string("f14"), 0x002E},
+    {std::string("f15"), 0x002F},
+    {std::string("f16"), 0x0030},
+    {std::string("f17"), 0x0031},
+    {std::string("f18"), 0x0032},
+    {std::string("f19"), 0x0033},
+    {std::string("f20"), 0x0034},
+    {std::string("f21"), 0x0035},
+    {std::string("f22"), 0x0036},
+    {std::string("f23"), 0x0037},
+    {std::string("f24"), 0x0038},
+    {std::string("f25"), 0x0039},
+    {std::string("f26"), 0x003A},
+    {std::string("f27"), 0x003B},
+    {std::string("f28"), 0x003C},
+    {std::string("f29"), 0x003D},
+    {std::string("f30"), 0x003E},
+    {std::string("f31"), 0x003F},
+    {std::string("f32"), 0x0040},
+    {std::string("f33"), 0x0041},
+    {std::string("f34"), 0x0042},
+    {std::string("f35"), 0x0043},
+    {std::string("f36"), 0x0044},
+    {std::string("f37"), 0x0045},
+    {std::string("f38"), 0x0046},
+    {std::string("f39"), 0x0047},
+    {std::string("f40"), 0x0048},
+    {std::string("f41"), 0x0049},
+    {std::string("f42"), 0x004A},
+    {std::string("f43"), 0x004B},
+    {std::string("f44"), 0x004C},
+    {std::string("f45"), 0x004D},
+    {std::string("f46"), 0x004E},
+    {std::string("f47"), 0x004F},
+    {std::string("f48"), 0x0050},
+    {std::string("f49"), 0x0051},
+    {std::string("f50"), 0x0052},
+    {std::string("f51"), 0x0053},
+    {std::string("f52"), 0x0054},
+    {std::string("f53"), 0x0055},
+    {std::string("f54"), 0x0056},
+    {std::string("f55"), 0x0057},
+    {std::string("f56"), 0x0058},
+    {std::string("f57"), 0x0059},
+    {std::string("f58"), 0x005A},
+    {std::string("f59"), 0x005B},
+    {std::string("f60"), 0x005C},
+    {std::string("f61"), 0x005D},
+    {std::string("f62"), 0x005E},
+    {std::string("f63"), 0x005F},
+    {std::string("f64"), 0x0060},
+    {std::string("f65"), 0x0061},
+    {std::string("f66"), 0x0062},
+    {std::string("f67"), 0x0063},
+    {std::string("f68"), 0x0064},
+    {std::string("f69"), 0x0065},
+    {std::string("f70"), 0x0066},
+    {std::string("f71"), 0x0067},
+    {std::string("f72"), 0x0068},
+    {std::string("f73"), 0x0069},
+    {std::string("f74"), 0x006A},
+    {std::string("f75"), 0x006B},
+    {std::string("f76"), 0x006C},
+    {std::string("f77"), 0x006D},
+    {std::string("f78"), 0x006E},
+    {std::string("f79"), 0x006F},
+    {std::string("f80"), 0x0070},
+    {std::string("f81"), 0x0071},
+    {std::string("f82"), 0x0072},
+    {std::string("f83"), 0x0073},
+    {std::string("f84"), 0x0074},
+    {std::string("f85"), 0x0075},
+    {std::string("f86"), 0x0076},
+    {std::string("f87"), 0x0077},
+    {std::string("f88"), 0x0078},
+    {std::string("f89"), 0x0079},
+    {std::string("f90"), 0x007A},
+    {std::string("f91"), 0x007B},
+    {std::string("f92"), 0x007C},
+    {std::string("f93"), 0x007D},
+    {std::string("f94"), 0x007E},
+    {std::string("f95"), 0x007F}
 };
 
 typedef struct
@@ -66,6 +206,7 @@ typedef struct
     int numTexts;
     int dataLen;
     std::unordered_map<int, std::string>* refSceneLabels;
+    std::unordered_map<int, std::string>* refVarLabels;
     std::unordered_map<std::string, int>* foundTextLabels;
 } SceneData;
 
@@ -75,11 +216,20 @@ int currentEntryScene;
 char* charLabels[65536];
 int numChars;
 bool textChain;
+char* globVarLabels[128];
+char* globFlagLabels[768];
+char* localVarLabels[512];
+char* localFlagLabels[2560];
+int numGlobVars;
+int numGlobFlags;
+int numLocalVars;
+int numLocalFlags;
 
 std::unordered_map<std::string, int>* foundJumpLabels;
 std::unordered_map<int, std::string>* refJumpLabels;
 std::unordered_map<std::string, int>* foundSceneLabels;
 std::unordered_map<std::string, int>* foundCharLabels;
+std::unordered_map<std::string, int>* foundVarLabels;
 
 char* sceneNamesBuffer;
 char* sceneNamesBufPtr;
@@ -100,17 +250,16 @@ const char* sceneUndefinedMessage = "ERROR - %s, line %u: attempted to use opera
 
 int GetOpcode(const char* firstWordOfLine)
 {
-    std::string* wordstr = new std::string(firstWordOfLine);
+    std::string wordstr = std::string(firstWordOfLine);
     int returnstat = OP_INVALIDOP;
-    if (wordstr->back() == ':') //Colon at end -> jump label
+    if (wordstr.back() == ':') //Colon at end -> jump label
     {
         returnstat = OP_JUMPLABEL;
     }
-    else if (mnemonicsToOpcodes.count(*wordstr))
+    else if (mnemonicsToOpcodes.count(wordstr))
     {
-        returnstat = mnemonicsToOpcodes.at(*wordstr);
+        returnstat = mnemonicsToOpcodes.at(wordstr);
     }
-    delete wordstr;
     return returnstat;
 }
 
@@ -195,6 +344,18 @@ int ScanForArgument(const char** start, const char** end)
     return returnStat;
 }
 
+int GetStateVarNum(const char* name)
+{
+    int output = 0;
+    std::string namestr = std::string(name);
+    if (foundVarLabels->count(namestr))
+    {
+        output = foundVarLabels->at(namestr);
+    }
+    else output = -1; //State variable not found
+    return output;
+}
+
 typedef enum
 {
     NOOPERANDS, //Operation takes no operands
@@ -226,6 +387,7 @@ int ParseLine(char* line, int* curScene)
     OperandType type = OperandType::NOOPERANDS;
     unsigned char instructionBytes[32];
     int numBytesInInstruction = 0;
+    bool requiresSceneDef = true;
     bool foundOperation = false;
     bool foundComment = false;
     //Find mnemonic on this line
@@ -248,32 +410,13 @@ int ParseLine(char* line, int* curScene)
             instructionBytes[2] = 0xFF;
             numBytesInInstruction += 2;
             numArg = 0;
-            type = OperandType::NOOPERANDS;
             break;
         case 0x01: //jmp
-            numArg = 1;
-            type = OperandType::JUMP;
-            break;
         case 0x02: //jz, je
-            numArg = 1;
-            type = OperandType::JUMP;
-            break;
         case 0x03: //jnz, jne
-            numArg = 1;
-            type = OperandType::JUMP;
-            break;
         case 0x04: //jn, jl
-            numArg = 1;
-            type = OperandType::JUMP;
-            break;
         case 0x05: //jp, jge
-            numArg = 1;
-            type = OperandType::JUMP;
-            break;
         case 0x06: //jle
-            numArg = 1;
-            type = OperandType::JUMP;
-            break;
         case 0x07: //jg
             numArg = 1;
             type = OperandType::JUMP;
@@ -293,7 +436,6 @@ int ParseLine(char* line, int* curScene)
             instructionBytes[2] = 0xFF;
             numBytesInInstruction += 2;
             numArg = 0;
-            type = OperandType::NOOPERANDS;
             break;
         case 0x1F: //deltext
             numArg = 0;
@@ -306,12 +448,11 @@ int ParseLine(char* line, int* curScene)
             numArg = 9;
             type = OperandType::MULTICHOICE;
             break;
-        case 0x22: //ynchoicefl
+        case 0x22: //ynchoice
             numArg = 0;
             break;
-        case 0x23: //ynchoicest
-            numArg = 1;
-            type = OperandType::STATEVAR_SINGLE;
+        case 0x23: //swapzn
+            numArg = 0;
             break;
         case 0x24: //setvi
             numArg = 2;
@@ -321,38 +462,75 @@ int ParseLine(char* line, int* curScene)
             numArg = 2;
             type = OperandType::STATEVAR_DOUBLE;
             break;
-        case 0x26: //cmpvi
+        case 0x26: //csetvi
             numArg = 2;
             type = OperandType::STATEVAR_SINGLE_IMMEDIATE;
             break;
-        case 0x27: //cmpvv
+        case 0x27: //csetvv
             numArg = 2;
             type = OperandType::STATEVAR_DOUBLE;
             break;
-        case 0x28: //addvi
+        case 0x28: //cmpvi
             numArg = 2;
             type = OperandType::STATEVAR_SINGLE_IMMEDIATE;
             break;
-        case 0x29: //addvv
+        case 0x29: //cmpvv
             numArg = 2;
             type = OperandType::STATEVAR_DOUBLE;
             break;
-        case 0x2A: //subvi
+        case 0x2A: //addvi
             numArg = 2;
             type = OperandType::STATEVAR_SINGLE_IMMEDIATE;
             break;
-        case 0x2B: //subvv
+        case 0x2B: //addvv
             numArg = 2;
             type = OperandType::STATEVAR_DOUBLE;
+            break;
+        case 0x2C: //subvi
+            numArg = 2;
+            type = OperandType::STATEVAR_SINGLE_IMMEDIATE;
+            break;
+        case 0x2D: //subvv
+            numArg = 2;
+            type = OperandType::STATEVAR_DOUBLE;
+            break;
+        case 0x2E: //ldflg
+            numArg = 1;
+            type = OperandType::STATEVAR_SINGLE;
+            break;
+        case 0x2F: //stflg
+            numArg = 1;
+            type = OperandType::STATEVAR_SINGLE;
             break;
         
         case 0x10000: //.scene
             numArg = 1;
             type = OperandType::SCENEREF;
+            requiresSceneDef = false;
             break;
         case 0x10001: //.vnentry
             numArg = 0;
             if (scene >= 0) currentEntryScene = scene;
+            break;
+        case 0x10002: //.globvar
+            numArg = 1;
+            type = OperandType::STATEVAR_SINGLE;
+            requiresSceneDef = false;
+            break;
+        case 0x10003: //.globflag
+            numArg = 1;
+            type = OperandType::STATEVAR_SINGLE;
+            requiresSceneDef = false;
+            break;
+        case 0x10004: //.localvar
+            numArg = 1;
+            type = OperandType::STATEVAR_SINGLE;
+            requiresSceneDef = false;
+            break;
+        case 0x10005: //.localflag
+            numArg = 1;
+            type = OperandType::STATEVAR_SINGLE;
+            requiresSceneDef = false;
             break;
         case OP_JUMPLABEL:
             numArg = 1;
@@ -365,8 +543,8 @@ int ParseLine(char* line, int* curScene)
     //No operation found -> empty line -> ignore it without raising an error
     if (!foundOperation) return 0;
 
-    //Tried to use operation other than .scene without declaring a scene first -> error, stop parsing file
-    if (scene < 0 && opcode != 0x10000)
+    //Tried to use an operation that requires a scene without declaring a scene first -> error, stop parsing file
+    if (scene < 0 && requiresSceneDef)
     {
         return OP_SCENEUNDEFINED;
     }
@@ -440,13 +618,60 @@ int ParseLine(char* line, int* curScene)
                 case OperandType::STATEVAR_SINGLE:
                     scanStat = ScanForWord((const char**)&wordptr, (const char**)&wordEndPtr);
                     *wordEndPtr = '\0';
+                    arg0 = GetStateVarNum(wordptr);
+                    if (arg0 < 0)
+                    {
+                        arg0 = 0;
+                        (*(curScDat->refVarLabels))[locCounter] = std::string(wordptr);
+                    }
                     numBytesInInstruction += 2;
-                    instructionBytes[1] = 0x00;
-                    instructionBytes[2] = 0x00;
+                    instructionBytes[1] = (unsigned char)(arg0 & 0x00FF);
+                    instructionBytes[2] = (unsigned char)((arg0 & 0xFF00) >> 8);
                     break;
                 case OperandType::STATEVAR_DOUBLE:
+                    scanStat = ScanForArgument((const char**)&wordptr, (const char**)&wordEndPtr);
+                    *wordEndPtr = '\0';
+                    arg0 = GetStateVarNum(wordptr);
+                    if (arg0 < 0)
+                    {
+                        arg0 = 0;
+                        (*(curScDat->refVarLabels))[locCounter] = std::string(wordptr);
+                    }
+                    numBytesInInstruction += 2;
+                    instructionBytes[1] = (unsigned char)(arg0 & 0x00FF);
+                    instructionBytes[2] = (unsigned char)((arg0 & 0xFF00) >> 8);
+                    wordptr = wordEndPtr + 1;
+                    scanStat = ScanForWord((const char**)&wordptr, (const char**)&wordEndPtr);
+                    *wordEndPtr = '\0';
+                    arg0 = GetStateVarNum(wordptr);
+                    if (arg0 < 0)
+                    {
+                        arg0 = 0;
+                        (*(curScDat->refVarLabels))[locCounter + 2] = std::string(wordptr);
+                    }
+                    numBytesInInstruction += 2;
+                    instructionBytes[1] = (unsigned char)(arg0 & 0x00FF);
+                    instructionBytes[2] = (unsigned char)((arg0 & 0xFF00) >> 8);
                     break;
                 case OperandType::STATEVAR_SINGLE_IMMEDIATE:
+                    scanStat = ScanForArgument((const char**)&wordptr, (const char**)&wordEndPtr);
+                    *wordEndPtr = '\0';
+                    arg0 = GetStateVarNum(wordptr);
+                    if (arg0 < 0)
+                    {
+                        arg0 = 0;
+                        (*(curScDat->refVarLabels))[locCounter] = std::string(wordptr);
+                    }
+                    numBytesInInstruction += 2;
+                    instructionBytes[1] = (unsigned char)(arg0 & 0x00FF);
+                    instructionBytes[2] = (unsigned char)((arg0 & 0xFF00) >> 8);
+                    wordptr = wordEndPtr + 1;
+                    scanStat = ScanForWord((const char**)&wordptr, (const char**)&wordEndPtr);
+                    *wordEndPtr = '\0';
+                    arg0 = atoi(wordptr);
+                    numBytesInInstruction += 2;
+                    instructionBytes[1] = (unsigned char)(arg0 & 0x00FF);
+                    instructionBytes[2] = (unsigned char)((arg0 & 0xFF00) >> 8);
                     break;
                 case OperandType::MULTICHOICE:
                     break;
@@ -479,6 +704,7 @@ int ParseLine(char* line, int* curScene)
                         curScDat->data = sceneDataBufPtr;
                         curScDat->refSceneLabels = new std::unordered_map<int, std::string>();
                         curScDat->foundTextLabels = new std::unordered_map<std::string, int>();
+                        curScDat->refVarLabels = new std::unordered_map<int, std::string>();
                         char ch = *wordptr++;
                         while (ch)
                         {
@@ -489,6 +715,10 @@ int ParseLine(char* line, int* curScene)
                         scene = numScenes;
                         numScenes++;
                     }
+                    break;
+                case OperandType::STATEVAR_SINGLE:
+                    scanStat = ScanForWord((const char**)&wordptr, (const char**)&wordEndPtr);
+                    *wordEndPtr = '\0';
                     break;
             }
             break;
@@ -532,8 +762,13 @@ int ParseInputFile(char* contents, const long length, const char* filename)
                     break;
                 case OP_SCENEUNDEFINED:
                     printf(sceneUndefinedMessage, filename, lineNum);
+                    delete foundJumpLabels;
+                    delete refJumpLabels;
                     return result;
-                default: return result;
+                default:
+                    delete foundJumpLabels;
+                    delete refJumpLabels;
+                    return result;
             }
             lineptr = contents + 1;
             if (curChar == '\n') lineNum++;
@@ -575,6 +810,7 @@ int AssembleScenes(const char* outputFilename, const char** inputFilenames, cons
     currentEntryScene = 0;
     foundSceneLabels = new std::unordered_map<std::string, int>();
     foundCharLabels = new std::unordered_map<std::string, int>();
+    foundVarLabels = new std::unordered_map<std::string, int>(defaultVarNames);
 
     for (int i = 0; i < numInputFiles; i++)
     {
@@ -610,6 +846,7 @@ int AssembleScenes(const char* outputFilename, const char** inputFilenames, cons
         free(sceneTextEntryNamesBuffer);
         free(sceneDataBuffer);
         free(charLabelsBuffer);
+        delete foundVarLabels;
         return 1;
     }
 
@@ -628,6 +865,7 @@ int AssembleScenes(const char* outputFilename, const char** inputFilenames, cons
     {
         delete scenes[i].refSceneLabels;
         delete scenes[i].foundTextLabels;
+        delete scenes[i].refVarLabels;
     }
 
     //Write scene data to file
@@ -653,10 +891,12 @@ int AssembleScenes(const char* outputFilename, const char** inputFilenames, cons
 
     //TODO: link info write
 
+    fclose(outputFileHandle);
     free(scenePtrs);
     free(sceneNamesBuffer);
     free(sceneTextEntryNamesBuffer);
     free(sceneDataBuffer);
     free(charLabelsBuffer);
+    delete foundVarLabels;
     return 0;
 }

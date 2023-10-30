@@ -1,50 +1,86 @@
 @s(SCENE_TEST)
 
+Narrator
 @[SCENE_TEST_0000
 Well, would you look at that, we've got ourselves a good bunch of text in front of us.@]
 
+Narrator
 @[SCENE_TEST_0001
 Believe it or not, we can change the @c6colour@r(c) of the text!@]
 
+Narrator
 @[SCENE_TEST_0002
 Or perhaps you'd like a bit of@f(sb) bold text@r(f) in your life.@]
 
+Narrator
 @[SCENE_TEST_0003
 Maybe some@f(si) italics@r(f) too, if you're good.@]
 
+Narrator
 @[SCENE_TEST_0004
 I can even put an @f(su)underline@r(f) on this text as well!@]
 
+Narrator
 @[SCENE_TEST_0005
 @w3@m8Or perhaps you'd like some masked text?@]
 
+Narrator
 @[SCENE_TEST_0006
 @t1I wonder if you can tell what's different about this text?@]
 
+Narrator
 @[SCENE_TEST_0007
 Well that's all for now, @p0.
 @f(sbi)@ca@d5Have a great day!@]
 
+(none)
 @[SCENE_TEST_0008
 Suddenly, someone new appears.@]
 
+Confused Person
 @[SCENE_TEST_0009
 Wait, wait, wait, this runs on a PC-98?@]
 
+Narrator
 @[SCENE_TEST_000A
 Well, it appears that, indeed, it does.@]
 
+Confused Person
 @[SCENE_TEST_000B
 Well, that's @f(si)completely unsurprising!@]
 
+Narrator
 @[SCENE_TEST_000C
 @f(sb)Of course you're not surprised!@]
 
+Narrator
 @[SCENE_TEST_000D
+What do you think, @p0? Is it surprising?@]
+
+Narrator
+@[SCENE_TEST_000D_YES_0
+Well what do you know, @p0 certainly seems to think it @f(si)is@r(f) surprising.@]
+
+Confused Person
+@[SCENE_TEST_000D_YES_1
+Well then they're @c5wrong!@]
+
+Narrator
+@[SCENE_TEST_000D_NO_0
+Well, well, well, looks like @p0 agrees with you.@]
+
+Confused Person
+@[SCENE_TEST_000D_NO_1
+Hah! 2 vs. 1, you're @c5outnumbered!@]
+
+Confused Person
+@[SCENE_TEST_000E
 Ah well, I'll come back when we have some actual graphics, instead of nothing at all.@]
 
-@[SCENE_TEST_000E
+Narrator
+@[SCENE_TEST_000F
 Yes, well we'll just have to wait for the developer to get to it, then.@]
 
-@[SCENE_TEST_000F
+Narrator
+@[SCENE_TEST_0010
 So come on developer! Can't you program more for us? Jesus.@]

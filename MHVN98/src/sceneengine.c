@@ -10,6 +10,14 @@
 #define VMFLAG_TEXTINBOX 0x40
 #define VMFLAG_PROCESS 0x80
 
+#define SVAR_BASE 0x0000
+#define SFLG_BASE 0x0020
+#define GVAR_BASE 0x0080
+#define GFLG_BASE 0x0100
+#define LVAR_BASE 0x0400
+#define LFLG_BASE 0x0600
+#define VARSPACE_TOP 0x1000
+
 SceneInfo sceneInfo;
 unsigned char curSceneData[1024];
 unsigned short curSceneDataPC;
@@ -21,6 +29,14 @@ char curCharName[64];
 char* curTextArray[256];
 char sceneTextBuffer[1024];
 int sdHandle;
+
+short scratchVars[32];
+short globalVars[128];
+short localVars[512];
+//Flags are bitpacked for space-efficiency reasons
+unsigned char scratchFlags[12];
+unsigned char globalFlags[96];
+unsigned char localFlags[320];
 
 int loadNewScene(unsigned int sceneNum)
 {
@@ -66,6 +82,113 @@ int setupSceneEngine()
     return loadNewScene(0);
 }
 
+short* getVariableRef(unsigned short addr)
+{
+    if (addr < SFLG_BASE) //Scratch variables
+    {
+        return scratchVars + addr;
+    }
+    else if (addr < GVAR_BASE) //Scratch flags (invalid)
+    {
+        return (short*)0;
+    }
+    else if (addr < GFLG_BASE) //Global variables
+    {
+        return globalVars + addr - GVAR_BASE;
+    }
+    else if (addr < LVAR_BASE) //Global flags (invalid)
+    {
+        return (short*)0;
+    }
+    else if (addr < LFLG_BASE) //Local variables
+    {
+        return localVars + addr - LVAR_BASE;
+    }
+    else //Local flags (invalid) and out-of-range addresses
+    {
+        return (short*)0;
+    }
+}
+
+int getFlag(unsigned short addr)
+{
+    int val = 0;
+    if (addr < SFLG_BASE) //Scratch variables
+    {
+        val = scratchVars[addr];
+    }
+    else if (addr < GVAR_BASE) //Scratch flags
+    {
+        addr -= SFLG_BASE;
+        val  = scratchFlags[addr >> 3];
+        val &= (0x01 << (addr & 0x7));
+    }
+    else if (addr < GFLG_BASE) //Global variables
+    {
+        val = globalVars[addr - GVAR_BASE];
+    }
+    else if (addr < LVAR_BASE) //Global flags
+    {
+        addr -= GFLG_BASE;
+        val  = globalFlags[addr >> 3];
+        val &= (0x01 << (addr & 0x7));
+    }
+    else if (addr < LFLG_BASE) //Local variables
+    {
+        val = localVars[addr - LVAR_BASE];
+    }
+    else if (addr < VARSPACE_TOP) //Local flags
+    {
+        addr -= LFLG_BASE;
+        val  = localFlags[addr >> 3];
+        val &= (0x01 << (addr & 0x7));
+    }
+    else return 0; //Out-of-range addresses
+    return val != 0;
+}
+
+void setFlag(unsigned short addr, int val)
+{
+    unsigned char* flgptr;
+    unsigned char flgval;
+    unsigned char flgsel;
+    if (addr < SFLG_BASE) //Scratch variables (invalid)
+    {
+        return;
+    }
+    else if (addr < GVAR_BASE) //Scratch flags
+    {
+        addr -= SFLG_BASE;
+        flgptr = scratchFlags + (addr >> 3);
+    }
+    else if (addr < GFLG_BASE) //Global variables (invalid)
+    {
+        return;
+    }
+    else if (addr < LVAR_BASE) //Global flags
+    {
+        addr -= GFLG_BASE;
+        flgptr = globalFlags + (addr >> 3);
+    }
+    else if (addr < LFLG_BASE) //Local variables (invalid)
+    {
+        return;
+    }
+    else if (addr < VARSPACE_TOP) //Local flags
+    {
+        addr -= LFLG_BASE;
+        flgptr = localFlags + (addr >> 3);
+    }
+    else return; //Out-of-range addresses
+    flgval = *flgptr;
+    flgsel = (0x01 << (addr & 0x7));
+    val = val != 0;
+    val <<= (addr & 0x7);
+    flgval &= ~flgsel;
+    flgval |= val;
+    *flgptr = flgval;
+}
+
 void controlProcess(int process)
 {
     if (process) vmFlags |= VMFLAG_PROCESS;
@@ -94,6 +217,8 @@ int sceneDataProcess()
 {
     unsigned char curOpcode;
     int result = 0;
+    short* varptr1;
+    short* varptr2;
     while (vmFlags & VMFLAG_PROCESS)
     {
         returnStatus = 0;
@@ -192,6 +317,129 @@ int sceneDataProcess()
             vmFlags &= ~VMFLAG_TEXTINBOX;
             vmFlags &= ~VMFLAG_PROCESS;
             returnStatus |= SCENE_STATUS_WIPETEXT; //for later, when text box wiping involves an animation
+            break;
+        case 0x20: //lut
+            result = *((unsigned char*)(curSceneData + curSceneDataPC));
+            curSceneDataPC += 3 + (result << 1); //stub
+            break;
+        case 0x21: //multichoice
+            curSceneDataPC += 5; //stub
+            break;
+        case 0x22: //ynchoice
+            break; //stub
+        case 0x23: //swapzn
+            result  = (vmFlags & VMFLAG_Z) << 1;
+            result |= (vmFlags & VMFLAG_N) >> 1;
+            vmFlags = (vmFlags & ~(VMFLAG_Z | VMFLAG_N)) | result;
+            break;
+        case 0x24: //setvi
+            vmSetvi:
+            result = *((unsigned short*)(curSceneData + curSceneDataPC));
+            curSceneDataPC += 2;
+            varptr1 = getVariableRef(result);
+            result = *((unsigned short*)(curSceneData + curSceneDataPC));
+            *varptr1 = result;
+            curSceneDataPC += 2;
+            break;
+        case 0x25: //setvv
+            vmSetvv:
+            result = *((unsigned short*)(curSceneData + curSceneDataPC));
+            curSceneDataPC += 2;
+            varptr1 = getVariableRef(result);
+            result = *((unsigned short*)(curSceneData + curSceneDataPC));
+            *varptr1 = *getVariableRef(result);
+            curSceneDataPC += 2;
+            break;
+        case 0x26: //csetvi
+            if (vmFlags & VMFLAG_Z) goto vmSetvi;
+            else 
+            {
+                curSceneDataPC += 4;
+                break;
+            }
+        case 0x27: //csetvv
+            if (vmFlags & VMFLAG_Z) goto vmSetvv;
+            else 
+            {
+                curSceneDataPC += 4;
+                break;
+            }
+        case 0x28: //cmpvi
+            result = *((unsigned short*)(curSceneData + curSceneDataPC));
+            curSceneDataPC += 2;
+            varptr1 = getVariableRef(result);
+            result = *((unsigned short*)(curSceneData + curSceneDataPC));
+            curSceneDataPC += 2;
+            vmFlags &= ~(VMFLAG_Z | VMFLAG_N);
+            vmFlags |= VMFLAG_Z & (*varptr1 == result);
+            vmFlags |= VMFLAG_N & (*varptr1 < result);
+            break;
+        case 0x29: //cmpvv
+            result = *((unsigned short*)(curSceneData + curSceneDataPC));
+            curSceneDataPC += 2;
+            varptr1 = getVariableRef(result);
+            result = *((unsigned short*)(curSceneData + curSceneDataPC));
+            varptr2 = getVariableRef(result);
+            curSceneDataPC += 2;
+            vmFlags &= ~(VMFLAG_Z | VMFLAG_N);
+            vmFlags |= VMFLAG_Z & (*varptr1 == *varptr2);
+            vmFlags |= VMFLAG_N & (*varptr1 < *varptr2);
+            break;
+        case 0x2A: //addvi
+            result = *((unsigned short*)(curSceneData + curSceneDataPC));
+            curSceneDataPC += 2;
+            varptr1 = getVariableRef(result);
+            result = *((unsigned short*)(curSceneData + curSceneDataPC));
+            *varptr1 += result;
+            curSceneDataPC += 2;
+            vmFlags &= ~(VMFLAG_Z | VMFLAG_N);
+            vmFlags |= VMFLAG_Z & (*varptr1 == 0);
+            vmFlags |= VMFLAG_N & (*varptr1 < 0);
+            break;
+        case 0x2B: //addvv
+            result = *((unsigned short*)(curSceneData + curSceneDataPC));
+            curSceneDataPC += 2;
+            varptr1 = getVariableRef(result);
+            result = *((unsigned short*)(curSceneData + curSceneDataPC));
+            *varptr1 += *getVariableRef(result);
+            curSceneDataPC += 2;
+            vmFlags &= ~(VMFLAG_Z | VMFLAG_N);
+            vmFlags |= VMFLAG_Z & (*varptr1 == 0);
+            vmFlags |= VMFLAG_N & (*varptr1 < 0);
+            break;
+        case 0x2C: //subvi
+            result = *((unsigned short*)(curSceneData + curSceneDataPC));
+            curSceneDataPC += 2;
+            varptr1 = getVariableRef(result);
+            result = *((unsigned short*)(curSceneData + curSceneDataPC));
+            *varptr1 -= result;
+            curSceneDataPC += 2;
+            vmFlags &= ~(VMFLAG_Z | VMFLAG_N);
+            vmFlags |= VMFLAG_Z & (*varptr1 == 0);
+            vmFlags |= VMFLAG_N & (*varptr1 < 0);
+            break;
+        case 0x2D: //subvv
+            result = *((unsigned short*)(curSceneData + curSceneDataPC));
+            curSceneDataPC += 2;
+            varptr1 = getVariableRef(result);
+            result = *((unsigned short*)(curSceneData + curSceneDataPC));
+            *varptr1 -= *getVariableRef(result);
+            curSceneDataPC += 2;
+            vmFlags &= ~(VMFLAG_Z | VMFLAG_N);
+            vmFlags |= VMFLAG_Z & (*varptr1 == 0);
+            vmFlags |= VMFLAG_N & (*varptr1 < 0);
+            break;
+        case 0x2E: //ldflg
+            result = *((unsigned short*)(curSceneData + curSceneDataPC));
+            curSceneDataPC += 2;
+            result = getFlag(result);
+            vmFlags &= ~VMFLAG_Z;
+            vmFlags |= result;
+            break;
+        case 0x2F: //stflg
+            result = *((unsigned short*)(curSceneData + curSceneDataPC));
+            curSceneDataPC += 2;
+            setFlag(result, vmFlags & VMFLAG_Z);
             break;
         default: //illegal/unimplemented opcode
             break;

@@ -1,7 +1,10 @@
 typedef struct
 {
 	unsigned short VNFlags;
-	unsigned short numstvar;
+	unsigned short numstvar_glob;
+	unsigned short numflags_glob;
+	unsigned short numstvar_loc;
+	unsigned short numflags_loc;
 	unsigned short defFormatNormal;
 	unsigned short defFormatCharName;
 	unsigned short defFormatMenuItem;
