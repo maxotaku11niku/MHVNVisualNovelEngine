@@ -64,3 +64,9 @@
 #define FILE_SEEK_RELATIVE 0x01
 //From the end of the file
 #define FILE_SEEK_REVERSE 0x02
+//INT 21 function 48 - Allocate Memory ('segsize' segments, start segment in 'allocseg', can return an error code)
+#define int21_memalloc(segsize, allocseg, errorflag) asm inline ("movb $72, %%ah\n\tint $33" : "+b" (segsize), "=a" (allocseg), "=@ccc" (errorflag) : )
+//INT 21 function 49 - Free Memory ('segsize' segments, start segment in 'allocseg', can return an error code)
+#define int21_memfree(allocseg, errorcode, errorflag) asm inline ("movw %w0, %%es\n\tmovb $73, %%ah\n\tint $33\n\tmovw %%cs, %w0\n\tmovw %w0, %%es" : "+r" (allocseg), "=a" (errorcode), "=@ccc" (errorflag) : )
+//INT 21 function 4A - Reallocate Memory ('segsize' segments as new size, start segment in 'allocseg', can return an error code)
+#define int21_memrealloc(segsize, allocseg, errorcode, errorflag) asm inline ("movw %w0, %%es\n\tmovb $74, %%ah\n\tint $33\n\tmovw %%cs, %w0\n\tmovw %w0, %%es" : "+r" (allocseg), "+b" (segsize), "=a" (errorcode), "=@ccc" (errorflag) : )

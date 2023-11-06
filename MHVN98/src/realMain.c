@@ -1,4 +1,5 @@
 #include "x86strops.h"
+#include "memalloc.h"
 #include "pc98_crtbios.h"
 #include "pc98_gdc.h"
 #include "pc98_egc.h"
@@ -26,6 +27,8 @@ int sysHandle;
 
 int realMain(void)
 {
+	int result = memRealloc(0, 0x10000); //Needed to resize the block allocated initially to a DOS .COM program so that we can allocate other blocks using the functions in memalloc.h
+	if (result) return result;
 	//Set up graphics first
 	textOff();
 	graphicsOn();
@@ -58,7 +61,7 @@ int realMain(void)
 	egc_bitlen(32);
 	setShadowColours(stdShadowCols);
 	
-	int result = readInRootInfo();
+	result = readInRootInfo();
 	if (result) goto errorquit;
 	result = initLanguage(0);
 	if (result) goto errorquit;
@@ -148,5 +151,6 @@ int realMain(void)
 	egcDisable();
 	graphicsOff();
 	textOn();
+	freeSceneEngine();
 	return result;
 }

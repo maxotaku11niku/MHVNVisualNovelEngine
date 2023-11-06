@@ -14,6 +14,8 @@ extern SceneInfo sceneInfo;
 
 //Sets up the scene engine, loading the first scene in
 int setupSceneEngine();
+//Frees all dynamically allocated data associated with the scene engine
+int freeSceneEngine();
 //Controls whether or not to process the scene script from above
 void controlProcess(int process);
 //Scene script process loop

@@ -2,7 +2,7 @@
 
 .intel_syntax noprefix
 .code16gcc
-.text
+.section .startup, "rx"
 	.globl	_realMain
 	.def	_realMain;	.scl	2;	.type	32;	.endef
 	

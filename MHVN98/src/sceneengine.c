@@ -1,4 +1,5 @@
 #include "x86strops.h"
+#include "memalloc.h"
 #include "filehandling.h"
 #include "pc98_egc.h"
 #include "rootinfo.h"
@@ -27,7 +28,7 @@ unsigned int curCharNum;
 unsigned int nextTextNum;
 char curCharName[64];
 char* curTextArray[256];
-char sceneTextBuffer[1024];
+char* sceneTextBuffer = 0;
 int sdHandle;
 
 short scratchVars[32];
@@ -76,10 +77,16 @@ int setupSceneEngine()
 	readFile(sdHandle, 4, smallFileBuffer, &realReadLen);
 	sceneInfo.numScenes = *((unsigned short*)(smallFileBuffer));
 	sceneInfo.numChars = *((unsigned short*)(smallFileBuffer + 0x02));
-    //sceneTextBuffer = (char*)0x0010000; //temporary, also relies on being in unreal mode
+    sceneTextBuffer = memAlloc(0x10000);
     sceneInfo.curScene = 0xFFFF;
     closeFile(sdHandle);
     return loadNewScene(0);
+}
+
+int freeSceneEngine()
+{
+    if (sceneTextBuffer == 0) return 0;
+    else return memFree(sceneTextBuffer);
 }
 
 short* getVariableRef(unsigned short addr)

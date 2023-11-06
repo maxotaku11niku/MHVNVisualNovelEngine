@@ -38,7 +38,7 @@ $(TARGET)/MHVN98.COM	: $(PROCESS)/mhvn98.o
 	objcopy -O binary $< $@
 
 $(PROCESS)/mhvn98.o	: $(OFILES)
-	ld -T doscom.lds -m i386pe -M -O -s -static --relax -n --no-dynamic-linker -o $(PROCESS)/mhvn98.o $^
+	ld -T doscom.lds -m i386pe -M -O -s -static --relax -n --no-dynamic-linker --print-memory-usage -o $(PROCESS)/mhvn98.o $^
 
 $(BUILD)/%.o: $(SOURCES)/%.asm
 	as $< -o $@ -march=i386 -mtune=i386 --32
