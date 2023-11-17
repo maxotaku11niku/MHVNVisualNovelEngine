@@ -5,9 +5,9 @@
 .text
 
 	.p2align 2
-	.globl	_vsyncInterrupt
-	.def	_vsyncInterrupt;	.scl	2;	.type	32;	.endef
-_vsyncInterrupt:
+	.globl	_VsyncInterrupt
+	.def	_VsyncInterrupt;	.scl	2;	.type	32;	.endef
+_VsyncInterrupt:
 	push ax
 	movb _vsynced, 1
 	out 0x64, al	;#PC-98 GDC I/O: CRT interrupt reset

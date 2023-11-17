@@ -25,132 +25,131 @@ int mdHandle;
 int sfxHandle;
 int sysHandle;
 
-int realMain(void)
+int RealMain(void)
 {
-	int result = memRealloc(0, 0x10000); //Needed to resize the block allocated initially to a DOS .COM program so that we can allocate other blocks using the functions in memalloc.h
-	if (result) return result;
-	//Set up graphics first
-	textOff();
-	graphicsOn();
-	graphicsSetMode(CRT_MODE_GRAPHIC_PAGE0 | CRT_MODE_GRAPHIC_COLOUR | CRT_MODE_GRAPHIC_640x400);
-	graphicsSetMode2(GDC_MODE2_16COLOURS);
-	gdcSetPaletteColour(0x0, 0x1, 0x1, 0x1);
-	gdcSetPaletteColour(0x1, 0x7, 0x7, 0x7);
-	gdcSetPaletteColour(0x2, 0xB, 0x3, 0xB);
-	gdcSetPaletteColour(0x3, 0xF, 0x7, 0xF);
-	gdcSetPaletteColour(0x4, 0x7, 0x1, 0x1);
-	gdcSetPaletteColour(0x5, 0xD, 0x4, 0x4);
-	gdcSetPaletteColour(0x6, 0xF, 0xB, 0x7);
-	gdcSetPaletteColour(0x7, 0xC, 0xB, 0x3);
-	gdcSetPaletteColour(0x8, 0x2, 0x7, 0x3);
-	gdcSetPaletteColour(0x9, 0x5, 0xD, 0x5);
-	gdcSetPaletteColour(0xA, 0x8, 0xF, 0x5);
-	gdcSetPaletteColour(0xB, 0xF, 0xF, 0x6);
-	gdcSetPaletteColour(0xC, 0x3, 0x3, 0xB);
-	gdcSetPaletteColour(0xD, 0x3, 0xA, 0xF);
-	gdcSetPaletteColour(0xE, 0x9, 0xF, 0xF);
-	gdcSetPaletteColour(0xF, 0xF, 0xF, 0xF);
-	egcEnable();
-	egc_planeaccess(0xF);
-	egc_mask(0xFFFF);
-	egc_bgcolour(0xC);
-	clearScreenEGC();
-	egc_patdatandreadmode(EGC_PATTERNSOURCE_FGCOLOUR);
-	egc_rwmode(EGC_WRITE_ROPSHIFT | EGC_SOURCE_CPU | EGC_ROP((EGC_ROP_SRC & EGC_ROP_PAT) | ((~EGC_ROP_SRC) & EGC_ROP_DST)));
-	egc_bitaddrbtmode(EGC_BLOCKTRANSFER_FORWARD);
-	egc_bitlen(32);
-	setShadowColours(stdShadowCols);
-	
-	result = readInRootInfo();
-	if (result) goto errorquit;
-	result = initLanguage(0);
-	if (result) goto errorquit;
-	result = setupTextInfo();
-	if (result) goto errorquit;
-	result = setupSceneEngine();
-	if (result) goto errorquit;
+    int result = MemRealloc(0, 0x10000); //Needed to resize the block allocated initially to a DOS .COM program so that we can allocate other blocks using the functions in memalloc.h
+    if (result) return result;
+    //Set up graphics first
+    TextOff();
+    GraphicsOn();
+    GraphicsSetMode(CRT_MODE_GRAPHIC_PAGE0 | CRT_MODE_GRAPHIC_COLOUR | CRT_MODE_GRAPHIC_640x400);
+    GraphicsSetMode2(GDC_MODE2_16COLOURS);
+    GDCSetPaletteColour(0x0, 0x1, 0x1, 0x1);
+    GDCSetPaletteColour(0x1, 0x7, 0x7, 0x7);
+    GDCSetPaletteColour(0x2, 0xB, 0x3, 0xB);
+    GDCSetPaletteColour(0x3, 0xF, 0x7, 0xF);
+    GDCSetPaletteColour(0x4, 0x7, 0x1, 0x1);
+    GDCSetPaletteColour(0x5, 0xD, 0x4, 0x4);
+    GDCSetPaletteColour(0x6, 0xF, 0xB, 0x7);
+    GDCSetPaletteColour(0x7, 0xC, 0xB, 0x3);
+    GDCSetPaletteColour(0x8, 0x2, 0x7, 0x3);
+    GDCSetPaletteColour(0x9, 0x5, 0xD, 0x5);
+    GDCSetPaletteColour(0xA, 0x8, 0xF, 0x5);
+    GDCSetPaletteColour(0xB, 0xF, 0xF, 0x6);
+    GDCSetPaletteColour(0xC, 0x3, 0x3, 0xB);
+    GDCSetPaletteColour(0xD, 0x3, 0xA, 0xF);
+    GDCSetPaletteColour(0xE, 0x9, 0xF, 0xF);
+    GDCSetPaletteColour(0xF, 0xF, 0xF, 0xF);
+    EGCEnable();
+    egc_planeaccess(0xF);
+    egc_mask(0xFFFF);
+    egc_bgcolour(0xC);
+    ClearScreenEGC();
+    egc_patdatandreadmode(EGC_PATTERNSOURCE_FGCOLOUR);
+    egc_rwmode(EGC_WRITE_ROPSHIFT | EGC_SOURCE_CPU | EGC_ROP((EGC_ROP_SRC & EGC_ROP_PAT) | ((~EGC_ROP_SRC) & EGC_ROP_DST)));
+    egc_bitaddrbtmode(EGC_BLOCKTRANSFER_FORWARD);
+    egc_bitlen(32);
+    SetShadowColours(stdShadowCols);
+    
+    result = ReadInRootInfo();
+    if (result) goto errorquit;
+    result = InitLanguage(0);
+    if (result) goto errorquit;
+    result = SetupTextInfo();
+    if (result) goto errorquit;
+    result = SetupSceneEngine();
+    if (result) goto errorquit;
 
-	setCustomInfo(0, "Player"); //For testing
-	
-	oldInterruptMask = getPrimaryInterruptMask();
-	intsoff();
-	oldVsyncVector = getInterruptFunctionRaw(INTERRUPT_VECTOR_VSYNC);
-	setInterruptFunction(INTERRUPT_VECTOR_VSYNC, vsyncInterrupt);
-	addPrimaryInterrupts(INTERRUPT_MASK_VSYNC);
-	intson();
+    SetCustomInfo(0, "Player"); //For testing
+    
+    oldInterruptMask = GetPrimaryInterruptMask();
+    intsoff();
+    oldVsyncVector = GetInterruptFunctionRaw(INTERRUPT_VECTOR_VSYNC);
+    SetInterruptFunction(INTERRUPT_VECTOR_VSYNC, VsyncInterrupt);
+    AddPrimaryInterrupts(INTERRUPT_MASK_VSYNC);
+    intson();
 
-	textBoxlX = 64;
-	textBoxtY = 128;
-	textBoxrX = 576;
-	textBoxbY = 192;
-	int hasFinshedStringAnim = 0;
-	int textSkip = 0;
-	int strnum = 0;
-	int sceneProcessResult;
-	while (1)
-	{
-		while (1) //Wait for vsync
-		{
-			if(vsynced) break;
-		}
-		sceneProcessResult = sceneDataProcess();
-		if (sceneProcessResult & SCENE_STATUS_ERROR)
-		{
-			result = sceneProcessResult & (~SCENE_STATUS_ERROR);
-			break;
-		}
-		else if (sceneProcessResult & SCENE_STATUS_FINALEND) break;
-		else if (sceneProcessResult & SCENE_STATUS_WIPETEXT)
-		{
-			controlProcess(1);
-		}
-		else if (!hasFinshedStringAnim && (sceneProcessResult & SCENE_STATUS_RENDERTEXT))
-		{
-			hasFinshedStringAnim = stringWriteAnimationFrame(textSkip);
-		}
-		else
-		{
-			textSkip = 0;
-		}
-		vsynced = 0;
-		if (key_pressed(K_ENTER)) //Next lines
-		{
-			if (hasFinshedStringAnim)
-			{
-				controlProcess(1);
-				hasFinshedStringAnim = 0;
-				textSkip = 0;
-			}
-			else
-			{
-				textSkip = 1;
-			}
-		}
-		if (key_pressed(K_ESC)) //Quit
-		{
-			break;
-		}
-		updatePrevKeyStatus();
-	}
-	intsoff();
-	setPrimaryInterruptMask(oldInterruptMask);
-	setInterruptFunctionRaw(INTERRUPT_VECTOR_VSYNC, oldVsyncVector);
-	intson();
-	errorquit:
-	if (result)
-	{
-		writeString("Press Enter to quit.", 240, 200, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF), 0);
-		while (!key_is_down(K_ENTER))
-		{
-			updatePrevKeyStatus();
-		}
-	}
-	gdcSetPaletteColour(0x0, 0x0, 0x0, 0x0);
-	egc_bgcolour(0x0);
-	clearScreenEGC();
-	egcDisable();
-	graphicsOff();
-	textOn();
-	freeSceneEngine();
-	return result;
+    textBoxlX = 64;
+    textBoxtY = 128;
+    textBoxrX = 576;
+    textBoxbY = 192;
+    unsigned char hasFinshedStringAnim = 0;
+    unsigned char textSkip = 0;
+    int sceneProcessResult;
+    while (1)
+    {
+        while (1) //Wait for vsync
+        {
+            if(vsynced) break;
+        }
+        sceneProcessResult = SceneDataProcess();
+        if (sceneProcessResult & SCENE_STATUS_ERROR)
+        {
+            result = sceneProcessResult & (~SCENE_STATUS_ERROR);
+            break;
+        }
+        else if (sceneProcessResult & SCENE_STATUS_FINALEND) break;
+        else if (sceneProcessResult & SCENE_STATUS_WIPETEXT)
+        {
+            ControlProcess(1);
+        }
+        else if (!hasFinshedStringAnim && (sceneProcessResult & SCENE_STATUS_RENDERTEXT))
+        {
+            hasFinshedStringAnim = StringWriteAnimationFrame(textSkip);
+        }
+        else
+        {
+            textSkip = 0;
+        }
+        vsynced = 0;
+        if (key_pressed(K_ENTER)) //Next lines
+        {
+            if (hasFinshedStringAnim)
+            {
+                ControlProcess(1);
+                hasFinshedStringAnim = 0;
+                textSkip = 0;
+            }
+            else
+            {
+                textSkip = 1;
+            }
+        }
+        if (key_pressed(K_ESC)) //Quit
+        {
+            break;
+        }
+        UpdatePrevKeyStatus();
+    }
+    intsoff();
+    SetPrimaryInterruptMask(oldInterruptMask);
+    SetInterruptFunctionRaw(INTERRUPT_VECTOR_VSYNC, oldVsyncVector);
+    intson();
+    errorquit:
+    if (result)
+    {
+        WriteString("Press Enter to quit.", 240, 200, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF), 0);
+        while (!key_is_down(K_ENTER))
+        {
+            UpdatePrevKeyStatus();
+        }
+    }
+    GDCSetPaletteColour(0x0, 0x0, 0x0, 0x0);
+    egc_bgcolour(0x0);
+    ClearScreenEGC();
+    EGCDisable();
+    GraphicsOff();
+    TextOn();
+    FreeSceneEngine();
+    return result;
 }

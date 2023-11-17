@@ -5,7 +5,7 @@
 #include "pc98_gdc.h"
 
 //OUTPORT 7C - Set GRCG Mode
-#define grcg_writemode(mode) portOutB(0x7C, mode)
+#define grcg_writemode(mode) PortOutB(0x7C, mode)
 //Supporting defines
 //For convenience, as hardware uses bit = 0 to indicate access, we NOT a mask where bit = 1 indicates access
 #define GRCG_PLANEMASK(mask) (0x0F & (~(mask)))
@@ -15,24 +15,24 @@
 #define GRCG_MODE_RMW 0x40
 //Upon reading from VRAM, compares the colours in the tile register with the colours in VRAM, and sends a 1 to the CPU for every matching pixel in the block
 #define GRCG_MODE_TCR 0x00
-#define GRCG_DISABLE 0x00
-#define GRCG_ENABLE 0x80
+#define GRCG_DISABLE  0x00
+#define GRCG_ENABLE   0x80
 
 //OUTPORT 7E - Set GRCG Tile Register (this cycles through the planes, so be careful when using it)
-#define grcg_writetile(tile) portOutB(0x7E, tile)
+#define grcg_writetile(tile) PortOutB(0x7E, tile)
 
-__attribute__((always_inline)) inline void grcgEnable()
+__attribute__((always_inline)) inline void GRCGEnable()
 {
     grcg_writemode(GRCG_ENABLE);
 }
 
-__attribute__((always_inline)) inline void grcgDisable()
+__attribute__((always_inline)) inline void GRCGDisable()
 {
     grcg_writemode(GRCG_DISABLE);
 }
 
 //Set all 4 tile registers correctly
-__attribute__((always_inline)) inline void setGRCGTileRegisters(unsigned char tile0, unsigned char tile1, unsigned char tile2, unsigned char tile3)
+__attribute__((always_inline)) inline void SetGRCGTileRegisters(unsigned char tile0, unsigned char tile1, unsigned char tile2, unsigned char tile3)
 {
     grcg_writetile(tile0);
     grcg_writetile(tile1);
@@ -41,7 +41,7 @@ __attribute__((always_inline)) inline void setGRCGTileRegisters(unsigned char ti
 }
 
 //Set the tile registers so they're ready for a simple fill
-__attribute__((always_inline)) inline void setGRCGTilesToColour(unsigned char col)
+__attribute__((always_inline)) inline void SetGRCGTilesToColour(unsigned char col)
 {
     grcg_writetile((col & 0x01)? 0xFF : 0x00);
     grcg_writetile((col & 0x02)? 0xFF : 0x00);
@@ -52,12 +52,12 @@ __attribute__((always_inline)) inline void setGRCGTilesToColour(unsigned char co
 //The following wrappers allow for compile time type checking
 
 //Sets the GRCG mode
-__attribute__((always_inline)) inline void setGRCGMode(unsigned char mode)
+__attribute__((always_inline)) inline void SetGRCGMode(unsigned char mode)
 {
     grcg_writemode(mode);
 }
 
 //Clears the screen very fast using the GRCG (must enable beforehand)
-void clearScreenGRCG(unsigned char clearCol);
+void ClearScreenGRCG(unsigned char clearCol);
 //Clears some lines very fast using the GRCG (must enable beforehand)
-void clearLinesGRCG(unsigned char clearCol, int startLine, int numLines);
+void ClearLinesGRCG(unsigned char clearCol, unsigned long startLine, unsigned long numLines);

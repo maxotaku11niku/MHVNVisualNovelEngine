@@ -3,7 +3,7 @@
 unsigned char prevKeyStatus[16];
 unsigned char keyChangeStatus[16];
 
-void updatePrevKeyStatus()
+void UpdatePrevKeyStatus()
 {
     const unsigned long* kstat = (const unsigned long*)key_status_relptr;
     unsigned long* pkstat = (unsigned long*)prevKeyStatus;

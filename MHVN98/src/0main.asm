@@ -3,11 +3,11 @@
 .intel_syntax noprefix
 .code16gcc
 .section .startup, "rx"
-	.globl	_realMain
-	.def	_realMain;	.scl	2;	.type	32;	.endef
+	.globl	_RealMain
+	.def	_RealMain;	.scl	2;	.type	32;	.endef
 	
-	.globl	_setupRelativeFlatPointers
-	.def	_setupRelativeFlatPointers;	.scl	2;	.type	32;	.endef
+	.globl	_SetupRelativeFlatPointers
+	.def	_SetupRelativeFlatPointers;	.scl	2;	.type	32;	.endef
 
 	.p2align 2
 	.globl	_main
@@ -43,8 +43,8 @@ Lmain_nocrash:
 	;# It now allows us to ignore segmentation in our code, except when we have to interface with DOS or the BIOS
 	;# Interfacing directly with hardware we will just adjust our pointers appropriately
 	
-	call _setupRelativeFlatPointers ;#Obtain the proper relative pointers for unreal mode
-	call _realMain
+	call _SetupRelativeFlatPointers ;#Obtain the proper relative pointers for unreal mode
+	call _RealMain
 	
 	mov ah, 0x4C
 	int 0x21 ;#DOS return from program

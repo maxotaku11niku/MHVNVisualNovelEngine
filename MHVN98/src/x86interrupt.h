@@ -19,5 +19,5 @@
 #define intsoff() asm ("cli")
 #define intson() asm ("sti")
 
-typedef void interruptFunc(void*);
-typedef interruptFunc* interruptFuncPtr;
+typedef void InterruptFunc(void*);
+typedef InterruptFunc* InterruptFuncPtr;

@@ -18,35 +18,35 @@
 #define GDC_PLANES ((unsigned char*)0xA8000)
 
 //OUTPORT 68 - Write GDC Mode 1
-#define gdc_writemode1(mode) portOutB(0x68, mode)
+#define gdc_writemode1(mode) PortOutB(0x68, mode)
 //Supporting defines
 #define GDC_MODE1_ATTRIBUTE4_VERTICALLINE 0x00
-#define GDC_MODE1_ATTRIBUTE4_PATTERN 0x01
-#define GDC_MODE1_COLOUR 0x02
-#define GDC_MODE1_MONOCHROME 0x03
-#define GDC_MODE1_80COLUMN 0x04
-#define GDC_MODE1_40COLUMN 0x05
-#define GDC_MODE1_6x8CHARS 0x06
-#define GDC_MODE1_7x13CHARS 0x07
-#define GDC_MODE1_LINEDOUBLE_OFF 0x08
-#define GDC_MODE1_LINEDOUBLE_ON 0x09
-#define GDC_MODE1_CHARACCESS_CODE 0x0A
-#define GDC_MODE1_CHARACCESS_BITMAP 0x0B
-#define GDC_MODE1_MEMSWITCH_WRITE_ON 0x0C
-#define GDC_MODE1_MEMSWITCH_WRITE_OFF 0x0D
-#define GDC_MODE1_DISPLAY_ON 0x0E
-#define GDC_MODE1_DISPLAY_OFF 0x0F
+#define GDC_MODE1_ATTRIBUTE4_PATTERN      0x01
+#define GDC_MODE1_COLOUR                  0x02
+#define GDC_MODE1_MONOCHROME              0x03
+#define GDC_MODE1_80COLUMN                0x04
+#define GDC_MODE1_40COLUMN                0x05
+#define GDC_MODE1_6x8CHARS                0x06
+#define GDC_MODE1_7x13CHARS               0x07
+#define GDC_MODE1_LINEDOUBLE_OFF          0x08
+#define GDC_MODE1_LINEDOUBLE_ON           0x09
+#define GDC_MODE1_CHARACCESS_CODE         0x0A
+#define GDC_MODE1_CHARACCESS_BITMAP       0x0B
+#define GDC_MODE1_MEMSWITCH_WRITE_ON      0x0C
+#define GDC_MODE1_MEMSWITCH_WRITE_OFF     0x0D
+#define GDC_MODE1_DISPLAY_ON              0x0E
+#define GDC_MODE1_DISPLAY_OFF             0x0F
 
 //OUTPORT 60 - Write GDC Text Command Parameter
-#define gdc_writetextcommandparam(param) portOutB(0x60, param)
+#define gdc_writetextcommandparam(param) PortOutB(0x60, param)
 //OUTPORT 62 - Write GDC Text Command
-#define gdc_writetextcommand(command) portOutB(0x62, command)
+#define gdc_writetextcommand(command) PortOutB(0x62, command)
 //Supporting defines (all of these commands will be abstracted behind proper functions)
 //Reinitialises this GDC
 #define GDC_COMMAND_RESET 0x00
 //Sets display timing parameters, which can be VERY dangerous. If you don't know what you're doing, just use the BIOS functions.
 #define GDC_COMMAND_SYNC_OFF 0x0E
-#define GDC_COMMAND_SYNC_ON 0x0F
+#define GDC_COMMAND_SYNC_ON  0x0F
 //Start display of this layer
 #define GDC_COMMAND_START 0x0D
 //Stop display of this layer
@@ -95,8 +95,8 @@
 //INPORT 60 - Read GDC Text Status
 #define gdc_readtextstatus(status) inportb(0x60, status)
 //Supporting defines
-#define GDC_STATUS_DATAREADY 0x01
-#define GDC_STATUS_FIFO_FULL 0x02
+#define GDC_STATUS_DATAREADY  0x01
+#define GDC_STATUS_FIFO_FULL  0x02
 #define GDC_STATUS_FIFO_EMPTY 0x04
 //Only makes sense for the graphics GDC
 #define GDC_STATUS_DRAWING 0x08
@@ -115,9 +115,9 @@
 //OUTPORT 64 - CRT Interrupt Reset
 #define gdc_interruptreset() asm ("out %al, $100")
 //OUTPORT 6C - Set Border Colour
-#define gdc_setbordercolour(col) portOutB(0x6C, col)
+#define gdc_setbordercolour(col) PortOutB(0x6C, col)
 //OUTPORT 6A - Write GDC Mode 2
-#define gdc_writemode2(mode) portOutB(0x6A, mode)
+#define gdc_writemode2(mode) PortOutB(0x6A, mode)
 //Supporting defines
 //You probably don't want to use this mode, as the VX supports 16 colours anyway
 #define GDC_MODE2_8COLOURS 0x00
@@ -125,24 +125,24 @@
 #define GDC_MODE2_16COLOURS 0x01
 //Requires the EGC (put a GDC_MODE2_MODIFY through first)
 #define GDC_MODE2_GRCG 0x04
-#define GDC_MODE2_EGC 0x05
+#define GDC_MODE2_EGC  0x05
 //Requires a suitable hardware feature that can be modified through port 6A, otherwise these are useless
 #define GDC_MODE2_NOMODIFY 0x06
-#define GDC_MODE2_MODIFY 0x07
+#define GDC_MODE2_MODIFY   0x07
 //Requires 256-colour hardware (either MATE/MULTI builtin, or H98, put a GDC_MODE2_MODIFY through first)
-#define GDC_MODE2_256COLOURS_OFF 0x20
-#define GDC_MODE2_256COLOURS_ON 0x21
+#define GDC_MODE2_256COLOURS_OFF  0x20
+#define GDC_MODE2_256COLOURS_ON   0x21
 #define GDC_MODE2_PAGE_DISCONNECT 0x68
-#define GDC_MODE2_PAGE_CONNECT 0x69
+#define GDC_MODE2_PAGE_CONNECT    0x69
 
 //OUTPORT A0 - Write GDC Graphics Command Parameter
-#define gdc_writegraphiccommandparam(param) portOutB(0xA0, param)
+#define gdc_writegraphiccommandparam(param) PortOutB(0xA0, param)
 //OUTPORT A2 - Write GDC Graphics Command
-#define gdc_writegraphiccommand(command) portOutB(0xA2, command)
+#define gdc_writegraphiccommand(command) PortOutB(0xA2, command)
 //OUTPORT A4 - Set Display Page
-#define gdc_setdisplaypage(page) portOutB(0xA4, page)
+#define gdc_setdisplaypage(page) PortOutB(0xA4, page)
 //OUTPORT A6 - Set Draw Page
-#define gdc_setdrawpage(page) portOutB(0xA6, page)
+#define gdc_setdrawpage(page) PortOutB(0xA6, page)
 
 //INPORT A0 - Read GDC Graphics Status
 #define gdc_readgraphicstatus(status) inportb(0xA0, status)
@@ -151,70 +151,70 @@
 
 
 //Sets all 8 colours in the most basic palette. Only used if you're in 8-colour mode for some reason. Upper 4 bits for colours 0-3, lower 4 bits for colours 4-7.
-__attribute__((always_inline)) inline void gdcSet8ColoursPalette(unsigned char col04, unsigned char col15, unsigned char col26, unsigned char col37)
+__attribute__((always_inline)) inline void GDCSet8ColoursPalette(unsigned char col04, unsigned char col15, unsigned char col26, unsigned char col37)
 {
-	portOutB(0xAE, col04);
-	portOutB(0xAA, col15);
-	portOutB(0xAC, col26);
-	portOutB(0xA8, col37);
+    PortOutB(0xAE, col04);
+    PortOutB(0xAA, col15);
+    PortOutB(0xAC, col26);
+    PortOutB(0xA8, col37);
 }
 
 //Sets a single colour in the usual 16 colour palette. Each parameter is in the range 0x0-0xF
 //If in 256-colour mode, each parameter is in the range 0x00-0xFF
-__attribute__((always_inline)) inline void gdcSetPaletteColour(unsigned char index, unsigned char r, unsigned char g, unsigned char b)
+__attribute__((always_inline)) inline void GDCSetPaletteColour(unsigned char index, unsigned char r, unsigned char g, unsigned char b)
 {
-	portOutB(0xA8, index);
-	portOutB(0xAC, r);
-	portOutB(0xAA, g);
-	portOutB(0xAE, b);
+    PortOutB(0xA8, index);
+    PortOutB(0xAC, r);
+    PortOutB(0xAA, g);
+    PortOutB(0xAE, b);
 }
 
 //The following wrappers allow for compile time type checking
 
 //Sets the graphics mode first part
-__attribute__((always_inline)) inline void graphicsSetMode1(unsigned char mode)
+__attribute__((always_inline)) inline void GraphicsSetMode1(unsigned char mode)
 {
-	gdc_writemode1(mode);
+    gdc_writemode1(mode);
 }
 
 //Sets the graphics mode second part
-__attribute__((always_inline)) inline void graphicsSetMode2(unsigned char mode)
+__attribute__((always_inline)) inline void GraphicsSetMode2(unsigned char mode)
 {
-	gdc_writemode2(mode);
+    gdc_writemode2(mode);
 }
 
 //Resets the text GDC
-__attribute__((always_inline)) inline void resetTextGDC()
+__attribute__((always_inline)) inline void ResetTextGDC()
 {
-	gdc_writetextcommand(GDC_COMMAND_RESET);
+    gdc_writetextcommand(GDC_COMMAND_RESET);
 }
 
 //Start displaying the text layer
-__attribute__((always_inline)) inline void startTextGDC()
+__attribute__((always_inline)) inline void StartTextGDC()
 {
-	gdc_writetextcommand(GDC_COMMAND_START);
+    gdc_writetextcommand(GDC_COMMAND_START);
 }
 
 //Stop displaying the text layer
-__attribute__((always_inline)) inline void stopTextGDC()
+__attribute__((always_inline)) inline void StopTextGDC()
 {
-	gdc_writetextcommand(GDC_COMMAND_STOP);
+    gdc_writetextcommand(GDC_COMMAND_STOP);
 }
 
 //Resets the graphics GDC
-__attribute__((always_inline)) inline void resetGraphicsGDC()
+__attribute__((always_inline)) inline void ResetGraphicsGDC()
 {
-	gdc_writegraphiccommand(GDC_COMMAND_RESET);
+    gdc_writegraphiccommand(GDC_COMMAND_RESET);
 }
 
 //Start displaying the graphics layer
-__attribute__((always_inline)) inline void startGraphicsGDC()
+__attribute__((always_inline)) inline void StartGraphicsGDC()
 {
-	gdc_writegraphiccommand(GDC_COMMAND_START);
+    gdc_writegraphiccommand(GDC_COMMAND_START);
 }
 
 //Stop displaying the graphics layer
-__attribute__((always_inline)) inline void stopGraphicsGDC()
+__attribute__((always_inline)) inline void StopGraphicsGDC()
 {
-	gdc_writegraphiccommand(GDC_COMMAND_STOP);
+    gdc_writegraphiccommand(GDC_COMMAND_STOP);
 }

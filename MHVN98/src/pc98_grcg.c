@@ -5,16 +5,16 @@
 #include "x86segments.h"
 #include "unrealhwaddr.h"
 
-void clearScreenGRCG(unsigned char clearCol)
+void ClearScreenGRCG(unsigned char clearCol)
 {
-    setGRCGMode(GRCG_ENABLE | GRCG_MODE_TDW | GRCG_PLANEMASK(0x0F));
-    setGRCGTilesToColour(clearCol);
-    memset32Flat(0x00000000, gdcPlane0_relptr, 8000);
+    SetGRCGMode(GRCG_ENABLE | GRCG_MODE_TDW | GRCG_PLANEMASK(0x0F));
+    SetGRCGTilesToColour(clearCol);
+    Memset32Flat(0x00000000, gdcPlane0_relptr, 8000);
 }
 
-void clearLinesGRCG(unsigned char clearCol, int startLine, int numLines)
+void ClearLinesGRCG(unsigned char clearCol, unsigned long startLine, unsigned long numLines)
 {
-    setGRCGMode(GRCG_ENABLE | GRCG_MODE_TDW | GRCG_PLANEMASK(0x0F));
-    setGRCGTilesToColour(clearCol);
-    memset32Flat(0x00000000, gdcPlane0_relptr + startLine * 80, 20 * numLines);
+    SetGRCGMode(GRCG_ENABLE | GRCG_MODE_TDW | GRCG_PLANEMASK(0x0F));
+    SetGRCGTilesToColour(clearCol);
+    Memset32Flat(0x00000000, gdcPlane0_relptr + startLine * 80, 20 * numLines);
 }

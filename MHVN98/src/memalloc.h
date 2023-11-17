@@ -3,6 +3,6 @@
 
 #include "doscalls.h"
 
-void* memAlloc(int byteSize);
-int memFree(const void* ptr);
-int memRealloc(const void* ptr, int newSize);
+void* MemAlloc(unsigned long byteSize);
+int MemFree(const void* ptr);
+int MemRealloc(const void* ptr, unsigned long newSize);

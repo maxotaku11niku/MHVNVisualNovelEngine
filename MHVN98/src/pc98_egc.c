@@ -6,40 +6,40 @@
 #include "x86segments.h"
 #include "unrealhwaddr.h"
 
-void clearScreenEGC()
+void ClearScreenEGC()
 {
-	egc_planeaccess(0xF);
-	egc_patdatandreadmode(EGC_PATTERNSOURCE_BGCOLOUR);
-	egc_rwmode(EGC_WRITE_PATSHIFT | EGC_SOURCE_CPU);
-	egc_mask(0xFFFF);
-	egc_bitaddrbtmode(EGC_BLOCKTRANSFER_FORWARD);
-	egc_bitlen(2048);
-	memset32Flat(0xFFFFFFFF, gdcPlane0_relptr, 8000);
+    egc_planeaccess(0xF);
+    egc_patdatandreadmode(EGC_PATTERNSOURCE_BGCOLOUR);
+    egc_rwmode(EGC_WRITE_PATSHIFT | EGC_SOURCE_CPU);
+    egc_mask(0xFFFF);
+    egc_bitaddrbtmode(EGC_BLOCKTRANSFER_FORWARD);
+    egc_bitlen(2048);
+    Memset32Flat(0xFFFFFFFF, gdcPlane0_relptr, 8000);
 }
 
-void clearLinesEGC(int startLine, int numLines)
+void ClearLinesEGC(unsigned long startLine, unsigned long numLines)
 {
-	egc_planeaccess(0xF);
-	egc_patdatandreadmode(EGC_PATTERNSOURCE_BGCOLOUR);
-	egc_rwmode(EGC_WRITE_PATSHIFT | EGC_SOURCE_CPU);
-	egc_mask(0xFFFF);
-	egc_bitaddrbtmode(EGC_BLOCKTRANSFER_FORWARD);
-	egc_bitlen(2048);
-	memset32Flat(0xFFFFFFFF, gdcPlane0_relptr + startLine * 80, 20 * numLines);
+    egc_planeaccess(0xF);
+    egc_patdatandreadmode(EGC_PATTERNSOURCE_BGCOLOUR);
+    egc_rwmode(EGC_WRITE_PATSHIFT | EGC_SOURCE_CPU);
+    egc_mask(0xFFFF);
+    egc_bitaddrbtmode(EGC_BLOCKTRANSFER_FORWARD);
+    egc_bitlen(2048);
+    Memset32Flat(0xFFFFFFFF, gdcPlane0_relptr + startLine * 80, 20 * numLines);
 }
 
-void egcEnable()
+void EGCEnable()
 {
-	grcgEnable();
-	graphicsSetMode2(GDC_MODE2_MODIFY);
-	graphicsSetMode2(GDC_MODE2_EGC);
-	graphicsSetMode2(GDC_MODE2_NOMODIFY);
+    GRCGEnable();
+    GraphicsSetMode2(GDC_MODE2_MODIFY);
+    GraphicsSetMode2(GDC_MODE2_EGC);
+    GraphicsSetMode2(GDC_MODE2_NOMODIFY);
 }
 
-void egcDisable()
+void EGCDisable()
 {
-	graphicsSetMode2(GDC_MODE2_MODIFY);
-	graphicsSetMode2(GDC_MODE2_GRCG);
-	graphicsSetMode2(GDC_MODE2_NOMODIFY);
-	grcgDisable();
+    GraphicsSetMode2(GDC_MODE2_MODIFY);
+    GraphicsSetMode2(GDC_MODE2_GRCG);
+    GraphicsSetMode2(GDC_MODE2_NOMODIFY);
+    GRCGDisable();
 }

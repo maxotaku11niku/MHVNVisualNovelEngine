@@ -2,4 +2,4 @@
 
 #include "x86interrupt.h"
 
-INTFUNC void vsyncInterrupt(void*);
+INTFUNC void VsyncInterrupt(void*);

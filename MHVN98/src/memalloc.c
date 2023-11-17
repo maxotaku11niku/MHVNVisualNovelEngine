@@ -4,9 +4,9 @@
 #include "doscalls.h"
 
 //Allocates some memory (beware that DOS can only allocate blocks 16 bytes at a time, so please allocate sizeable data structures all at once rather than variable-by-variable)
-void* memAlloc(int byteSize)
+void* MemAlloc(unsigned long byteSize)
 {
-    int iserr;
+    unsigned char iserr;
     unsigned short codeSeg;
     getcs(codeSeg);
     unsigned short allocSeg = 0;
@@ -21,9 +21,9 @@ void* memAlloc(int byteSize)
 }
 
 //Frees previously allocated memory (so don't lose your pointers!)
-int memFree(const void* ptr)
+int MemFree(const void* ptr)
 {
-    int iserr;
+    unsigned char iserr;
     unsigned short codeSeg;
     getcs(codeSeg);
     unsigned short allocSeg = (unsigned short)((int)ptr >> 4);
@@ -38,9 +38,9 @@ int memFree(const void* ptr)
 }
 
 //Reallocates memory previously allocated (currently only allows resizing in place, panics if relocation is necessary)
-int memRealloc(const void* ptr, int newSize)
+int MemRealloc(const void* ptr, unsigned long newSize)
 {
-    int iserr;
+    unsigned char iserr;
     unsigned short codeSeg;
     getcs(codeSeg);
     unsigned short allocSeg = (unsigned short)((int)ptr >> 4);

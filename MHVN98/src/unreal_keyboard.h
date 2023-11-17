@@ -311,4 +311,4 @@ extern unsigned char keyChangeStatus[16];
 #define key_pressed(k) ((k) && (D##k))
 #define key_released(k) ((!k) && (D##k))
 
-void updatePrevKeyStatus();
+void UpdatePrevKeyStatus();

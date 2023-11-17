@@ -24,12 +24,12 @@ unsigned char curSceneData[1024];
 unsigned short curSceneDataPC;
 unsigned char vmFlags;
 int returnStatus;
-unsigned int curCharNum;
-unsigned int nextTextNum;
+unsigned short curCharNum;
+unsigned short nextTextNum;
 char curCharName[64];
 char* curTextArray[256];
 char* sceneTextBuffer = 0;
-int sdHandle;
+unsigned short sdHandle;
 
 short scratchVars[32];
 short globalVars[128];
@@ -39,24 +39,24 @@ unsigned char scratchFlags[12];
 unsigned char globalFlags[96];
 unsigned char localFlags[320];
 
-int loadNewScene(unsigned int sceneNum)
+int LoadNewScene(unsigned short sceneNum)
 {
     if (sceneNum == sceneInfo.curScene) return 0; //Don't change scene if scene number isn't going to change
-    int realReadLen;
+    unsigned short realReadLen;
     unsigned long curfilepos;
     unsigned long scenedatpos;
-    int result = openFile(rootInfo.sceneDataPath, FILE_OPEN_READ, &sdHandle);
+    int result = OpenFile(rootInfo.sceneDataPath, FILE_OPEN_READ, &sdHandle);
     if (result)
-	{
-		writeString("Error! Could not find scene data file!", 168, 184, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF), 0);
-		return result; //Error handler
-	}
-    seekFile(sdHandle, FILE_SEEK_ABSOLUTE, 4 + 4 * sceneNum, &curfilepos);
-    readFile(sdHandle, 4, &scenedatpos, &realReadLen);
-    seekFile(sdHandle, FILE_SEEK_ABSOLUTE, 4 + 4 * sceneInfo.numScenes + scenedatpos, &curfilepos);
-    readFile(sdHandle, 1024, curSceneData, &realReadLen);
-    closeFile(sdHandle);
-    result = loadSceneText(sceneNum, sceneTextBuffer, curTextArray);
+    {
+        WriteString("Error! Could not find scene data file!", 168, 184, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF), 0);
+        return result; //Error handler
+    }
+    SeekFile(sdHandle, FILE_SEEK_ABSOLUTE, 4 + 4 * sceneNum, &curfilepos);
+    ReadFile(sdHandle, 4, &scenedatpos, &realReadLen);
+    SeekFile(sdHandle, FILE_SEEK_ABSOLUTE, 4 + 4 * sceneInfo.numScenes + scenedatpos, &curfilepos);
+    ReadFile(sdHandle, 1024, curSceneData, &realReadLen);
+    CloseFile(sdHandle);
+    result = LoadSceneText(sceneNum, sceneTextBuffer, curTextArray);
     if (result) return result;
     curSceneDataPC = 0;
     returnStatus = 0;
@@ -65,31 +65,31 @@ int loadNewScene(unsigned int sceneNum)
     return 0;
 }
 
-int setupSceneEngine()
+int SetupSceneEngine()
 {
-    int realReadLen;
-    int result = openFile(rootInfo.sceneDataPath, FILE_OPEN_READ, &sdHandle);
-	if (result)
-	{
-		writeString("Error! Could not find scene data file!", 168, 184, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF), 0);
-		return result; //Error handler
-	}
-	readFile(sdHandle, 4, smallFileBuffer, &realReadLen);
-	sceneInfo.numScenes = *((unsigned short*)(smallFileBuffer));
-	sceneInfo.numChars = *((unsigned short*)(smallFileBuffer + 0x02));
-    sceneTextBuffer = memAlloc(0x10000);
+    unsigned short realReadLen;
+    int result = OpenFile(rootInfo.sceneDataPath, FILE_OPEN_READ, &sdHandle);
+    if (result)
+    {
+        WriteString("Error! Could not find scene data file!", 168, 184, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF), 0);
+        return result; //Error handler
+    }
+    ReadFile(sdHandle, 4, smallFileBuffer, &realReadLen);
+    sceneInfo.numScenes = *((unsigned short*)(smallFileBuffer));
+    sceneInfo.numChars = *((unsigned short*)(smallFileBuffer + 0x02));
+    sceneTextBuffer = MemAlloc(0x10000);
     sceneInfo.curScene = 0xFFFF;
-    closeFile(sdHandle);
-    return loadNewScene(0);
+    CloseFile(sdHandle);
+    return LoadNewScene(0);
 }
 
-int freeSceneEngine()
+int FreeSceneEngine()
 {
     if (sceneTextBuffer == 0) return 0;
-    else return memFree(sceneTextBuffer);
+    else return MemFree(sceneTextBuffer);
 }
 
-short* getVariableRef(unsigned short addr)
+short* GetVariableRef(unsigned short addr)
 {
     if (addr < SFLG_BASE) //Scratch variables
     {
@@ -117,9 +117,9 @@ short* getVariableRef(unsigned short addr)
     }
 }
 
-int getFlag(unsigned short addr)
+unsigned char GetFlag(unsigned short addr)
 {
-    int val = 0;
+    unsigned short val = 0;
     if (addr < SFLG_BASE) //Scratch variables
     {
         val = scratchVars[addr];
@@ -154,7 +154,7 @@ int getFlag(unsigned short addr)
     return val != 0;
 }
 
-void setFlag(unsigned short addr, int val)
+void SetFlag(unsigned short addr, unsigned char val)
 {
     unsigned char* flgptr;
     unsigned char flgval;
@@ -196,31 +196,31 @@ void setFlag(unsigned short addr, int val)
     *flgptr = flgval;
 }
 
-void controlProcess(int process)
+void ControlProcess(unsigned char process)
 {
     if (process) vmFlags |= VMFLAG_PROCESS;
     else vmFlags &= ~VMFLAG_PROCESS;
 }
 
-void clearTextBox()
+void ClearTextBox()
 {
-    clearLinesEGC(textBoxtY, textBoxbY - textBoxtY + 1);
+    ClearLinesEGC(textBoxtY, textBoxbY - textBoxtY + 1);
     egc_patdatandreadmode(EGC_PATTERNSOURCE_FGCOLOUR);
     egc_rwmode(EGC_WRITE_ROPSHIFT | EGC_SOURCE_CPU | EGC_ROP((EGC_ROP_SRC & EGC_ROP_PAT) | ((~EGC_ROP_SRC) & EGC_ROP_DST)));
     egc_bitaddrbtmode(EGC_BLOCKTRANSFER_FORWARD);
     egc_bitlen(32);
 }
 
-void clearCharacterName()
+void ClearCharacterName()
 {
-    clearLinesEGC(60, 17);
+    ClearLinesEGC(60, 17);
     egc_patdatandreadmode(EGC_PATTERNSOURCE_FGCOLOUR);
     egc_rwmode(EGC_WRITE_ROPSHIFT | EGC_SOURCE_CPU | EGC_ROP((EGC_ROP_SRC & EGC_ROP_PAT) | ((~EGC_ROP_SRC) & EGC_ROP_DST)));
     egc_bitaddrbtmode(EGC_BLOCKTRANSFER_FORWARD);
     egc_bitlen(32);
 }
 
-int sceneDataProcess()
+int SceneDataProcess()
 {
     unsigned char curOpcode;
     int result = 0;
@@ -233,14 +233,14 @@ int sceneDataProcess()
         switch (curOpcode)
         {
         case 0x00: //gotoscene
-            unsigned int sNum = *((unsigned short*)(curSceneData + curSceneDataPC));
+            unsigned short sNum = *((unsigned short*)(curSceneData + curSceneDataPC));
             if (sNum == 0xFFFF) //scene number FFFF is a proxy for the end of the whole VN
             {
                 vmFlags &= ~VMFLAG_PROCESS;
                 returnStatus |= SCENE_STATUS_FINALEND;
                 break;
             }
-            result = loadNewScene(sNum);
+            result = LoadNewScene(sNum);
             if (result)
             {
                 returnStatus = SCENE_STATUS_ERROR | result;
@@ -292,27 +292,27 @@ int sceneDataProcess()
                 curSceneDataPC--; //compensation
                 goto delText;
             }
-            startAnimatedStringToWrite(curTextArray[nextTextNum], textBoxlX, textBoxtY, rootInfo.defFormatNormal);
+            StartAnimatedStringToWrite(curTextArray[nextTextNum], textBoxlX, textBoxtY, rootInfo.defFormatNormal);
             nextTextNum++;
             vmFlags |= VMFLAG_TEXTINBOX;
             vmFlags &= ~VMFLAG_PROCESS;
             returnStatus |= SCENE_STATUS_RENDERTEXT;
             break;
         case 0x12: //charname
-            unsigned int charNum = *((unsigned short*)(curSceneData + curSceneDataPC));
+            unsigned short charNum = *((unsigned short*)(curSceneData + curSceneDataPC));
             if (charNum != curCharNum)
             {
-                clearCharacterName();
+                ClearCharacterName();
                 if (charNum != 0xFFFF)
                 {
-                    result = loadCurrentCharacterName(charNum, curCharName);
+                    result = LoadCurrentCharacterName(charNum, curCharName);
                     if (result)
                     {
                         returnStatus = SCENE_STATUS_ERROR | result;
                         vmFlags &= ~VMFLAG_PROCESS;
                         break;
                     }
-                    writeString(curCharName, 60, 60, rootInfo.defFormatCharName, 0);
+                    WriteString(curCharName, 60, 60, rootInfo.defFormatCharName, 0);
                 }
                 curCharNum = charNum;
             }
@@ -320,7 +320,7 @@ int sceneDataProcess()
             break;
         case 0x1F: //deltext
             delText:
-            clearTextBox();
+            ClearTextBox();
             vmFlags &= ~VMFLAG_TEXTINBOX;
             vmFlags &= ~VMFLAG_PROCESS;
             returnStatus |= SCENE_STATUS_WIPETEXT; //for later, when text box wiping involves an animation
@@ -343,7 +343,7 @@ int sceneDataProcess()
             vmSetvi:
             result = *((unsigned short*)(curSceneData + curSceneDataPC));
             curSceneDataPC += 2;
-            varptr1 = getVariableRef(result);
+            varptr1 = GetVariableRef(result);
             result = *((unsigned short*)(curSceneData + curSceneDataPC));
             *varptr1 = result;
             curSceneDataPC += 2;
@@ -352,9 +352,9 @@ int sceneDataProcess()
             vmSetvv:
             result = *((unsigned short*)(curSceneData + curSceneDataPC));
             curSceneDataPC += 2;
-            varptr1 = getVariableRef(result);
+            varptr1 = GetVariableRef(result);
             result = *((unsigned short*)(curSceneData + curSceneDataPC));
-            *varptr1 = *getVariableRef(result);
+            *varptr1 = *GetVariableRef(result);
             curSceneDataPC += 2;
             break;
         case 0x26: //csetvi
@@ -374,7 +374,7 @@ int sceneDataProcess()
         case 0x28: //cmpvi
             result = *((unsigned short*)(curSceneData + curSceneDataPC));
             curSceneDataPC += 2;
-            varptr1 = getVariableRef(result);
+            varptr1 = GetVariableRef(result);
             result = *((unsigned short*)(curSceneData + curSceneDataPC));
             curSceneDataPC += 2;
             vmFlags &= ~(VMFLAG_Z | VMFLAG_N);
@@ -384,9 +384,9 @@ int sceneDataProcess()
         case 0x29: //cmpvv
             result = *((unsigned short*)(curSceneData + curSceneDataPC));
             curSceneDataPC += 2;
-            varptr1 = getVariableRef(result);
+            varptr1 = GetVariableRef(result);
             result = *((unsigned short*)(curSceneData + curSceneDataPC));
-            varptr2 = getVariableRef(result);
+            varptr2 = GetVariableRef(result);
             curSceneDataPC += 2;
             vmFlags &= ~(VMFLAG_Z | VMFLAG_N);
             vmFlags |= VMFLAG_Z & (*varptr1 == *varptr2);
@@ -395,7 +395,7 @@ int sceneDataProcess()
         case 0x2A: //addvi
             result = *((unsigned short*)(curSceneData + curSceneDataPC));
             curSceneDataPC += 2;
-            varptr1 = getVariableRef(result);
+            varptr1 = GetVariableRef(result);
             result = *((unsigned short*)(curSceneData + curSceneDataPC));
             *varptr1 += result;
             curSceneDataPC += 2;
@@ -406,9 +406,9 @@ int sceneDataProcess()
         case 0x2B: //addvv
             result = *((unsigned short*)(curSceneData + curSceneDataPC));
             curSceneDataPC += 2;
-            varptr1 = getVariableRef(result);
+            varptr1 = GetVariableRef(result);
             result = *((unsigned short*)(curSceneData + curSceneDataPC));
-            *varptr1 += *getVariableRef(result);
+            *varptr1 += *GetVariableRef(result);
             curSceneDataPC += 2;
             vmFlags &= ~(VMFLAG_Z | VMFLAG_N);
             vmFlags |= VMFLAG_Z & (*varptr1 == 0);
@@ -417,7 +417,7 @@ int sceneDataProcess()
         case 0x2C: //subvi
             result = *((unsigned short*)(curSceneData + curSceneDataPC));
             curSceneDataPC += 2;
-            varptr1 = getVariableRef(result);
+            varptr1 = GetVariableRef(result);
             result = *((unsigned short*)(curSceneData + curSceneDataPC));
             *varptr1 -= result;
             curSceneDataPC += 2;
@@ -428,9 +428,9 @@ int sceneDataProcess()
         case 0x2D: //subvv
             result = *((unsigned short*)(curSceneData + curSceneDataPC));
             curSceneDataPC += 2;
-            varptr1 = getVariableRef(result);
+            varptr1 = GetVariableRef(result);
             result = *((unsigned short*)(curSceneData + curSceneDataPC));
-            *varptr1 -= *getVariableRef(result);
+            *varptr1 -= *GetVariableRef(result);
             curSceneDataPC += 2;
             vmFlags &= ~(VMFLAG_Z | VMFLAG_N);
             vmFlags |= VMFLAG_Z & (*varptr1 == 0);
@@ -439,14 +439,14 @@ int sceneDataProcess()
         case 0x2E: //ldflg
             result = *((unsigned short*)(curSceneData + curSceneDataPC));
             curSceneDataPC += 2;
-            result = getFlag(result);
+            result = GetFlag(result);
             vmFlags &= ~VMFLAG_Z;
             vmFlags |= result;
             break;
         case 0x2F: //stflg
             result = *((unsigned short*)(curSceneData + curSceneDataPC));
             curSceneDataPC += 2;
-            setFlag(result, vmFlags & VMFLAG_Z);
+            SetFlag(result, vmFlags & VMFLAG_Z);
             break;
         default: //illegal/unimplemented opcode
             break;

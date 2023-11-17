@@ -22,25 +22,25 @@
 //The following wrappers allow for compile time type checking
 
 //Output a byte to the given I/O port (0x00 - 0xFF)
-__attribute__((always_inline)) inline void portOutB(unsigned char port, unsigned char val)
+__attribute__((always_inline)) inline void PortOutB(unsigned char port, unsigned char val)
 {
     outportb(port, val);
 }
 
 //Output a 16-bit number to the given I/O port (0x00 - 0xFF)
-__attribute__((always_inline)) inline void portOutW(unsigned char port, unsigned short val)
+__attribute__((always_inline)) inline void PortOutW(unsigned char port, unsigned short val)
 {
     outportw(port, val);
 }
 
 //Output a 32-bit number to the given I/O port (0x00 - 0xFF)
-__attribute__((always_inline)) inline void portOutD(unsigned char port, unsigned long val)
+__attribute__((always_inline)) inline void PortOutD(unsigned char port, unsigned long val)
 {
     outportd(port, val);
 }
 
 //Get a byte from the given I/O port (0x00 - 0xFF)
-__attribute__((always_inline)) inline unsigned char portInB(unsigned char port)
+__attribute__((always_inline)) inline unsigned char PortInB(unsigned char port)
 {
     unsigned char val;
     inportb(port, val);
@@ -48,7 +48,7 @@ __attribute__((always_inline)) inline unsigned char portInB(unsigned char port)
 }
 
 //Get a 16-bit number from the given I/O port (0x00 - 0xFF)
-__attribute__((always_inline)) inline unsigned short portInW(unsigned char port)
+__attribute__((always_inline)) inline unsigned short PortInW(unsigned char port)
 {
     unsigned short val;
     inportw(port, val);
@@ -56,7 +56,7 @@ __attribute__((always_inline)) inline unsigned short portInW(unsigned char port)
 }
 
 //Get a 32-bit number from the given I/O port (0x00 - 0xFF)
-__attribute__((always_inline)) inline unsigned long portInD(unsigned char port)
+__attribute__((always_inline)) inline unsigned long PortInD(unsigned char port)
 {
     unsigned long val;
     inportd(port, val);
@@ -64,25 +64,25 @@ __attribute__((always_inline)) inline unsigned long portInD(unsigned char port)
 }
 
 //Output a byte to the given I/O port (0x0000 - 0xFFFF)
-__attribute__((always_inline)) inline void portOutBExt(unsigned short port, unsigned char val)
+__attribute__((always_inline)) inline void PortOutBExt(unsigned short port, unsigned char val)
 {
     outportb_ext(port, val);
 }
 
 //Output a 16-bit number to the given I/O port (0x0000 - 0xFFFF)
-__attribute__((always_inline)) inline void portOutWExt(unsigned short port, unsigned short val)
+__attribute__((always_inline)) inline void PortOutWExt(unsigned short port, unsigned short val)
 {
     outportw_ext(port, val);
 }
 
 //Output a 32-bit number to the given I/O port (0x0000 - 0xFFFF)
-__attribute__((always_inline)) inline void portOutDExt(unsigned short port, unsigned long val)
+__attribute__((always_inline)) inline void PortOutDExt(unsigned short port, unsigned long val)
 {
     outportd_ext(port, val);
 }
 
 //Get a byte from the given I/O port (0x0000 - 0xFFFF)
-__attribute__((always_inline)) inline unsigned char portInBExt(unsigned short port)
+__attribute__((always_inline)) inline unsigned char PortInBExt(unsigned short port)
 {
     unsigned char val;
     inportb_ext(port, val);
@@ -90,7 +90,7 @@ __attribute__((always_inline)) inline unsigned char portInBExt(unsigned short po
 }
 
 //Get a 16-bit number from the given I/O port (0x0000 - 0xFFFF)
-__attribute__((always_inline)) inline unsigned short portInWExt(unsigned short port)
+__attribute__((always_inline)) inline unsigned short PortInWExt(unsigned short port)
 {
     unsigned short val;
     inportw_ext(port, val);
@@ -98,7 +98,7 @@ __attribute__((always_inline)) inline unsigned short portInWExt(unsigned short p
 }
 
 //Get a 32-bit number from the given I/O port (0x0000 - 0xFFFF)
-__attribute__((always_inline)) inline unsigned long portInDExt(unsigned short port)
+__attribute__((always_inline)) inline unsigned long PortInDExt(unsigned short port)
 {
     unsigned long val;
     inportd_ext(port, val);

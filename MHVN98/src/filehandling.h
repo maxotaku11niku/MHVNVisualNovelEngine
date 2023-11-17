@@ -5,10 +5,10 @@
 
 extern unsigned char smallFileBuffer[1024];
 
-int createFile(const char* path, unsigned char attributes, int* const handle);
-int openFile(const char* path, unsigned char attribute, int* const handle);
-int closeFile(int handle);
-int readFile(int handle, int len, void* buffer, int* const readbytes);
-int writeFile(int handle, int len, const void* buffer, int* const writebytes);
-int deleteFile(const char* path);
-int seekFile(int handle, unsigned char method, unsigned long len, unsigned long* pos);
+int CreateFile(const char* path, unsigned char attributes, unsigned short* const handle);
+int OpenFile(const char* path, unsigned char attribute, unsigned short* const handle);
+int CloseFile(unsigned short handle);
+int ReadFile(unsigned short handle, unsigned short len, void* buffer, unsigned short* const readbytes);
+int WriteFile(unsigned short handle, unsigned short len, const void* buffer, unsigned short* const writebytes);
+int DeleteFile(const char* path);
+int SeekFile(unsigned short handle, unsigned char method, unsigned long len, unsigned long* pos);
