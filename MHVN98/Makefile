@@ -14,37 +14,40 @@ export GENASMFILES	:= $(addprefix $(GENASM)/,$(CFILES:.c=.asm))
 export SOURCEFILES	:= $(addprefix $(SOURCES)/,$(ASMFILES) $(CFILES))
 export CFILESWD	:= $(addprefix $(SOURCES)/,$(CFILES))
 export ASMFILESWD	:= $(addprefix $(SOURCES)/,$(ASMFILES))
+# Flags
+export CFLAGS	:= -nostdlib -m16 -O2 -march=i386 -mtune=i386
 # Targets
-all: $(PROCESS) $(BUILD) $(TARGET)/MHVN98.COM
+all: $(PROCESS) $(BUILD) $(TARGET) $(TARGET)/MHVN98.COM
 
 .PHONY: showasm
 
-showasm	: $(GENASMFILES)
+showasm	: $(GENASM) $(GENASMFILES)
 
 $(BUILD):
-	[ -d $(BUILD) ] || mkdir -p $(BUILD)
-	make -f $(CURDIR)/Makefile
+	mkdir -p $(BUILD)
 
 $(PROCESS):
-	[ -d $(PROCESS) ] || mkdir -p $(PROCESS)
-	make -f $(CURDIR)/Makefile
+	mkdir -p $(PROCESS)
 
 $(TARGET):
-	[ -d $(TARGET) ] || mkdir -p $(TARGET)
-	make -f $(CURDIR)/Makefile
+	mkdir -p $(TARGET)
+
+$(GENASM):
+	mkdir -p $(GENASM)
 
 	
 $(TARGET)/MHVN98.COM	: $(PROCESS)/mhvn98.o
 	objcopy -O binary $< $@
 
+#Apply some lovely whole program optimisation
 $(PROCESS)/mhvn98.o	: $(OFILES)
-	ld -T doscom.lds -m i386pe -M -O -s -static --relax -n --no-dynamic-linker --print-memory-usage -o $(PROCESS)/mhvn98.o $^
+	gcc $(CFLAGS) -flto -Wa,--32 -Wl,-Tdoscom.lds,-mi386pe,-M,-static,--relax,-n,--no-dynamic-linker,--print-memory-usage -o $(PROCESS)/mhvn98.o $^
 
 $(BUILD)/%.o: $(SOURCES)/%.asm
 	as $< -o $@ -march=i386 -mtune=i386 --32
 
 $(BUILD)/%.o: $(SOURCES)/%.c
-	gcc $< -o $@ -nostdlib -m16 -Os -fpeephole -fipa-icf -march=i386 -mtune=i386 -c -Wa,--32
+	gcc $< -o $@ $(CFLAGS) -flto -c -Wa,--32
 
 $(GENASM)/%.asm	: $(SOURCES)/%.c
-	gcc $< -S -o $@ -nostdlib -m16 -Os -fpeephole -fipa-icf -march=i386 -mtune=i386 -c
+	gcc $< -S -o $@ $(CFLAGS) -c
