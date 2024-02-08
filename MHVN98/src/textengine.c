@@ -256,9 +256,9 @@ static void MaskChar(unsigned long* charb, const unsigned short* chosenMask)
 static void DrawChar(const unsigned long* charb, short x, short y)
 {
     unsigned short* planeptr = (unsigned short*)(y * 80 + ((x >> 3) & 0xFFFE));
-    setes(GDC_PLANES_SEGMENT);
     unsigned short xinblock = x & 0x000F;
     egc_bitaddrbtmode(EGC_BLOCKTRANSFER_FORWARD | EGC_BITADDRESS_DEST(xinblock));
+    setes(GDC_PLANES_SEGMENT);
     if(xinblock) //Unaligned
     {
         __asm volatile (
@@ -266,8 +266,8 @@ static void DrawChar(const unsigned long* charb, short x, short y)
             "loop%=: movsw\n\t"
             "movsw\n\t"
             "stosw\n\t"
-            "addw $74, %1\n\t"
-            "cmpw %%bx, %1\n\t"
+            "addw $74, %w1\n\t"
+            "cmpw %%bx, %w1\n\t"
             "jne loop%=\n\t"
         : "+S" (charb), "+D" (planeptr) : : "%bx", "memory");
         /*/
@@ -285,8 +285,8 @@ static void DrawChar(const unsigned long* charb, short x, short y)
             "lea 0x500(%%di), %%bx\n"
             "loop%=: movsw\n\t"
             "movsw\n\t"
-            "addw $76, %1\n\t"
-            "cmpw %%bx, %1\n\t"
+            "addw $76, %w1\n\t"
+            "cmpw %%bx, %w1\n\t"
             "jne loop%=\n\t"
         : "+S" (charb), "+D" (planeptr) : : "%bx", "memory");
         /*/
@@ -302,21 +302,21 @@ static void DrawChar(const unsigned long* charb, short x, short y)
 static void DrawCharMask(const unsigned long* charb, short x, short y, const unsigned short* chosenMask)
 {
     unsigned short* planeptr = (unsigned short*)(y * 80 + ((x >> 3) & 0xFFFE));
-    setes(GDC_PLANES_SEGMENT);
     unsigned short xinblock = x & 0x000F;
     egc_bitaddrbtmode(EGC_BLOCKTRANSFER_FORWARD | EGC_BITADDRESS_DEST(xinblock));
+    setes(GDC_PLANES_SEGMENT);
     if(xinblock) //Unaligned
     {
         __asm volatile (
             "xor %%cx, %%cx\n\t"
             "push %%bp\n\t"
-            "movw %2, %%bp\n"
+            "movw %w2, %%bp\n"
             "loop%=: lodsw\n\t"
             "movw %%cx, %%dx\n\t"
             "andw $6, %%dx\n\t"
-            "movw %%bp, %2\n\t"
-            "addw %%dx, %2\n\t"
-            "movw (%2), %%dx\n\t"
+            "movw %%bp, %w2\n\t"
+            "addw %%dx, %w2\n\t"
+            "movw (%w2), %%dx\n\t"
             "andw %%dx, %%ax\n\t"
             "stosw\n\t"
             "lodsw\n\t"
@@ -346,13 +346,13 @@ static void DrawCharMask(const unsigned long* charb, short x, short y, const uns
         __asm volatile (
             "xor %%cx, %%cx\n\t"
             "push %%bp\n\t"
-            "movw %2, %%bp\n"
+            "movw %w2, %%bp\n"
             "loop%=: lodsw\n\t"
             "movw %%cx, %%dx\n\t"
             "andw $6, %%dx\n\t"
-            "movw %%bp, %2\n\t"
-            "addw %%dx, %2\n\t"
-            "movw (%2), %%dx\n\t"
+            "movw %%bp, %w2\n\t"
+            "addw %%dx, %w2\n\t"
+            "movw (%w2), %%dx\n\t"
             "andw %%dx, %%ax\n\t"
             "stosw\n\t"
             "lodsw\n\t"

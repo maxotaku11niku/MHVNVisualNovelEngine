@@ -79,10 +79,12 @@ int main(void)
     unsigned char textSkip = 0;
     int sceneProcessResult;
     vsynced = 0;
+    gdc_interruptreset(); //Prevents a spinlock
     while (1)
     {
         while (1) //Wait for vsync
         {
+            __asm ("hlt"); //Save energy
             if(vsynced) break;
         }
         sceneProcessResult = SceneDataProcess();
