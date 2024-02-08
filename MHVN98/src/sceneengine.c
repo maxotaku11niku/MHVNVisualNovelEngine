@@ -1,6 +1,11 @@
-#include "x86strops.h"
-#include "memalloc.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <libi86/malloc.h>
+#include <dos.h>
+//#include "x86strops.h"
+//#include "memalloc.h"
 #include "filehandling.h"
+#include "stdbuffer.h"
 #include "pc98_egc.h"
 #include "rootinfo.h"
 #include "sceneengine.h"
@@ -27,9 +32,10 @@ int returnStatus;
 unsigned short curCharNum;
 unsigned short nextTextNum;
 char curCharName[64];
-char* curTextArray[256];
-char* sceneTextBuffer = 0;
-unsigned short sdHandle;
+unsigned int curTextArray[256];
+__far char* sceneTextBuffer = 0;
+int sdHandle;
+//FILE* sdHandle;
 
 short scratchVars[32];
 short globalVars[128];
@@ -42,20 +48,34 @@ unsigned char localFlags[320];
 int LoadNewScene(unsigned short sceneNum)
 {
     if (sceneNum == sceneInfo.curScene) return 0; //Don't change scene if scene number isn't going to change
-    unsigned short realReadLen;
+    unsigned int realReadLen;
     unsigned long curfilepos;
     unsigned long scenedatpos;
-    int result = OpenFile(rootInfo.sceneDataPath, FILE_OPEN_READ, &sdHandle);
+    int result = _dos_open(rootInfo.sceneDataPath, 0, &sdHandle);
+    //sdHandle = fopen(rootInfo.sceneDataPath, "rb");
     if (result)
+    //if (sdHandle == 0)
     {
         WriteString("Error! Could not find scene data file!", 168, 184, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF), 0);
         return result; //Error handler
+        //return 1; //Error handler
     }
+    /**/
     SeekFile(sdHandle, FILE_SEEK_ABSOLUTE, 4 + 4 * sceneNum, &curfilepos);
-    ReadFile(sdHandle, 4, &scenedatpos, &realReadLen);
+    __far unsigned char* sdp = &scenedatpos;
+    _dos_read(sdHandle, sdp, 4, &realReadLen);
     SeekFile(sdHandle, FILE_SEEK_ABSOLUTE, 4 + 4 * sceneInfo.numScenes + scenedatpos, &curfilepos);
-    ReadFile(sdHandle, 1024, curSceneData, &realReadLen);
-    CloseFile(sdHandle);
+    __far unsigned char* csd = curSceneData;
+    _dos_read(sdHandle, csd, 1024, &realReadLen);
+    _dos_close(sdHandle);
+    //*/
+    /*/
+    fseek(sdHandle, 4 + 4 * sceneNum, SEEK_SET);
+    fread(&scenedatpos, 1, 4, sdHandle);
+    fseek(sdHandle, 4 + 4 * sceneInfo.numScenes + scenedatpos, SEEK_SET);
+    fread(curSceneData, 1, 1024, sdHandle);
+    fclose(sdHandle);
+    //*/
     result = LoadSceneText(sceneNum, sceneTextBuffer, curTextArray);
     if (result) return result;
     curSceneDataPC = 0;
@@ -67,26 +87,33 @@ int LoadNewScene(unsigned short sceneNum)
 
 int SetupSceneEngine()
 {
-    unsigned short realReadLen;
-    int result = OpenFile(rootInfo.sceneDataPath, FILE_OPEN_READ, &sdHandle);
+    unsigned int realReadLen;
+    int result = _dos_open(rootInfo.sceneDataPath, 0, &sdHandle);
+    //sdHandle = fopen(rootInfo.sceneDataPath, "rb");
     if (result)
+    //if (sdHandle == 0)
     {
         WriteString("Error! Could not find scene data file!", 168, 184, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF), 0);
         return result; //Error handler
+        //return 1; //Error handler
     }
-    ReadFile(sdHandle, 4, smallFileBuffer, &realReadLen);
+    __far unsigned char* fb = smallFileBuffer;
+    _dos_read(sdHandle, fb, 4, &realReadLen);
+    //fread(smallFileBuffer, 1, 4, sdHandle);
     sceneInfo.numScenes = *((unsigned short*)(smallFileBuffer));
     sceneInfo.numChars = *((unsigned short*)(smallFileBuffer + 0x02));
-    sceneTextBuffer = MemAlloc(0x10000);
+    sceneTextBuffer = _fmalloc(0xFFFF);
     sceneInfo.curScene = 0xFFFF;
-    CloseFile(sdHandle);
+    _dos_close(sdHandle);
+    //fclose(sdHandle);
     return LoadNewScene(0);
 }
 
 int FreeSceneEngine()
 {
     if (sceneTextBuffer == 0) return 0;
-    else return MemFree(sceneTextBuffer);
+    else _ffree(sceneTextBuffer);
+    return 0;
 }
 
 short* GetVariableRef(unsigned short addr)
@@ -233,6 +260,7 @@ int SceneDataProcess()
         switch (curOpcode)
         {
         case 0x00: //gotoscene
+        {
             unsigned short sNum = *((unsigned short*)(curSceneData + curSceneDataPC));
             if (sNum == 0xFFFF) //scene number FFFF is a proxy for the end of the whole VN
             {
@@ -249,6 +277,7 @@ int SceneDataProcess()
             }
             curSceneDataPC += 2;
             break;
+        }
         case 0x01: //jmp
             curSceneDataPC += 2;
             vmJump:
@@ -292,13 +321,14 @@ int SceneDataProcess()
                 curSceneDataPC--; //compensation
                 goto delText;
             }
-            StartAnimatedStringToWrite(curTextArray[nextTextNum], textBoxlX, textBoxtY, rootInfo.defFormatNormal);
+            StartAnimatedStringToWrite(sceneTextBuffer + curTextArray[nextTextNum], textBoxlX, textBoxtY, rootInfo.defFormatNormal);
             nextTextNum++;
             vmFlags |= VMFLAG_TEXTINBOX;
             vmFlags &= ~VMFLAG_PROCESS;
             returnStatus |= SCENE_STATUS_RENDERTEXT;
             break;
         case 0x12: //charname
+        {
             unsigned short charNum = *((unsigned short*)(curSceneData + curSceneDataPC));
             if (charNum != curCharNum)
             {
@@ -318,6 +348,7 @@ int SceneDataProcess()
             }
             curSceneDataPC += 2;
             break;
+        }
         case 0x1F: //deltext
             delText:
             ClearTextBox();

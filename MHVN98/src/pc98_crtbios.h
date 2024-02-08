@@ -2,7 +2,7 @@
 #pragma once
 
 //INT 18 function 0A - Text Mode Set (with 'mode')
-#define pc98crt_textmodeset(mode) asm volatile ("movb $10, %%ah\n\tint $24" : : "a" (mode))
+#define pc98crt_textmodeset(mode) __asm volatile ("movb $10, %%ah\n\tint $24" : : "a" (mode))
 //Supporting defines
 #define CRT_MODE_TEXT_25_ROWS       0x00
 #define CRT_MODE_TEXT_20_ROWS       0x01
@@ -13,20 +13,20 @@
 #define CRT_MODE_TEXT_CGACCESS_CODE 0x00
 #define CRT_MODE_TEXT_CGACCESS_DOT  0x08
 //INT 18 function 0B - Text Mode Get (put in 'mode')
-#define pc98crt_textmodeget(mode) asm volatile ("movb $11, %%ah\n\tint $24" : "=a" (mode) : )
+#define pc98crt_textmodeget(mode) __asm volatile ("movb $11, %%ah\n\tint $24" : "=a" (mode) : )
 //Supporting defines
 #define CRT_MODE_CRTTYPE_STANDARD 0x00
 #define CRT_MODE_CRTTYPE_HIGH     0x80
 //INT 18 function 0C - Turn Text Layer On
-#define pc98crt_texton() asm volatile ("movb $12, %%ah\n\tint $24" : : : "ah")
+#define pc98crt_texton() __asm volatile ("movb $12, %%ah\n\tint $24" : : : "ah")
 //INT 18 function 0D - Turn Text Layer Off
-#define pc98crt_textoff() asm volatile ("movb $13, %%ah\n\tint $24" : : : "ah")
+#define pc98crt_textoff() __asm volatile ("movb $13, %%ah\n\tint $24" : : : "ah")
 //INT 18 function 40 - Turn Graphics Layer On
-#define pc98crt_graphicon() asm volatile ("movb $64, %%ah\n\tint $24" : : : "ah")
+#define pc98crt_graphicon() __asm volatile ("movb $64, %%ah\n\tint $24" : : : "ah")
 //INT 18 function 41 - Turn Graphics Layer Off
-#define pc98crt_graphicoff() asm volatile ("movb $65, %%ah\n\tint $24" : : : "ah")
+#define pc98crt_graphicoff() __asm volatile ("movb $65, %%ah\n\tint $24" : : : "ah")
 //INT 18 function 42 - Graphics Mode Set
-#define pc98crt_graphicmodeset(mode) asm volatile ("movb $66, %%ah\n\tmovb %0, %%ch\n\tint $24" : : "rmi" (mode) : "ah", "ch")
+#define pc98crt_graphicmodeset(mode) __asm volatile ("movb $66, %%ah\n\tmovb %0, %%ch\n\tint $24" : : "rmi" (mode) : "ah", "ch")
 //Supporting defines
 #define CRT_MODE_GRAPHIC_PAGE0         0x00
 #define CRT_MODE_GRAPHIC_PAGE1         0x10

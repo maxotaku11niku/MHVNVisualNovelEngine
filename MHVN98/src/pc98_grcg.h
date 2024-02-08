@@ -1,11 +1,12 @@
 //PC-98 graphic charger interface
 #pragma once
 
-#include "x86ports.h"
+//#include "x86ports.h"
+#include <dos.h>
 #include "pc98_gdc.h"
 
 //OUTPORT 7C - Set GRCG Mode
-#define grcg_writemode(mode) PortOutB(0x7C, mode)
+#define grcg_writemode(mode) outportb(0x7C, mode)
 //Supporting defines
 //For convenience, as hardware uses bit = 0 to indicate access, we NOT a mask where bit = 1 indicates access
 #define GRCG_PLANEMASK(mask) (0x0F & (~(mask)))
@@ -19,7 +20,7 @@
 #define GRCG_ENABLE   0x80
 
 //OUTPORT 7E - Set GRCG Tile Register (this cycles through the planes, so be careful when using it)
-#define grcg_writetile(tile) PortOutB(0x7E, tile)
+#define grcg_writetile(tile) outportb(0x7E, tile)
 
 __attribute__((always_inline)) inline void GRCGEnable()
 {
@@ -60,4 +61,4 @@ __attribute__((always_inline)) inline void SetGRCGMode(unsigned char mode)
 //Clears the screen very fast using the GRCG (must enable beforehand)
 void ClearScreenGRCG(unsigned char clearCol);
 //Clears some lines very fast using the GRCG (must enable beforehand)
-void ClearLinesGRCG(unsigned char clearCol, unsigned long startLine, unsigned long numLines);
+void ClearLinesGRCG(unsigned char clearCol, unsigned short startLine, unsigned short numLines);

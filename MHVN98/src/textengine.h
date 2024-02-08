@@ -42,7 +42,7 @@ int SetupTextInfo();
 int LoadCurrentCharacterName(unsigned short charNumber, char* nameBuffer);
 
 //Load the given scene number's text
-int LoadSceneText(unsigned short sceneNumber, char* textDataBuffer, char** textPtrsBuffer);
+int LoadSceneText(unsigned short sceneNumber, __far char* textDataBuffer, unsigned int* textPtrsBuffer);
 
 //Set the custom protagonist info item appropriately
 void SetCustomInfo(unsigned short num, char* str);
@@ -51,7 +51,7 @@ void SetCustomInfo(unsigned short num, char* str);
 void WriteString(const char* str, const short x, const short y, short format, unsigned char autolb);
 
 //Start an animated string write of string 'str', starting from position (x, y) with format given by 'format'
-void StartAnimatedStringToWrite(const char* str, const short x, const short y, short format);
+void StartAnimatedStringToWrite(const __far char* str, const short x, const short y, short format);
 
 //Do the next frame of the string write animation
 int StringWriteAnimationFrame(unsigned char skip);

@@ -1,27 +1,62 @@
 # Directories
-TARGET	:= bin
-BUILD	:= obj
-PROCESS	:= objp
-SOURCES	:= src
-GENASM	:= genasm
+TARGET  := bin
+BUILD   := obj
+SOURCES := src
+GENASM  := genasm
 # Find source files
-export ASMFILES		:= $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.asm)))
-export CFILES	:= $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
-export OFILESC	:= $(addprefix $(BUILD)/,$(CFILES:.c=.o))
-export OFILESASM	:= $(addprefix $(BUILD)/,$(ASMFILES:.asm=.o))
-export OFILES	:= $(addprefix $(BUILD)/,$(ASMFILES:.asm=.o) $(CFILES:.c=.o))
-export GENASMFILES	:= $(addprefix $(GENASM)/,$(CFILES:.c=.asm))
-export SOURCEFILES	:= $(addprefix $(SOURCES)/,$(ASMFILES) $(CFILES))
-export CFILESWD	:= $(addprefix $(SOURCES)/,$(CFILES))
-export ASMFILESWD	:= $(addprefix $(SOURCES)/,$(ASMFILES))
+export ASMFILES    := $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.asm)))
+export CFILES      := $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
+export HEADERS     := $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.h)))
+export OFILESC     := $(addprefix $(BUILD)/,$(CFILES:.c=.o))
+export OFILESASM   := $(addprefix $(BUILD)/,$(ASMFILES:.asm=.o))
+export OFILES      := $(addprefix $(BUILD)/,$(ASMFILES:.asm=.o) $(CFILES:.c=.o))
+export GENASMFILES := $(addprefix $(GENASM)/,$(CFILES:.c=.asm))
+export SOURCEFILES := $(addprefix $(SOURCES)/,$(ASMFILES) $(CFILES))
+export CFILESWD    := $(addprefix $(SOURCES)/,$(CFILES))
+export HEADERSWD   := $(addprefix $(SOURCES)/,$(HEADERS))
+export ASMFILESWD  := $(addprefix $(SOURCES)/,$(ASMFILES))
 # Flags
-export CFLAGS	:= -nostdlib -m16 -O2 -march=i386 -mtune=i386
-# Targets
-all: $(PROCESS) $(BUILD) $(TARGET) $(TARGET)/MHVN98.COM
+export CFLAGSBASE       := -march=i286 -mcmodel=small
+export CFLAGSRELEASE    := $(CFLAGSBASE) -O2
+export CFLAGSDEBUG      := $(CFLAGSBASE) -O2
+export CFLAGS           := $(CFLAGSBASE)
+export LINKFLAGSBASE    := -Wl,-melf_i386_msdos_mz,-M,-static,--relax,-n,--no-dynamic-linker,--print-memory-usage
+export LINKFLAGSRELEASE := $(LINKFLAGSBASE)
+export LINKFLAGSDEBUG   := $(LINKFLAGSBASE)
+export LINKFLAGS        := $(LINKFLAGSBASE)
+export LINKLIBS         := -li86
 
-.PHONY: showasm
+# Define some variable overrides
+default : CFLAGS = $(CFLAGSRELEASE)
+debug : CFLAGS = $(CFLAGSDEBUG)
 
-showasm	: $(GENASM) $(GENASMFILES)
+default : LINKFLAGS = $(LINKFLAGSRELEASE)
+debug : LINKFLAGS = $(LINKFLAGSDEBUG)
+
+.PHONY: default debug showasm clean cleanasm
+
+all : default
+
+#Builds an optmised executable, but it will be horrible for debugging purposes
+default : $(BUILD) $(TARGET) wholeprog.o $(OFILESASM)
+	ia16-elf-gcc $(CFLAGS) $(LINKFLAGS) -o $(TARGET)/MHVN98.EXE wholeprog.o $(OFILESASM) $(LINKLIBS)
+
+#Build a debug-friendly version (at least, it's much easier to use a memory viewer to locate stuff, it's not your usual debug executable)
+debug :  $(BUILD) $(TARGET) $(TARGET)/MHVN98.EXE
+
+#Compiles the source files to assembly language for curiosity's sake
+showasm : $(GENASM) $(GENASMFILES)
+
+#Cleans the build directory
+clean : $(BUILD) $(TARGET)
+	rm -rf $(BUILD)
+	rm -rf $(TARGET)
+	mkdir -p $(BUILD)
+	mkdir -p $(TARGET)
+
+#Removes the generated assembly files
+cleanasm : $(GENASM)
+	rm -rf $(GENASM)
 
 $(BUILD):
 	mkdir -p $(BUILD)
@@ -35,19 +70,20 @@ $(TARGET):
 $(GENASM):
 	mkdir -p $(GENASM)
 
-	
-$(TARGET)/MHVN98.COM	: $(PROCESS)/mhvn98.o
-	objcopy -O binary $< $@
-
 #Apply some lovely whole program optimisation
-$(PROCESS)/mhvn98.o	: $(OFILES)
-	gcc $(CFLAGS) -flto -Wa,--32 -Wl,-Tdoscom.lds,-mi386pe,-M,-static,--relax,-n,--no-dynamic-linker,--print-memory-usage -o $(PROCESS)/mhvn98.o $^
+$(TARGET)/MHVN98.EXE : $(OFILES)
+	ia16-elf-gcc $(CFLAGS) $(LINKFLAGS) -o $@ $^ $(LINKLIBS)
+
+$(OFILES) : $(SOURCEFILES) $(HEADERSWD)
+
+wholeprog.o : wholeprog.c $(SOURCEFILES) $(HEADERSWD)
+	ia16-elf-gcc wholeprog.c -o wholeprog.o $(CFLAGS) -fwhole-program -c
 
 $(BUILD)/%.o: $(SOURCES)/%.asm
-	as $< -o $@ -march=i386 -mtune=i386 --32
+	ia16-elf-as $< -o $@ -O2
 
 $(BUILD)/%.o: $(SOURCES)/%.c
-	gcc $< -o $@ $(CFLAGS) -flto -c -Wa,--32
+	ia16-elf-gcc $< -o $@ $(CFLAGS) -c
 
 $(GENASM)/%.asm	: $(SOURCES)/%.c
-	gcc $< -S -o $@ $(CFLAGS) -c
+	ia16-elf-gcc $< -S -o $@ $(CFLAGS) -c

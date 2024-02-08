@@ -1,4 +1,5 @@
 //Unreal mode flat addressing compensation for hardware addresses
+/*/
 #pragma once
 
 extern unsigned long* ivt_relptr;
@@ -14,3 +15,4 @@ extern unsigned short* key_buffercount_relptr;
 extern unsigned char* key_errorretry_relptr;
 extern unsigned char* key_status_relptr;
 extern unsigned char* key_mod_relptr;
+//*/

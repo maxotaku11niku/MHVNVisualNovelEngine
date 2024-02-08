@@ -1,21 +1,21 @@
-//x86 port access intrinsics
+//x86 port access intrinsics (redundant)
 #pragma once
-
+/*/
 //Port access, using 8-bit immediate address
-#define outportb(port, val) asm inline ("out %b0, %1" : : "a" (val), "i" (port))
-#define outportw(port, val) asm inline ("out %w0, %1" : : "a" (val), "i" (port))
-#define outportd(port, val) asm inline ("out %k0, %1" : : "a" (val), "i" (port))
+#define outportb(port, val) asm volatile ("out %%al, %1" : : "a" (val), "i" (port))
+#define outportw(port, val) asm volatile ("out %w0, %1" : : "a" (val), "i" (port))
+#define outportd(port, val) asm volatile ("out %k0, %1" : : "a" (val), "i" (port))
 
-#define inportb(port, val) asm volatile ("in %1, %b0" : "=a" (val) : "i" (port))
+#define inportb(port, val) asm volatile ("in %1, %%al" : "=a" (val) : "i" (port))
 #define inportw(port, val) asm volatile ("in %1, %w0" : "=a" (val) : "i" (port))
 #define inportd(port, val) asm volatile ("in %1, %k0" : "=a" (val) : "i" (port))
 
 //Port access, using 16-bit address in dx
-#define outportb_ext(port, val) asm inline ("out %b0, %w1" : : "a" (val), "d" (port))
-#define outportw_ext(port, val) asm inline ("out %w0, %w1" : : "a" (val), "d" (port))
-#define outportd_ext(port, val) asm inline ("out %k0, %w1" : : "a" (val), "d" (port))
+#define outportb_ext(port, val) asm volatile ("out %%al, %w1" : : "a" (val), "d" (port))
+#define outportw_ext(port, val) asm volatile ("out %w0, %w1" : : "a" (val), "d" (port))
+#define outportd_ext(port, val) asm volatile ("out %k0, %w1" : : "a" (val), "d" (port))
 
-#define inportb_ext(port, val) asm volatile ("in %w1, %b0" : "=a" (val) : "d" (port))
+#define inportb_ext(port, val) asm volatile ("in %w1, %%al" : "=a" (val) : "d" (port))
 #define inportw_ext(port, val) asm volatile ("in %w1, %w0" : "=a" (val) : "d" (port))
 #define inportd_ext(port, val) asm volatile ("in %w1, %k0" : "=a" (val) : "d" (port))
 
@@ -104,3 +104,4 @@ __attribute__((always_inline)) inline unsigned long PortInDExt(unsigned short po
     inportd_ext(port, val);
     return val;
 }
+//*/

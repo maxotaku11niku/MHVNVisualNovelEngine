@@ -1,5 +1,9 @@
+#include <stdio.h>
+#include <string.h>
+#include <dos.h>
 #include "x86strops.h"
-#include "filehandling.h"
+//#include "filehandling.h"
+#include "stdbuffer.h"
 #include "textengine.h"
 #include "rootinfo.h"
 
@@ -9,23 +13,28 @@ static const char* magicNumber = "MHVN";
 
 int ReadInRootInfo()
 {
-    MemsetSeg(0, &rootInfo, sizeof(RootInfo)); //Zero out the root info structure
-    unsigned short handle;
-    unsigned short realReadLen;
-    int result = OpenFile("ROOTINFO.DAT", FILE_OPEN_READ, &handle);
+    //MemsetSeg(0, &rootInfo, sizeof(RootInfo));
+    memset(&rootInfo, 0, sizeof(RootInfo)); //Zero out the root info structure
+    int handle;
+    unsigned int realReadLen;
+    //FILE* handle = fopen("ROOTINFO.DAT", "rb");
+    int result = _dos_open("ROOTINFO.DAT", 0, &handle);
     if (result)
+    //if (handle == 0)
     {
         WriteString("Error! Could not find ROOTINFO.DAT!", 180, 184, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF), 0);
         return result; //Error handler
+        //return 1; //Error handler
     }
-    ReadFile(handle, 0x7C, smallFileBuffer, &realReadLen);
+    __far unsigned char* fb = smallFileBuffer;
+    _dos_read(handle, fb, 0x7C, &realReadLen);
+    //fread(smallFileBuffer, 1, 0x7C, handle);
     for (int i = 0; i < 4; i++)
     {
         if (smallFileBuffer[i] != magicNumber[i])
         {
             WriteString("Error! ROOTINFO.DAT is not valid!", 188, 184, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF), 0);
-            result = 0xFF;
-            return result; //Wrong file format error
+            return 0xFF; //Wrong file format error
         }
     }
     //Read in all root info
@@ -38,7 +47,7 @@ int ReadInRootInfo()
     rootInfo.defFormatCharName = *((unsigned short*)(smallFileBuffer + 0x10));
     rootInfo.defFormatMenuItem = *((unsigned short*)(smallFileBuffer + 0x12));
     rootInfo.defFormatMenuItemSelected = *((unsigned short*)(smallFileBuffer + 0x14));
-    for (unsigned short i = 0; i < 12; i++)
+    for (int i = 0; i < 12; i++)
     {
         rootInfo.sceneDataPath[i] = smallFileBuffer[0x16 + i];
         rootInfo.langDataPath[i] = smallFileBuffer[0x22 + i];
@@ -48,54 +57,67 @@ int ReadInRootInfo()
         rootInfo.sfxDataPath[i] = smallFileBuffer[0x52 + i];
         rootInfo.systemDataPath[i] = smallFileBuffer[0x5E + i];
     }
-    CloseFile(handle);
+    //fclose(handle);
+    _dos_close(handle);
     return 0;
 }
 
 int InitLanguage(unsigned short lang)
 {
-    unsigned short handle;
-    unsigned short realReadLen;
-    int result = OpenFile(rootInfo.langDataPath, FILE_OPEN_READ, &handle);
+    int handle;
+    unsigned int realReadLen;
+    int result = _dos_open(rootInfo.langDataPath, 0, &handle);
+    //FILE* handle = fopen(rootInfo.langDataPath, "rb");
     if (result)
+    //if (handle == 0)
     {
         WriteString("Error! Could not find language data file!", 156, 184, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF), 0);
         return result; //Error handler
+        //return 1; //Error handler
     }
-    ReadFile(handle, 1024, smallFileBuffer, &realReadLen);
+    __far unsigned char* fb = smallFileBuffer;
+    _dos_read(handle, fb, 1024, &realReadLen);
+    //fread(smallFileBuffer, 1, 1024, handle);
     rootInfo.numLang = *((unsigned short*)(smallFileBuffer));
     rootInfo.curLang = lang;
     char* tdPath = smallFileBuffer + smallFileBuffer[2 + 4 * lang];
-    for (unsigned short i = 0; i < 12; i++)
+    for (unsigned int i = 0; i < 12; i++)
     {
         const char ch = tdPath[i];
         if (ch) rootInfo.curTextDataPath[i] = ch;
         else break;
     }
-    CloseFile(handle);
+    //fclose(handle);
+    _dos_close(handle);
     return 0;
 }
 
 int ChangeLanguage(unsigned short newLang)
 {
     if (newLang == rootInfo.curLang) return 0; //Do not go through all this if we're not actually changing the language
-    unsigned short handle;
-    unsigned short realReadLen;
-    int result = OpenFile(rootInfo.langDataPath, FILE_OPEN_READ, &handle);
+    int handle;
+    unsigned int realReadLen;
+    int result = _dos_open(rootInfo.langDataPath, 0, &handle);
+    //FILE* handle = fopen(rootInfo.langDataPath, "rb");
     if (result)
+    //if (handle == 0)
     {
         WriteString("Error! Could not find language data file!", 156, 184, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF), 0);
         return result; //Error handler
+        //return 1; //Error handler
     }
-    ReadFile(handle, 1024, smallFileBuffer, &realReadLen);
+    __far unsigned char* fb = smallFileBuffer;
+    _dos_read(handle, fb, 1024, &realReadLen);
+    //fread(smallFileBuffer, 1, 1024, handle);
     rootInfo.curLang = newLang;
     char* tdPath = smallFileBuffer + smallFileBuffer[2 + 4 * newLang];
-    for (unsigned short i = 0; i < 12; i++)
+    for (unsigned int i = 0; i < 12; i++)
     {
         const char ch = tdPath[i];
         if (ch) rootInfo.curTextDataPath[i] = ch;
         else break;
     }
-    CloseFile(handle);
+    //fclose(handle);
+    _dos_close(handle);
     return 0;
 }

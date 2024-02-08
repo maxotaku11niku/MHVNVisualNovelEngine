@@ -75,7 +75,7 @@ const char* missingTextMessage = "ERROR - %s, line %u: declaration is missing bo
 const char* noSceneMessage = "ERROR - %s, line %u: normal text entry declared without a valid scene declaration, nor with a system reserved label. Entry ignored.\n";
 
 //Quick convenience function
-inline char SingleHexCharToBinary(char ch)
+char SingleHexCharToBinary(char ch)
 {
     switch (ch)
     {

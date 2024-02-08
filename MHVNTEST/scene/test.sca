@@ -32,7 +32,7 @@ charname CONFUSED
 text SCENE_TEST_000D_YES_1
 jmp endsurprise
 
-98surprise:
+98nosurprise:
 text SCENE_TEST_000D_NO_0
 charname CONFUSED
 text SCENE_TEST_000D_NO_1

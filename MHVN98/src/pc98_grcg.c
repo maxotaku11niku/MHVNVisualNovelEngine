@@ -9,12 +9,14 @@ void ClearScreenGRCG(unsigned char clearCol)
 {
     SetGRCGMode(GRCG_ENABLE | GRCG_MODE_TDW | GRCG_PLANEMASK(0x0F));
     SetGRCGTilesToColour(clearCol);
-    Memset32Flat(0x00000000, gdcPlane0_relptr, 8000);
+    setes(GDC_PLANES_SEGMENT);
+    Memset16Seg(0x0000, 0, 16000);
 }
 
-void ClearLinesGRCG(unsigned char clearCol, unsigned long startLine, unsigned long numLines)
+void ClearLinesGRCG(unsigned char clearCol, unsigned short startLine, unsigned short numLines)
 {
     SetGRCGMode(GRCG_ENABLE | GRCG_MODE_TDW | GRCG_PLANEMASK(0x0F));
     SetGRCGTilesToColour(clearCol);
-    Memset32Flat(0x00000000, gdcPlane0_relptr + startLine * 80, 20 * numLines);
+    setes(GDC_PLANES_SEGMENT);
+    Memset16Seg(0x0000, startLine * 80, 40 * numLines);
 }

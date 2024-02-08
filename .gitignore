@@ -1,4 +1,5 @@
 .vscode/
+.kdev4/
 MHVN98/bin/
 MHVN98/obj/
 MHVN98/objp/
@@ -6,16 +7,20 @@ MHVN98/genasm/
 MHVN98/br.bat
 MHVN98/putandrun.bat
 MHVN98/run.bat
+MHVN98/wholeprog.o
 MHVNTEST/bin/
 MHVNTEST/obj/
 MHVNTEST/out/
 MHVNTEST/tools/
 MHVNTXAR/bin/
+MHVNTXAR/obj/
 MHVNTXAR/genasm/
 MHVNTXAR/build.bat
 MHVNSCAS/bin/
+MHVNSCAS/obj/
 MHVNSCAS/genasm/
 MHVNSCAS/build.bat
 MHVNLINK/bin/
+MHVNLINK/obj/
 MHVNLINK/genasm/
 MHVNLINK/build.bat

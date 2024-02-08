@@ -5,16 +5,18 @@
 .text
 
 	.p2align 2
-	.globl	_VsyncInterrupt
-	.def	_VsyncInterrupt;	.scl	2;	.type	32;	.endef
-_VsyncInterrupt:
+	.globl	VsyncInterrupt
+	;#.def	VsyncInterrupt;	.scl	2;	.type	32;	.endef
+VsyncInterrupt:
 	push ax
-	movb _vsynced, 1
+	movb ss:vsynced, 1
 	out 0x64, al	;#PC-98 GDC I/O: CRT interrupt reset
 	mov al, 0x20
 	out 0x00, al	;#PC-98 interrupt controller: signal end of interrupt
 	pop ax
 	iret
 	
-.data
-	.globl	_vsynced
+.bss
+	.globl	vsynced
+	vsynced: .skip 1,0
+

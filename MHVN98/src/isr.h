@@ -2,4 +2,6 @@
 
 #include "x86interrupt.h"
 
-INTFUNC void VsyncInterrupt(void*);
+INTFUNC void VsyncInterrupt();
+
+extern volatile unsigned char vsynced;

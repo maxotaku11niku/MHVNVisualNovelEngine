@@ -1,3 +1,4 @@
+/*/
 #include "unreal_keyboard.h"
 
 unsigned char prevKeyStatus[16];
@@ -15,3 +16,4 @@ void UpdatePrevKeyStatus()
         pkstat[i] = kspart;
     }
 }
+//*/

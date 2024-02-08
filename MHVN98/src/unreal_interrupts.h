@@ -1,3 +1,4 @@
+/*/
 #pragma once
 
 #include "unrealhwaddr.h"
@@ -23,3 +24,4 @@ __attribute__((always_inline)) inline void SetInterruptFunction(unsigned char nu
     getcs(codeSeg);
     ivt_relptr[num] = ((unsigned long)ptr & 0x0000FFFF) | ((unsigned long)codeSeg << 16);
 }
+//*/

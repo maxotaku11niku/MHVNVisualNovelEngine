@@ -1,31 +1,95 @@
 # Directories
-TARGET	:= bin
-BUILD	:= obj
-SOURCES	:= src
-GENASM	:= genasm
+TARGET  := bin
+EXE     := mhvnscas
+BUILD   := obj
+SOURCES := src
+GENASM  := genasm
 # Find source files
-export CFILES	:= $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
-export FULLCFILES	:= $(addprefix $(SOURCES)/,$(CFILES))
-export CPPFILES	:= $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
-export FULLCPPFILES	:= $(addprefix $(SOURCES)/,$(CPPFILES))
-export GENASMFILESC	:= $(addprefix $(GENASM)/,$(CFILES:.c=.asm))
-export GENASMFILESCPP	:= $(addprefix $(GENASM)/,$(CPPFILES:.cpp=.asm))
+export CFILES       := $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
+export FULLCFILES   := $(addprefix $(SOURCES)/,$(CFILES))
+export CPPFILES     := $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
+export FULLCPPFILES := $(addprefix $(SOURCES)/,$(CPPFILES))
+export HEADERS      := $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.h)))
+export FULLHEADERS  := $(addprefix $(SOURCES)/,$(HEADERS))
+export GENASMFILES  := $(addprefix $(GENASM)/,$(CFILES:.c=.asm) $(CPPFILES:.cpp=.asm))
+export OFILESC      := $(CFILES:.c=.o)
+export OFILESCPP    := $(CPPFILES:.cpp=.o)
+export OFILES       := $(OFILESC) $(OFILESCPP)
+export FULLOFILES   := $(addprefix $(BUILD)/,$(OFILES))
+# Flags and libraries
+export CFLAGSBASE       :=
+export CFLAGSDEBUG      := $(CFLAGSBASE) -Og
+export CFLAGSRELEASE    := $(CFLAGSBASE) -O3 -flto
+export CFLAGS           := $(CFLAGSBASE)
+export CXXFLAGS         :=
+export LINKFLAGSBASE    :=
+export LINKFLAGSDEBUG   := $(LINKFLAGSBASE)
+export LINKFLAGSRELEASE := $(LINKFLAGSBASE) -Wl,-s
+export LINKFLAGS        := $(LINKFLAGSBASE)
+export LINKLIBS         :=
 
-.PHONY : win64rel, win64dbg, showasm
+# Define some variable overrides
+default : CFLAGS = $(CFLAGSRELEASE)
+native : CFLAGS = $(CFLAGSRELEASE) -march=native
+debug : CFLAGS = $(CFLAGSDEBUG)
 
-all : $(FULLCFILES) $(FULLCPPFILES)
-	g++ -o $(TARGET)/mhvnscas.exe -O3 -march=native -Wl,-O,-s,--gc-sections $^
+default : LINKFLAGS = $(LINKFLAGSRELEASE)
+native : LINKFLAGS = $(LINKFLAGSRELEASE)
+debug : LINKFLAGS = $(LINKFLAGSDEBUG)
 
-win64rel : $(FULLCFILES) $(FULLCPPFILES)
-	g++ -o $(TARGET)/mhvnscas.exe -O3 -Wl,-O,-s,--gc-sections $^
+.PHONY : default native debug showasm clean cleanasm install-linux
 
-win64dbg : $(FULLCFILES) $(FULLCPPFILES)
-	g++ -o $(TARGET)/mhvnscas.exe -Og $^
+all : default
 
-showasm	: $(GENASMFILESC) $(GENASMFILESCPP)
+#Builds for the current host OS, but assumes a basic variant of the current processor architecture
+default : $(BUILD) $(TARGET) $(TARGET)/$(EXE)
+
+#Builds specifically for this machine
+native : $(BUILD) $(TARGET) $(TARGET)/$(EXE)
+
+#Build a debug-friendly version
+debug : $(BUILD) $(TARGET) $(TARGET)/$(EXE)
+
+#Compiles the source files to assembly language for curiosity's sake
+showasm : $(GENASM) $(GENASMFILES)
+
+#Cleans the build directory
+clean : $(BUILD) $(TARGET)
+	rm -rf $(BUILD)
+	rm -rf $(TARGET)
+	mkdir -p $(BUILD)
+	mkdir -p $(TARGET)
+
+#Removes the generated assembly files
+cleanasm : $(GENASM)
+	rm -rf $(GENASM)
+
+#Copies output executable to /usr/local/bin/ (with confirmation)
+install-linux : $(TARGET)/$(EXE)
+	sudo cp $^ /usr/local/bin/
+
+$(BUILD) :
+	mkdir -p $(BUILD)
+
+$(TARGET) :
+	mkdir -p $(TARGET)
+
+$(GENASM) :
+	mkdir -p $(GENASM)
+
+$(TARGET)/$(EXE) : $(FULLOFILES)
+	g++ $(CFLAGS) $(CXXFLAGS) $(LINKFLAGS) -o $@ $^ $(LINKLIBS)
+
+$(FULLOFILES) : $(FULLCFILES) $(FULLCPPFILES) $(FULLHEADERS)
+
+$(BUILD)/%.o : $(SOURCES)/%.c
+	gcc -c $(CFLAGS) -o $@ $<
+
+$(BUILD)/%.o : $(SOURCES)/%.cpp
+	g++ -c $(CFLAGS) $(CXXFLAGS) -o $@ $<
 
 $(GENASM)/%.asm	: $(SOURCES)/%.c
-	gcc $< -S -o $@ -O3 -c
+	gcc -c -O3 -S -o $@ $<
 
 $(GENASM)/%.asm	: $(SOURCES)/%.cpp
-	g++ $< -S -o $@ -O3 -c
+	g++ -c -O3 $(CXXFLAGS) -S -o $@ $<

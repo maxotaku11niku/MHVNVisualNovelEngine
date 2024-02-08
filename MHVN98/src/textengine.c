@@ -1,5 +1,8 @@
 //Text drawing engine
 
+#include <stdio.h>
+#include <string.h>
+#include <dos.h>
 #include "x86ports.h"
 #include "x86strops.h"
 #include "pc98_crtbios.h"
@@ -8,14 +11,17 @@
 #include "pc98_keyboard.h"
 #include "pc98_egc.h"
 #include "filehandling.h"
+#include "stdbuffer.h"
 #include "unrealhwaddr.h"
 #include "rootinfo.h"
 #include "sceneengine.h"
 #include "textengine.h"
+#include "x86segments.h"
 
 TextInfo textInfo;
 
-unsigned short ctHandle;
+int ctHandle;
+//FILE* ctHandle;
 unsigned long charbuf[16];
 
 unsigned long animCharBuf[16 * 16]; //For fade in animation, ring buffer
@@ -71,78 +77,122 @@ char stringBuffer2[512];
 
 void SetShadowColours(const unsigned char* cols)
 {
-    Memcpy32Seg(cols, shadowColours, 4);
+    memcpy(shadowColours, cols, 16);
 }
 
 int SetupTextInfo()
 {
-    unsigned short realReadLen;
-    int result = OpenFile(rootInfo.curTextDataPath, FILE_OPEN_READ, &ctHandle);
+    unsigned int realReadLen;
+    int result = _dos_open(rootInfo.curTextDataPath, 0, &ctHandle);
+    //ctHandle = fopen(rootInfo.curTextDataPath, "rb");
     if (result)
+    //if (ctHandle == 0)
     {
         WriteString("Error! Could not find text data file!", 172, 184, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF), 0);
         return result; //Error handler
+        //return 1; //Error handler
     }
-    ReadFile(ctHandle, 0x18, smallFileBuffer, &realReadLen);
+    __far unsigned char* fb = smallFileBuffer;
+    _dos_read(ctHandle, fb, 0x18, &realReadLen);
+    //fread(smallFileBuffer, 1, 0x18, ctHandle);
     textInfo.systemTextFilePtr = *((unsigned long*)(smallFileBuffer));
     textInfo.creditsTextFilePtr = *((unsigned long*)(smallFileBuffer + 0x04));
     textInfo.characterNamesFilePtr = *((unsigned long*)(smallFileBuffer + 0x08));
     textInfo.sceneTextFilePtr = *((unsigned long*)(smallFileBuffer + 0x0C));
     textInfo.CGTextFilePtr = *((unsigned long*)(smallFileBuffer + 0x10));
     textInfo.musicTextFilePtr = *((unsigned long*)(smallFileBuffer + 0x14));
-    CloseFile(ctHandle);
+    //fclose(ctHandle);
+    _dos_close(ctHandle);
     return 0;
 }
 
 int LoadCurrentCharacterName(unsigned short charNumber, char* nameBuffer)
 {
-    unsigned short realReadLen;
+    unsigned int realReadLen;
     unsigned long curfilepos;
     unsigned short charnamepos;
-    int result = OpenFile(rootInfo.curTextDataPath, FILE_OPEN_READ, &ctHandle);
+    int result = _dos_open(rootInfo.curTextDataPath, 0, &ctHandle);
+    //ctHandle = fopen(rootInfo.curTextDataPath, "rb");
     if (result)
+    //if (ctHandle == 0)
     {
         WriteString("Error! Could not find text data file!", 172, 184, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF), 0);
         return result; //Error handler
+        //return 1; //Error handler
     }
+    /**/
     SeekFile(ctHandle, FILE_SEEK_ABSOLUTE, textInfo.characterNamesFilePtr + 2 * charNumber, &curfilepos);
-    ReadFile(ctHandle, 2, &charnamepos, &realReadLen);
+    __far unsigned char* cnp = &charnamepos;
+    _dos_read(ctHandle, cnp, 2, &realReadLen);
     SeekFile(ctHandle, FILE_SEEK_ABSOLUTE, textInfo.characterNamesFilePtr + 2 * sceneInfo.numChars + charnamepos, &curfilepos);
-    ReadFile(ctHandle, 64, nameBuffer, &realReadLen);
-    CloseFile(ctHandle);
+    __far unsigned char* nb = nameBuffer;
+    _dos_read(ctHandle, nb, 64, &realReadLen);
+    _dos_close(ctHandle);
+    //*/
+    /*/
+    fseek(ctHandle, textInfo.characterNamesFilePtr + 2 * charNumber, SEEK_SET);
+    fread(&charnamepos, 1, 2, ctHandle);
+    fseek(ctHandle, textInfo.characterNamesFilePtr + 2 * sceneInfo.numChars + charnamepos, SEEK_SET);
+    fread(nameBuffer, 1, 64, ctHandle);
+    fclose(ctHandle);
+    //*/
     return 0;
 }
 
-int LoadSceneText(unsigned short sceneNumber, char* textDataBuffer, char** textPtrsBuffer)
+int LoadSceneText(unsigned short sceneNumber, __far char* textDataBuffer, unsigned int* textPtrsBuffer)
 {
-    unsigned short realReadLen;
+    unsigned int realReadLen;
     unsigned long curfilepos;
     unsigned long scenedatpos;
     unsigned short numTexts;
-    int result = OpenFile(rootInfo.curTextDataPath, FILE_OPEN_READ, &ctHandle);
+    int result = _dos_open(rootInfo.curTextDataPath, 0, &ctHandle);
+    //ctHandle = fopen(rootInfo.curTextDataPath, "rb");
     if (result)
+    //if (ctHandle == 0)
     {
         WriteString("Error! Could not find text data file!", 172, 184, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF), 0);
         return result; //Error handler
+        //return 1; //Error handler
     }
+    /**/
     SeekFile(ctHandle, FILE_SEEK_ABSOLUTE, textInfo.sceneTextFilePtr + 4 * sceneNumber, &curfilepos);
-    ReadFile(ctHandle, 4, &scenedatpos, &realReadLen);
+    __far unsigned char* sdp = &scenedatpos;
+    _dos_read(ctHandle, sdp, 4, &realReadLen);
     SeekFile(ctHandle, FILE_SEEK_ABSOLUTE, textInfo.sceneTextFilePtr + 4 * sceneInfo.numScenes, &curfilepos);
-    ReadFile(ctHandle, 2, &numTexts, &realReadLen);
-    ReadFile(ctHandle, 1024, smallFileBuffer, &realReadLen);
+    __far unsigned char* nt = &numTexts;
+    _dos_read(ctHandle, nt, 2, &realReadLen);
+    __far unsigned char* fb = smallFileBuffer;
+    _dos_read(ctHandle, fb, 1024, &realReadLen);
+    //*/
+    /*/
+    fseek(ctHandle, textInfo.sceneTextFilePtr + 4 * sceneNumber, SEEK_SET);
+    fread(&scenedatpos, 1, 4, ctHandle);
+    fseek(ctHandle, textInfo.sceneTextFilePtr + 4 * sceneInfo.numScenes, SEEK_SET);
+    fread(&numTexts, 1, 2, ctHandle);
+    fread(smallFileBuffer, 1, 1024, ctHandle);
+    //*/
     for(int i = 0; i < numTexts; i++)
     {
-        textPtrsBuffer[i] = *((unsigned short*)(smallFileBuffer) + i) + textDataBuffer;
+        textPtrsBuffer[i] = *((unsigned short*)(smallFileBuffer) + i) + (unsigned int)(((unsigned long)textDataBuffer) & 0x0000FFFF);
     }
+    /**/
     SeekFile(ctHandle, FILE_SEEK_ABSOLUTE, textInfo.sceneTextFilePtr + 4 * sceneInfo.numScenes + 2 * (numTexts + 1), &curfilepos);
-    ReadFile(ctHandle, 0x8000, textDataBuffer, &realReadLen);
-    if (realReadLen == 0x8000) ReadFile(ctHandle, 0x8000, textDataBuffer + 0x8000, &realReadLen);
-    CloseFile(ctHandle);
+    _dos_read(ctHandle, textDataBuffer, 0x8000, &realReadLen);
+    if (realReadLen == 0x8000) _dos_read(ctHandle, textDataBuffer + 0x8000, 0x8000, &realReadLen);
+    _dos_close(ctHandle);
+    //*/
+    /*/
+    fseek(ctHandle, textInfo.sceneTextFilePtr + 4 * sceneInfo.numScenes + 2 * (numTexts + 1), SEEK_SET);
+    setds((unsigned short)(((unsigned long)textDataBuffer) >> 16));
+    fread((unsigned short)(((unsigned long)textDataBuffer) & 0x0000FFFF), 1, 0xFFFF, ctHandle);
+    resetdstoss();
+    fclose(ctHandle);
+    //*/
     return 0;
 }
 
 //Char data must be in 'edit-friendly' format
-void BoldenCharLeft(unsigned long* charb)
+static void BoldenCharLeft(unsigned long* charb)
 {
     for (unsigned short i = 0; i < 16; i++)
     {
@@ -156,7 +206,7 @@ void BoldenCharLeft(unsigned long* charb)
 }
 
 //Char data must be in 'edit-friendly' format
-void BoldenCharRight(unsigned long* charb)
+static void BoldenCharRight(unsigned long* charb)
 {
     for (unsigned short i = 0; i < 16; i++)
     {
@@ -170,7 +220,7 @@ void BoldenCharRight(unsigned long* charb)
 }
 
 //Char data must be in 'edit-friendly' format
-void ItaliciseChar(unsigned long* charb)
+static void ItaliciseChar(unsigned long* charb)
 {
     for (unsigned short i = 0; i < 16; i++)
     {
@@ -181,7 +231,7 @@ void ItaliciseChar(unsigned long* charb)
 }
 
 //Char data must be in 'edit-friendly' format
-void UnderlineChar(unsigned long* charb, short underlineLen)
+static void UnderlineChar(unsigned long* charb, short underlineLen)
 {
     long underLine = 0x80000000;
     if (underlineLen > 32) underlineLen = 32;
@@ -191,7 +241,7 @@ void UnderlineChar(unsigned long* charb, short underlineLen)
 }
 
 //Format doesn't matter
-void MaskChar(unsigned long* charb, const unsigned short* chosenMask)
+static void MaskChar(unsigned long* charb, const unsigned short* chosenMask)
 {
     for (unsigned short i = 0; i < 16; i++)
     {
@@ -203,37 +253,83 @@ void MaskChar(unsigned long* charb, const unsigned short* chosenMask)
 }
 
 //Char data must be in 'VRAM-compatible' format
-void DrawChar(const unsigned long* charb, short x, short y)
+static void DrawChar(const unsigned long* charb, short x, short y)
 {
-    unsigned short* planeptr = (unsigned short*)(y * 80 + ((x >> 3) & 0xFFFE) + (unsigned long)gdcPlane0_relptr);
+    unsigned short* planeptr = (unsigned short*)(y * 80 + ((x >> 3) & 0xFFFE));
+    setes(GDC_PLANES_SEGMENT);
     unsigned short xinblock = x & 0x000F;
     egc_bitaddrbtmode(EGC_BLOCKTRANSFER_FORWARD | EGC_BITADDRESS_DEST(xinblock));
     if(xinblock) //Unaligned
     {
+        __asm volatile (
+            "lea 0x500(%%di), %%bx\n"
+            "loop%=: movsw\n\t"
+            "movsw\n\t"
+            "stosw\n\t"
+            "addw $74, %1\n\t"
+            "cmpw %%bx, %1\n\t"
+            "jne loop%=\n\t"
+        : "+S" (charb), "+D" (planeptr) : : "%bx", "memory");
+        /*/
         for (unsigned short j = 0; j < 16; j++)
         {
             unsigned long charL = charb[j];
             *((unsigned long*)(&planeptr[40 * j])) = charL;
             planeptr[40 * j + 2] = (unsigned short)charL; //Dummy write to empty the EGC's shift buffer
         }
+        //*/
     }
     else //Aligned
     {
+        __asm volatile (
+            "lea 0x500(%%di), %%bx\n"
+            "loop%=: movsw\n\t"
+            "movsw\n\t"
+            "addw $76, %1\n\t"
+            "cmpw %%bx, %1\n\t"
+            "jne loop%=\n\t"
+        : "+S" (charb), "+D" (planeptr) : : "%bx", "memory");
+        /*/
         for (unsigned short j = 0; j < 16; j++)
         {
             *((unsigned long*)(&planeptr[40 * j])) = charb[j];
         }
+        //*/
     }
 }
 
 //Char data must be in 'VRAM-compatible' format
-void DrawCharMask(const unsigned long* charb, short x, short y, const unsigned short* chosenMask)
+static void DrawCharMask(const unsigned long* charb, short x, short y, const unsigned short* chosenMask)
 {
-    unsigned short* planeptr = (unsigned short*)(y * 80 + ((x >> 3) & 0xFFFE) + (unsigned long)gdcPlane0_relptr);
+    unsigned short* planeptr = (unsigned short*)(y * 80 + ((x >> 3) & 0xFFFE));
+    setes(GDC_PLANES_SEGMENT);
     unsigned short xinblock = x & 0x000F;
     egc_bitaddrbtmode(EGC_BLOCKTRANSFER_FORWARD | EGC_BITADDRESS_DEST(xinblock));
     if(xinblock) //Unaligned
     {
+        __asm volatile (
+            "xor %%cx, %%cx\n\t"
+            "push %%bp\n\t"
+            "movw %2, %%bp\n"
+            "loop%=: lodsw\n\t"
+            "movw %%cx, %%dx\n\t"
+            "andw $6, %%dx\n\t"
+            "movw %%bp, %2\n\t"
+            "addw %%dx, %2\n\t"
+            "movw (%2), %%dx\n\t"
+            "andw %%dx, %%ax\n\t"
+            "stosw\n\t"
+            "lodsw\n\t"
+            "andw %%dx, %%ax\n\t"
+            "stosw\n\t"
+            "stosw\n\t"
+            "addw $74, %1\n\t"
+            "addw $2, %%cx\n\t"
+            "cmpw $32, %%cx\n\t"
+            "jne loop%=\n\t"
+            "pop %%bp"
+        : "+S" (charb), "+D" (planeptr) : "b" (chosenMask) : "%ax", "%dx", "%cx", "memory");
+        /*/
         for (unsigned short j = 0; j < 16; j++)
         {
             unsigned long mask = chosenMask[j & 0x3];
@@ -243,9 +339,32 @@ void DrawCharMask(const unsigned long* charb, short x, short y, const unsigned s
             *((unsigned long*)(&planeptr[40 * j])) = charL;
             planeptr[40 * j + 2] = (unsigned short)charL; //Dummy write to empty the EGC's shift buffer
         }
+        //*/
     }
     else //Aligned
     {
+        __asm volatile (
+            "xor %%cx, %%cx\n\t"
+            "push %%bp\n\t"
+            "movw %2, %%bp\n"
+            "loop%=: lodsw\n\t"
+            "movw %%cx, %%dx\n\t"
+            "andw $6, %%dx\n\t"
+            "movw %%bp, %2\n\t"
+            "addw %%dx, %2\n\t"
+            "movw (%2), %%dx\n\t"
+            "andw %%dx, %%ax\n\t"
+            "stosw\n\t"
+            "lodsw\n\t"
+            "andw %%dx, %%ax\n\t"
+            "stosw\n\t"
+            "addw $76, %1\n\t"
+            "addw $2, %%cx\n\t"
+            "cmpw $32, %%cx\n\t"
+            "jne loop%=\n\t"
+            "pop %%bp"
+        : "+S" (charb), "+D" (planeptr) : "b" (chosenMask) : "%ax", "%dx", "%cx", "memory");
+        /*/
         for (unsigned short j = 0; j < 16; j++)
         {
             unsigned long mask = chosenMask[j & 0x3];
@@ -253,6 +372,7 @@ void DrawCharMask(const unsigned long* charb, short x, short y, const unsigned s
             unsigned long charL = charb[j];
             *((unsigned long*)(&planeptr[40 * j])) = charL & mask;
         }
+        //*/
     }
 }
 
@@ -261,7 +381,7 @@ void SetCustomInfo(unsigned short num, char* str)
     customInfos[num] = str;
 }
 
-const char* PreprocessString(const char* str, unsigned char autolb, short lx, short rx, short ty, short by)
+static const char* PreprocessString(const __far char* str, unsigned char autolb, short lx, short rx, short ty, short by)
 {
     //Inject variable strings
     char ch = *str++;
@@ -323,7 +443,7 @@ const char* PreprocessString(const char* str, unsigned char autolb, short lx, sh
                     break;
             }
         }
-        else if (ch <= 0x7F || (ch > 0x9F && ch < 0xE0)) //Single byte
+        else if (ch <= 0x7F || (((unsigned char)ch) > 0x9F && ((unsigned char)ch) < 0xE0)) //Single byte
         {
             if (ch == '-') bpp = pch + 1;
             curX += 8;
@@ -331,7 +451,7 @@ const char* PreprocessString(const char* str, unsigned char autolb, short lx, sh
         else //double byte
         {
             unsigned short twobytecode = ch << 8;
-            ch = *str++;
+            ch = *sspch++;
             if (!ch)
             {
                 break; //Standard null termination
@@ -364,7 +484,7 @@ const char* PreprocessString(const char* str, unsigned char autolb, short lx, sh
     return stringBuffer2;
 }
 
-void StartAnimatedStringToWrite(const char* str, const short x, const short y, short format)
+void StartAnimatedStringToWrite(const __far char* str, const short x, const short y, short format)
 {
     const char* pstr = PreprocessString(str, 1, x, textBoxrX, y, textBoxbY);
     stringToAnimWrite = pstr;
@@ -380,8 +500,8 @@ void StartAnimatedStringToWrite(const char* str, const short x, const short y, s
     animLength = 16;
     waitFrames = 0;
     waitPerChar = 0;
-    Memset32Seg(0, animCharBuf, 256);
-    Memset32Seg(0xFFFFFFFF, charFade, 4);
+    memset(animCharBuf, 0, 1024);
+    memset(charFade, 0xFFFF, 16);
 }
 
 int StringWriteAnimationFrame(unsigned char skip)
@@ -417,11 +537,13 @@ int StringWriteAnimationFrame(unsigned char skip)
                     switch (ch)
                     {
                         case 0x09: //Tab
+                        {
                             short delX = curX - x + 32;
                             delX &= 0xFFE0; //Tab stops every 4 halfwidth characters
                             curX = x + delX;
                             waitFrames = waitPerChar;
                             break;
+                        }
                         case 0x0A: //LF
                             curY += 16;
                             break;
@@ -510,7 +632,7 @@ int StringWriteAnimationFrame(unsigned char skip)
                             ch += 0x76;
                             str++;
                         }
-                        twobytecode = (ch & 0x7F) | (isKana ? 0x0A00 : 0x0900);
+                        twobytecode = ((unsigned int)(ch & 0x7F)) | (isKana ? 0x0A00 : 0x0900);
                     }
                     else twobytecode = ch << 8;
                     GetCharacterDataEditFriendly(twobytecode, nextCharBuf);
@@ -634,10 +756,12 @@ void WriteString(const char* str, const short x, const short y, short format, un
                 switch (ch)
                 {
                     case 0x09: //Tab
+                    {
                         short delX = curX - x + 32;
                         delX &= 0xFFE0; //Tab stops every 4 halfwidth characters
                         curX = x + delX;
                         break;
+                    }
                     case 0x0A: //LF
                         curY += 16;
                         break;
@@ -683,7 +807,7 @@ void WriteString(const char* str, const short x, const short y, short format, un
                         }
                         break;
                     case 0x20: //space
-                        Memset32Seg(0, charbuf, 16);
+                        memset(charbuf, 0, 64);
                         if (format & FORMAT_UNDERLINE)
                         {
                             UnderlineChar(charbuf, 8);

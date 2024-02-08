@@ -4,7 +4,7 @@
 #include "pc98_egc.h"
 #include "x86strops.h"
 #include "x86segments.h"
-#include "unrealhwaddr.h"
+//#include "unrealhwaddr.h"
 
 void ClearScreenEGC()
 {
@@ -14,10 +14,11 @@ void ClearScreenEGC()
     egc_mask(0xFFFF);
     egc_bitaddrbtmode(EGC_BLOCKTRANSFER_FORWARD);
     egc_bitlen(2048);
-    Memset32Flat(0xFFFFFFFF, gdcPlane0_relptr, 8000);
+    setes(GDC_PLANES_SEGMENT);
+    Memset16Seg(0xFFFF, 0, 16000);
 }
 
-void ClearLinesEGC(unsigned long startLine, unsigned long numLines)
+void ClearLinesEGC(unsigned short startLine, unsigned short numLines)
 {
     egc_planeaccess(0xF);
     egc_patdatandreadmode(EGC_PATTERNSOURCE_BGCOLOUR);
@@ -25,7 +26,8 @@ void ClearLinesEGC(unsigned long startLine, unsigned long numLines)
     egc_mask(0xFFFF);
     egc_bitaddrbtmode(EGC_BLOCKTRANSFER_FORWARD);
     egc_bitlen(2048);
-    Memset32Flat(0xFFFFFFFF, gdcPlane0_relptr + startLine * 80, 20 * numLines);
+    setes(GDC_PLANES_SEGMENT);
+    Memset16Seg(0xFFFF, startLine * 80, 40 * numLines);
 }
 
 void EGCEnable()

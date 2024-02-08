@@ -1,3 +1,4 @@
+/*/
 #include "unrealhwaddr.h"
 #pragma once
 
@@ -312,3 +313,4 @@ extern unsigned char keyChangeStatus[16];
 #define key_released(k) ((!k) && (D##k))
 
 void UpdatePrevKeyStatus();
+//*/

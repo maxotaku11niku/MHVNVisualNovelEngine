@@ -1,5 +1,5 @@
 //Unreal mode flat addressing compensation for hardware addresses
-
+/*/
 #include "x86segments.h"
 #include "x86interrupt.h"
 #include "pc98_gdc.h"
@@ -46,3 +46,4 @@ void SetupRelativeFlatPointers()
     key_status_relptr = KEY_STATUS - rootAddr;
     key_mod_relptr = &KEY_MOD - rootAddr;
 }
+//*/

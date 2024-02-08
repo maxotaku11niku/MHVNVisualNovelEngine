@@ -1,34 +1,26 @@
 #include "x86strops.h"
-#include "memalloc.h"
+#include "x86interrupt.h"
+//#include "memalloc.h"
 #include "pc98_crtbios.h"
 #include "pc98_gdc.h"
 #include "pc98_egc.h"
-#include "unreal_keyboard.h"
+#include "pc98_keyboard.h"
 #include "pc98_interrupt.h"
 #include "isr.h"
-#include "unrealhwaddr.h"
+//#include "unrealhwaddr.h"
 #include "textengine.h"
-#include "filehandling.h"
-#include "unreal_interrupts.h"
+//#include "filehandling.h"
+//#include "unreal_interrupts.h"
 #include "rootinfo.h"
 #include "sceneengine.h"
 
 const unsigned char stdShadowCols[16] = { 0x0, 0x0, 0x0, 0x2, 0x0, 0x4, 0x5, 0x0, 0x0, 0x8, 0x9, 0x7, 0x0, 0xC, 0xD, 0x1 };
 
-unsigned long oldVsyncVector;
+InterruptFuncPtr oldVsyncVector;
 unsigned char oldInterruptMask;
-volatile unsigned char vsynced = 0;
 
-int bgHandle;
-int sprHandle;
-int mdHandle;
-int sfxHandle;
-int sysHandle;
-
-int RealMain(void)
+int main(void)
 {
-    int result = MemRealloc(0, 0x10000); //Needed to resize the block allocated initially to a DOS .COM program so that we can allocate other blocks using the functions in memalloc.h
-    if (result) return result;
     //Set up graphics first
     TextOff();
     GraphicsOn();
@@ -61,7 +53,7 @@ int RealMain(void)
     egc_bitlen(32);
     SetShadowColours(stdShadowCols);
     
-    result = ReadInRootInfo();
+    int result = ReadInRootInfo();
     if (result) goto errorquit;
     result = InitLanguage(0);
     if (result) goto errorquit;
@@ -75,7 +67,7 @@ int RealMain(void)
     oldInterruptMask = GetPrimaryInterruptMask();
     intsoff();
     oldVsyncVector = GetInterruptFunctionRaw(INTERRUPT_VECTOR_VSYNC);
-    SetInterruptFunction(INTERRUPT_VECTOR_VSYNC, VsyncInterrupt);
+    SetInterruptFunctionRaw(INTERRUPT_VECTOR_VSYNC, VsyncInterrupt);
     AddPrimaryInterrupts(INTERRUPT_MASK_VSYNC);
     intson();
 
@@ -86,6 +78,7 @@ int RealMain(void)
     unsigned char hasFinshedStringAnim = 0;
     unsigned char textSkip = 0;
     int sceneProcessResult;
+    vsynced = 0;
     while (1)
     {
         while (1) //Wait for vsync

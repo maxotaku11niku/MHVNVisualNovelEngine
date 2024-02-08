@@ -1,7 +1,8 @@
 //PC-98 hardware interrupts
 #pragma once
 
-#include "x86ports.h"
+//#include "x86ports.h"
+#include <dos.h>
 
 //Primary interrupt vector indices
 #define INTERRUPT_VECTOR_TIMER       0x08
@@ -22,10 +23,10 @@
 #define INTERRUPT_VECTOR_NDP          0x16
 
 //The interrupt mask is 0 for allow, 1 for forbid
-#define setinterruptmask_primary(mask) PortOutB(0x02, mask)
-#define setinterruptmask_secondary(mask) PortOutB(0x0A, mask)
-#define getinterruptmask_primary(mask) inportb(0x02, mask)
-#define getinterruptmask_secondary(mask) inportb(0x0A, mask)
+#define setinterruptmask_primary(mask) outportb(0x02, mask)
+#define setinterruptmask_secondary(mask) outportb(0x0A, mask)
+//#define getinterruptmask_primary(mask) inportb(0x02, mask)
+//#define getinterruptmask_secondary(mask) inportb(0x0A, mask)
 //Just OR together some masks and then use this to make the proper interrupt mask for the above macros
 #define INTERRUPTMASK(m) (~(m))
 //Primary interrupt masks
@@ -49,62 +50,54 @@
 //The following wrappers allow for compile time type checking
 
 //Set the interrupt mask for the primary controller
-__attribute__((always_inline)) inline void SetPrimaryInterruptMask(unsigned char mask)
+inline void SetPrimaryInterruptMask(unsigned char mask)
 {
     setinterruptmask_primary(mask);
 }
 
 //Set the interrupt mask for the secondary controller
-__attribute__((always_inline)) inline void SetSecondaryInterruptMask(unsigned char mask)
+inline void SetSecondaryInterruptMask(unsigned char mask)
 {
     setinterruptmask_secondary(mask);
 }
 
 //Get the interrupt mask from the primary controller
-__attribute__((always_inline)) inline unsigned char GetPrimaryInterruptMask()
+inline unsigned char GetPrimaryInterruptMask()
 {
-    unsigned char mask;
-    getinterruptmask_primary(mask);
-    return mask;
+    return inportb(0x02);
 }
 
 //Get the interrupt mask from the secondary controller
-__attribute__((always_inline)) inline unsigned char GetSecondaryInterruptMask()
+inline unsigned char GetSecondaryInterruptMask()
 {
-    unsigned char mask;
-    getinterruptmask_secondary(mask);
-    return mask;
+    return inportb(0x0A);
 }
 
 //You must not use INTERRUPTMASK(m) for these functions
-__attribute__((always_inline)) inline void AddPrimaryInterrupts(const unsigned char mask)
+inline void AddPrimaryInterrupts(const unsigned char mask)
 {
-    unsigned char maskBefore;
-    getinterruptmask_primary(maskBefore);
+    unsigned char maskBefore = GetPrimaryInterruptMask();
     maskBefore &= ~mask;
-    setinterruptmask_primary(maskBefore);
+    SetPrimaryInterruptMask(maskBefore);
 }
 
-__attribute__((always_inline)) inline void AddSecondaryInterrupts(const unsigned char mask)
+inline void AddSecondaryInterrupts(const unsigned char mask)
 {
-    unsigned char maskBefore;
-    getinterruptmask_secondary(maskBefore);
+    unsigned char maskBefore = GetSecondaryInterruptMask();
     maskBefore &= ~mask;
-    setinterruptmask_secondary(maskBefore);
+    SetSecondaryInterruptMask(maskBefore);
 }
 
-__attribute__((always_inline)) inline void RemovePrimaryInterrupts(const unsigned char mask)
+inline void RemovePrimaryInterrupts(const unsigned char mask)
 {
-    unsigned char maskBefore;
-    getinterruptmask_primary(maskBefore);
+    unsigned char maskBefore = GetPrimaryInterruptMask();
     maskBefore |= mask;
-    setinterruptmask_primary(maskBefore);
+    SetPrimaryInterruptMask(maskBefore);
 }
 
-__attribute__((always_inline)) inline void RemoveSecondaryInterrupts(const unsigned char mask)
+inline void RemoveSecondaryInterrupts(const unsigned char mask)
 {
-    unsigned char maskBefore;
-    getinterruptmask_secondary(maskBefore);
+    unsigned char maskBefore = GetSecondaryInterruptMask();
     maskBefore |= mask;
-    setinterruptmask_secondary(maskBefore);
+    SetSecondaryInterruptMask(maskBefore);
 }

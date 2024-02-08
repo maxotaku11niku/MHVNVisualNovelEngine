@@ -1,18 +1,19 @@
-#include "x86ports.h"
+//#include "x86ports.h"
+#include <dos.h>
 
 void GetCharacterData(unsigned short code, unsigned long* buffer)
 {
-    PortOutB(0xA1, (unsigned char)code);
-    PortOutB(0xA3, (unsigned char)(code >> 8)); //Put JIS code in
+    outportb(0xA1, (unsigned char)code);
+    outportb(0xA3, (unsigned char)(code >> 8)); //Put JIS code in
     if (code & 0x00FF) //Fullwidth JIS code
     {
         for (unsigned char i = 0; i < 16; i++)
         {
-            PortOutB(0xA5, i);
-            unsigned char rowhalf = PortInB(0xA9);
-            unsigned long row = (rowhalf << 8); //Read in right half
-            PortOutB(0xA5, i | 0x20);
-            rowhalf = PortInB(0xA9);
+            outportb(0xA5, i);
+            unsigned int rowhalf = inportb(0xA9);
+            unsigned int row = (rowhalf << 8); //Read in right half
+            outportb(0xA5, i | 0x20);
+            rowhalf = inportb(0xA9);
             row |= rowhalf; //Read in left half
             buffer[i] = row;
         }
@@ -21,8 +22,8 @@ void GetCharacterData(unsigned short code, unsigned long* buffer)
     {
         for (unsigned char i = 0; i < 16; i++)
         {
-            PortOutB(0xA5, i);
-            unsigned long row = PortInB(0xA9); //Read in left half only (both halves are the same, we're technically reading from the right side though)
+            outportb(0xA5, i);
+            unsigned long row = inportb(0xA9); //Read in left half only (both halves are the same, we're technically reading from the right side though)
             buffer[i] = row;
         }
     }
@@ -30,27 +31,27 @@ void GetCharacterData(unsigned short code, unsigned long* buffer)
 
 void GetCharacterDataEditFriendly(unsigned short code, unsigned long* buffer)
 {
-    PortOutB(0xA1, (unsigned char)code);
-    PortOutB(0xA3, (unsigned char)(code >> 8)); //Put JIS code in
+    outportb(0xA1, (unsigned char)code);
+    outportb(0xA3, (unsigned char)(code >> 8)); //Put JIS code in
     if (code & 0x00FF) //Fullwidth JIS code
     {
         for (unsigned char i = 0; i < 16; i++)
         {
-            PortOutB(0xA5, i);
-            unsigned char rowhalf = PortInB(0xA9);
-            unsigned long row = (rowhalf << 16); //Read in right half
-            PortOutB(0xA5, i | 0x20);
-            rowhalf = PortInB(0xA9);
-            row |= (rowhalf << 24); //Read in left half
-            buffer[i] = row;
+            outportb(0xA5, i);
+            unsigned int row = inportb(0xA9); //Read in right half
+            outportb(0xA5, i | 0x20);
+            unsigned int rowhalf = inportb(0xA9);
+            row |= (rowhalf << 8); //Read in left half
+            ((unsigned int*)(&buffer[i]))[0] = 0;
+            ((unsigned int*)(&buffer[i]))[1] = row;
         }
     }
     else //Halfwidth JIS code
     {
         for (unsigned char i = 0; i < 16; i++)
         {
-            PortOutB(0xA5, i);
-            unsigned long row = PortInB(0xA9); //Read in left half only (both halves are the same, we're technically reading from the right side though)
+            outportb(0xA5, i);
+            unsigned long row = inportb(0xA9); //Read in left half only (both halves are the same, we're technically reading from the right side though)
             buffer[i] = (row << 24);
         }
     }
@@ -58,15 +59,15 @@ void GetCharacterDataEditFriendly(unsigned short code, unsigned long* buffer)
 
 void SetCharacterData(unsigned short code, const unsigned long* buffer)
 {
-    PortOutB(0xA1, (unsigned char)code);
-    PortOutB(0xA3, (unsigned char)(code >> 8)); //Put JIS code in
+    outportb(0xA1, (unsigned char)code);
+    outportb(0xA3, (unsigned char)(code >> 8)); //Put JIS code in
     for (unsigned char i = 0; i < 16; i++)
     {
         unsigned long row = buffer[i];
-        PortOutB(0xA5, i);
-        PortOutB(0xA9, (row >> 8) & 0x000000FF); //Write right half
-        PortOutB(0xA5, i | 0x20);
-        PortOutB(0xA9, row & 0x000000FF); //Write left half
+        outportb(0xA5, i);
+        outportb(0xA9, (row >> 8) & 0x000000FF); //Write right half
+        outportb(0xA5, i | 0x20);
+        outportb(0xA9, row & 0x000000FF); //Write left half
     }
 }
 

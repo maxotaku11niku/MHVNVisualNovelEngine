@@ -1,22 +1,23 @@
 //PC-98 EGC interface
 #pragma once
 
-#include "x86ports.h"
+//#include "x86ports.h"
+#include <dos.h>
 #include "pc98_gdc.h"
 
 //OUTPORT 04A0 - EGC Plane Access Register
 //For convenience, as hardware uses bit = 0 to indicate access, we NOT a mask where bit = 1 indicates access
-#define egc_planeaccess(planemask) PortOutWExt(0x04A0, ~(planemask))
+#define egc_planeaccess(planemask) outportw(0x04A0, ~(planemask))
 //OUTPORT 04A2 - EGC Pattern Data And Read Setting Register
 //Apparently the lower 8 bits must be 1
-#define egc_patdatandreadmode(mode) PortOutWExt(0x04A2, (mode) | 0x00FF)
+#define egc_patdatandreadmode(mode) outportw(0x04A2, (mode) | 0x00FF)
 //Supporting defines
 #define EGC_PATTERNSOURCE_PATREG   0x0000
 #define EGC_PATTERNSOURCE_BGCOLOUR 0x2000
 #define EGC_PATTERNSOURCE_FGCOLOUR 0x4000
 #define EGC_READSOURCE_PLANE(n) (((n) & 0x7) << 8)
 //OUTPORT 04A4 - EGC Read/Write Mode Register
-#define egc_rwmode(mode) PortOutWExt(0x04A4, mode)
+#define egc_rwmode(mode) outportw(0x04A4, mode)
 //Supporting defines
 #define EGC_READ_SINGLEPLANE 0x0000
 #define EGC_READ_COMPARE     0x2000
@@ -37,13 +38,13 @@
 #define EGC_ROP_PAT 0x00AA
 #define EGC_ROP(rop) ((rop) & 0x00FF)
 //OUTPORT 04A6 - EGC Foreground Colour Register
-#define egc_fgcolour(col) PortOutWExt(0x04A6, col)
+#define egc_fgcolour(col) outportw(0x04A6, col)
 //OUTPORT 04A8 - EGC Mask Register
-#define egc_mask(mask) PortOutWExt(0x04A8, mask)
+#define egc_mask(mask) outportw(0x04A8, mask)
 //OUTPORT 04AA - EGC Background Colour Register
-#define egc_bgcolour(col) PortOutWExt(0x04AA, col)
+#define egc_bgcolour(col) outportw(0x04AA, col)
 //OUTPORT 04AC - EGC Bit Address And Block Transfer Register
-#define egc_bitaddrbtmode(mode) PortOutWExt(0x04AC, mode)
+#define egc_bitaddrbtmode(mode) outportw(0x04AC, mode)
 //Supporting defines
 #define EGC_BLOCKTRANSFER_FORWARD  0x0000
 #define EGC_BLOCKTRANSFER_BACKWARD 0x1000
@@ -51,11 +52,11 @@
 #define EGC_BITADDRESS_SRC(n) ((n) & 0xF)
 //OUTPORT 04AE - EGC Bit Length Register
 //There is an implicit +1 to the length, so we account for that
-#define egc_bitlen(len) PortOutWExt(0x4AE, (len)-1)
+#define egc_bitlen(len) outportw(0x4AE, (len)-1)
 
 //Clears the screen very fast using the EGC (must enable beforehand)
 void ClearScreenEGC();
 //Clears some lines very fast using the EGC (must enable beforehand)
-void ClearLinesEGC(unsigned long startLine, unsigned long numLines);
+void ClearLinesEGC(unsigned short startLine, unsigned short numLines);
 void EGCEnable();
 void EGCDisable();

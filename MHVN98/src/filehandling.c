@@ -1,5 +1,5 @@
 //DOS file calls wrapper
-
+/**/
 #include "x86segments.h"
 #include "doscalls.h"
 
@@ -23,6 +23,7 @@ int CreateFile(const char* path, unsigned char attributes, unsigned short* const
 }
 
 //Opens a file and gives the handle back in 'handle' which is passed by reference and merely written to
+/*/
 int OpenFile(const char* path, unsigned char attribute, unsigned short* const handle)
 {
     unsigned char iserr;
@@ -38,8 +39,10 @@ int OpenFile(const char* path, unsigned char attribute, unsigned short* const ha
     }
     return 0;
 }
+//*/
 
 //Closes a file with the given handle
+/*/
 int CloseFile(unsigned short handle)
 {
     int errcode;
@@ -51,8 +54,10 @@ int CloseFile(unsigned short handle)
     }
     return 0;
 }
+//*/
 
 //Reads 'len' bytes from the file given by the handle in 'handle' into the buffer pointed to by 'buffer' (a flat pointer based at the code segment), putting the actual number of bytes read into 'readbytes'
+/*/
 int ReadFile(unsigned short handle, unsigned short len, void* buffer, unsigned short* const readbytes)
 {
     unsigned char iserr;
@@ -68,6 +73,7 @@ int ReadFile(unsigned short handle, unsigned short len, void* buffer, unsigned s
     }
     return 0;
 }
+//*/
 
 //Writes 'len' bytes to the file given by the handle in 'handle' from the buffer pointed to by 'buffer' (a flat pointer based at the code segment), putting the actual number of bytes written into 'readbytes'
 int WriteFile(unsigned short handle, unsigned short len, const void* buffer, unsigned short* const writebytes)
@@ -120,3 +126,4 @@ int SeekFile(unsigned short handle, unsigned char method, unsigned long len, uns
     }
     return 0;
 }
+//*/

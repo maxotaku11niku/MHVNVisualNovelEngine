@@ -3,23 +3,23 @@
 
 //16-bit pointers
 //Memcpy routines (movs-based)
-#define smemcpy8(src, dst, count) asm volatile ("rep movsb" : "+c" (count), "+S" (src), "+D" (dst) : )
-#define smemcpy16(src, dst, count) asm volatile ("rep movsw" : "+c" (count), "+S" (src), "+D" (dst) : )
-#define smemcpy32(src, dst, count) asm volatile ("rep movsl" : "+c" (count), "+S" (src), "+D" (dst) : )
+#define smemcpy8(src, dst, count) __asm volatile ("rep movsb" : "+c" (count), "+S" (src), "+D" (dst) : : "memory")
+#define smemcpy16(src, dst, count) __asm volatile ("rep movsw" : "+c" (count), "+S" (src), "+D" (dst) : : "memory")
+#define smemcpy32(src, dst, count) __asm volatile ("rep movsl" : "+c" (count), "+S" (src), "+D" (dst) : : "memory")
 //Memset routines (stos-based)
-#define smemset8(num, dst, count) asm volatile ("rep stosb" : "+c" (count), "+D" (dst) : "a" (num))
-#define smemset16(num, dst, count) asm volatile ("rep stosw" : "+c" (count), "+D" (dst) : "a" (num))
-#define smemset32(num, dst, count) asm volatile ("rep stosl" : "+c" (count), "+D" (dst) : "a" (num))
+#define smemset8(num, dst, count) __asm volatile ("rep stosb" : "+c" (count), "+D" (dst) : "a" (num) : "memory")
+#define smemset16(num, dst, count) __asm volatile ("rep stosw" : "+c" (count), "+D" (dst) : "a" (num) : "memory")
+#define smemset32(num, dst, count) __asm volatile ("rep stosl" : "+c" (count), "+D" (dst) : "a" (num) : "memory")
 
 //32-bit pointers
 //Memcpy routines (movs-based)
-#define wmemcpy8(src, dst, count) asm volatile ("rep movsb (%%esi), (%%edi)" : "+c" (count), "+S" (src), "+D" (dst) : )
-#define wmemcpy16(src, dst, count) asm volatile ("rep movsw (%%esi), (%%edi)" : "+c" (count), "+S" (src), "+D" (dst) : )
-#define wmemcpy32(src, dst, count) asm volatile ("rep movsl (%%esi), (%%edi)" : "+c" (count), "+S" (src), "+D" (dst) : )
+#define wmemcpy8(src, dst, count) __asm volatile ("rep movsb (%%esi), (%%edi)" : "+c" (count), "+S" (src), "+D" (dst) : : "memory")
+#define wmemcpy16(src, dst, count) __asm volatile ("rep movsw (%%esi), (%%edi)" : "+c" (count), "+S" (src), "+D" (dst) : : "memory")
+#define wmemcpy32(src, dst, count) __asm volatile ("rep movsl (%%esi), (%%edi)" : "+c" (count), "+S" (src), "+D" (dst) : : "memory")
 //Memset routines (stos-based)
-#define wmemset8(num, dst, count) asm volatile ("rep stosb (%%edi)" : "+c" (count), "+D" (dst) : "a" (num))
-#define wmemset16(num, dst, count) asm volatile ("rep stosw (%%edi)" : "+c" (count), "+D" (dst) : "a" (num))
-#define wmemset32(num, dst, count) asm volatile ("rep stosl (%%edi)" : "+c" (count), "+D" (dst) : "a" (num))
+#define wmemset8(num, dst, count) __asm volatile ("rep stosb (%%edi)" : "+c" (count), "+D" (dst) : "a" (num) : "memory")
+#define wmemset16(num, dst, count) __asm volatile ("rep stosw (%%edi)" : "+c" (count), "+D" (dst) : "a" (num) : "memory")
+#define wmemset32(num, dst, count) __asm volatile ("rep stosl (%%edi)" : "+c" (count), "+D" (dst) : "a" (num) : "memory")
 
 //The following wrappers allow for compile time type checking
 
