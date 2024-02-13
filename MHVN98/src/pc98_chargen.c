@@ -71,15 +71,27 @@ void SetCharacterData(unsigned short code, const unsigned long* buffer)
     }
 }
 
-void SwapCharDataFormats(unsigned long* buffer)
+void SwapCharDataFormats(unsigned long* buffer, int bits32)
 {
-    for (unsigned char i = 0; i < 16; i++)
+    if (!bits32) //Also pack to 16 bits per character row, one way operation
     {
-        unsigned long row = buffer[i];
-        unsigned long temprow = (row & 0x000000FF) << 24;
-        temprow |= (row & 0x0000FF00) << 8;
-        temprow |= (row & 0x00FF0000) >> 8;
-        buffer[i] = temprow | ((row & 0xFF000000) >> 24);
+        for (unsigned char i = 0; i < 16; i++)
+        {
+            unsigned short row = ((unsigned short*)buffer)[2*i + 1];
+            unsigned long temprow = (row & 0x00FF) << 8;
+            ((unsigned short*)buffer)[i] = temprow | ((row & 0xFF00) >> 8);
+        }
+    }
+    else
+    {
+        for (unsigned char i = 0; i < 16; i++)
+        {
+            unsigned long row = buffer[i];
+            unsigned long temprow = (row & 0x000000FF) << 24;
+            temprow |= (row & 0x0000FF00) << 8;
+            temprow |= (row & 0x00FF0000) >> 8;
+            buffer[i] = temprow | ((row & 0xFF000000) >> 24);
+        }
     }
 }
 

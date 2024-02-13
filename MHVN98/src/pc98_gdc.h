@@ -19,7 +19,7 @@
 #define GDC_PLANES ((unsigned __far char*)0xA8000000)
 
 //OUTPORT 68 - Write GDC Mode 1
-#define gdc_writemode1(mode) PortOutB(0x68, mode)
+#define gdc_writemode1(mode) outportb(0x68, mode)
 //Supporting defines
 #define GDC_MODE1_ATTRIBUTE4_VERTICALLINE 0x00
 #define GDC_MODE1_ATTRIBUTE4_PATTERN      0x01

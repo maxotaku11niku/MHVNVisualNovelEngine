@@ -28,7 +28,7 @@ unsigned long animCharBuf[16 * 16]; //For fade in animation, ring buffer
 short charXs[16];
 short charYs[16];
 char charColours[16];
-char charShadowed[16];
+char charFlags[16];
 unsigned char charFade[16];
 unsigned short chBufStartNum;
 const char* stringToAnimWrite;
@@ -192,41 +192,83 @@ int LoadSceneText(unsigned short sceneNumber, __far char* textDataBuffer, unsign
 }
 
 //Char data must be in 'edit-friendly' format
-static void BoldenCharLeft(unsigned long* charb)
+static void BoldenCharLeft(unsigned long* charb, int bits32)
 {
-    for (unsigned short i = 0; i < 16; i++)
+    if (!bits32) //Why bother doing work on an empty cell?
     {
-        unsigned long convcharA = charb[i];
-        unsigned long convcharB = convcharA << 1;
-        convcharB |= convcharA;
-        convcharA ^= convcharB;
-        convcharB &= ~(convcharA << 1);
-        charb[i] = convcharB;
+        for (unsigned short i = 0; i < 16; i++)
+        {
+            unsigned short convcharA = ((unsigned short*)charb)[2*i + 1];
+            unsigned short convcharB = convcharA << 1;
+            convcharB |= convcharA;
+            convcharA ^= convcharB;
+            convcharB &= ~(convcharA << 1);
+            ((unsigned short*)charb)[2*i + 1] = convcharB;
+        }
+    }
+    else
+    {
+        for (unsigned short i = 0; i < 16; i++)
+        {
+            unsigned long convcharA = charb[i];
+            unsigned long convcharB = convcharA << 1;
+            convcharB |= convcharA;
+            convcharA ^= convcharB;
+            convcharB &= ~(convcharA << 1);
+            charb[i] = convcharB;
+        }
     }
 }
 
 //Char data must be in 'edit-friendly' format
-static void BoldenCharRight(unsigned long* charb)
+static void BoldenCharRight(unsigned long* charb, int bits32)
 {
-    for (unsigned short i = 0; i < 16; i++)
+    if (!bits32) //Why bother doing work on an empty cell?
     {
-        unsigned long convcharA = charb[i];
-        unsigned long convcharB = convcharA >> 1;
-        convcharB |= convcharA;
-        convcharA ^= convcharB;
-        convcharB &= ~(convcharA >> 1);
-        charb[i] = convcharB;
+        for (unsigned short i = 0; i < 16; i++)
+        {
+            unsigned short convcharA = ((unsigned short*)charb)[2*i + 1];
+            unsigned short convcharB = convcharA >> 1;
+            convcharB |= convcharA;
+            convcharA ^= convcharB;
+            convcharB &= ~(convcharA >> 1);
+            ((unsigned short*)charb)[2*i + 1] = convcharB;
+        }
+    }
+    else
+    {
+        for (unsigned short i = 0; i < 16; i++)
+        {
+            unsigned long convcharA = charb[i];
+            unsigned long convcharB = convcharA >> 1;
+            convcharB |= convcharA;
+            convcharA ^= convcharB;
+            convcharB &= ~(convcharA >> 1);
+            charb[i] = convcharB;
+        }
     }
 }
 
 //Char data must be in 'edit-friendly' format
-static void ItaliciseChar(unsigned long* charb)
+static void ItaliciseChar(unsigned long* charb, int bits32)
 {
-    for (unsigned short i = 0; i < 16; i++)
+    if (!bits32) //Why bother doing work on an empty cell?
     {
-        unsigned long convchar = charb[i];
-        convchar >>= 7 - (i >> 1);
-        charb[i] = convchar;
+        for (unsigned short i = 0; i < 16; i++)
+        {
+            unsigned long convchar = ((unsigned short*)charb)[2*i + 1];
+            convchar >>= 7 - (i >> 1);
+            ((unsigned short*)charb)[2*i + 1] = convchar;
+        }
+    }
+    else
+    {
+        for (unsigned short i = 0; i < 16; i++)
+        {
+            unsigned long convchar = charb[i];
+            convchar >>= 7 - (i >> 1);
+            charb[i] = convchar;
+        }
     }
 }
 
@@ -240,139 +282,380 @@ static void UnderlineChar(unsigned long* charb, short underlineLen)
     charb[14] |= underLine;
 }
 
-//Format doesn't matter
-static void MaskChar(unsigned long* charb, const unsigned short* chosenMask)
+//Char data must be in 'edit-friendly' format
+static void MaskChar(unsigned long* charb, const unsigned short* chosenMask, int bits32)
 {
-    for (unsigned short i = 0; i < 16; i++)
+    if (!bits32) //Why bother doing work on an empty cell?
     {
-        unsigned long convchar = charb[i];
-        unsigned long mask = chosenMask[i & 0x3];
-        convchar &= mask | (mask << 16);
-        charb[i] = convchar;
+        for (unsigned short i = 0; i < 16; i++)
+        {
+            unsigned short convchar = ((unsigned short*)charb)[2*i + 1];
+            unsigned short mask = chosenMask[i & 0x3];
+            convchar &= mask;
+            ((unsigned short*)charb)[2*i + 1] = convchar;
+        }
+    }
+    else
+    {
+        for (unsigned short i = 0; i < 16; i++)
+        {
+            unsigned long convchar = charb[i];
+            unsigned long mask = chosenMask[i & 0x3];
+            convchar &= mask | (mask << 16);
+            charb[i] = convchar;
+        }
     }
 }
 
 //Char data must be in 'VRAM-compatible' format
-static void DrawChar(const unsigned long* charb, short x, short y)
+static void DrawChar(const unsigned long* charb, short x, short y, int bits32)
 {
     unsigned short* planeptr = (unsigned short*)(y * 80 + ((x >> 3) & 0xFFFE));
     unsigned short xinblock = x & 0x000F;
     egc_bitaddrbtmode(EGC_BLOCKTRANSFER_FORWARD | EGC_BITADDRESS_DEST(xinblock));
     setes(GDC_PLANES_SEGMENT);
-    if(xinblock) //Unaligned
+    if (!bits32) //Why bother doing work on an empty cell?
     {
-        __asm volatile (
-            "lea 0x500(%%di), %%bx\n"
-            "loop%=: movsw\n\t"
-            "movsw\n\t"
-            "stosw\n\t"
-            "addw $74, %w1\n\t"
-            "cmpw %%bx, %w1\n\t"
-            "jne loop%=\n\t"
-        : "+S" (charb), "+D" (planeptr) : : "%bx", "memory");
-        /*/
-        for (unsigned short j = 0; j < 16; j++)
+        egc_bitlen(16);
+        if (xinblock) //Unaligned
         {
-            unsigned long charL = charb[j];
-            *((unsigned long*)(&planeptr[40 * j])) = charL;
-            planeptr[40 * j + 2] = (unsigned short)charL; //Dummy write to empty the EGC's shift buffer
+            __asm volatile ( //Unrolled a bit to reduce the overhead of jumping
+                "lea 0x500(%%di), %%bx\n"
+                ".loop%=: movsw\n\t"
+                "stosw\n\t"
+                "addw $76, %w1\n\t"
+                "movsw\n\t"
+                "stosw\n\t"
+                "addw $76, %w1\n\t"
+                "movsw\n\t"
+                "stosw\n\t"
+                "addw $76, %w1\n\t"
+                "movsw\n\t"
+                "stosw\n\t"
+                "addw $76, %w1\n\t"
+                "cmpw %%bx, %w1\n\t"
+                "jne .loop%=\n\t"
+            : "+S" (charb), "+D" (planeptr) : : "%bx", "memory");
+            /*/
+            for (unsigned short j = 0; j < 16; j++)
+            {
+                unsigned short charL = ((unsigned short*)charb)[2*j];
+                planeptr[40 * j] = charL;
+                planeptr[40 * j + 1] = charL; //Dummy write to empty the EGC's shift buffer
+            }
+            //*/
         }
-        //*/
+        else //Aligned
+        {
+            __asm volatile ( //Unrolled a bit to reduce the overhead of jumping
+                "lea 0x500(%%di), %%bx\n"
+                ".loop%=: movsw\n\t"
+                "addw $78, %w1\n\t"
+                "movsw\n\t"
+                "addw $78, %w1\n\t"
+                "movsw\n\t"
+                "addw $78, %w1\n\t"
+                "movsw\n\t"
+                "addw $78, %w1\n\t"
+                "cmpw %%bx, %w1\n\t"
+                "jne .loop%=\n\t"
+            : "+S" (charb), "+D" (planeptr) : : "%bx", "memory");
+            /*/
+            for (unsigned short j = 0; j < 16; j++)
+            {
+                planeptr[40 * j] = ((unsigned short*)charb)[2*j];
+            }
+            //*/
+        }
     }
-    else //Aligned
+    else
     {
-        __asm volatile (
-            "lea 0x500(%%di), %%bx\n"
-            "loop%=: movsw\n\t"
-            "movsw\n\t"
-            "addw $76, %w1\n\t"
-            "cmpw %%bx, %w1\n\t"
-            "jne loop%=\n\t"
-        : "+S" (charb), "+D" (planeptr) : : "%bx", "memory");
-        /*/
-        for (unsigned short j = 0; j < 16; j++)
+        egc_bitlen(32);
+        if (xinblock) //Unaligned
         {
-            *((unsigned long*)(&planeptr[40 * j])) = charb[j];
+            __asm volatile ( //Unrolled a bit to reduce the overhead of jumping
+                "lea 0x500(%%di), %%bx\n"
+                ".loop%=: movsw\n\t"
+                "movsw\n\t"
+                "stosw\n\t"
+                "addw $74, %w1\n\t"
+                "movsw\n\t"
+                "movsw\n\t"
+                "stosw\n\t"
+                "addw $74, %w1\n\t"
+                "movsw\n\t"
+                "movsw\n\t"
+                "stosw\n\t"
+                "addw $74, %w1\n\t"
+                "movsw\n\t"
+                "movsw\n\t"
+                "stosw\n\t"
+                "addw $74, %w1\n\t"
+                "cmpw %%bx, %w1\n\t"
+                "jne .loop%=\n\t"
+            : "+S" (charb), "+D" (planeptr) : : "%bx", "memory");
+            /*/
+            for (unsigned short j = 0; j < 16; j++)
+            {
+                unsigned long charL = charb[j];
+                *((unsigned long*)(&planeptr[40 * j])) = charL;
+                planeptr[40 * j + 2] = (unsigned short)charL; //Dummy write to empty the EGC's shift buffer
+            }
+            //*/
         }
-        //*/
+        else //Aligned
+        {
+            __asm volatile ( //Unrolled a bit to reduce the overhead of jumping
+                "lea 0x500(%%di), %%bx\n"
+                ".loop%=: movsw\n\t"
+                "movsw\n\t"
+                "addw $76, %w1\n\t"
+                "movsw\n\t"
+                "movsw\n\t"
+                "addw $76, %w1\n\t"
+                "movsw\n\t"
+                "movsw\n\t"
+                "addw $76, %w1\n\t"
+                "movsw\n\t"
+                "movsw\n\t"
+                "addw $76, %w1\n\t"
+                "cmpw %%bx, %w1\n\t"
+                "jne .loop%=\n\t"
+            : "+S" (charb), "+D" (planeptr) : : "%bx", "memory");
+            /*/
+            for (unsigned short j = 0; j < 16; j++)
+            {
+                *((unsigned long*)(&planeptr[40 * j])) = charb[j];
+            }
+            //*/
+        }
     }
 }
 
 //Char data must be in 'VRAM-compatible' format
-static void DrawCharMask(const unsigned long* charb, short x, short y, const unsigned short* chosenMask)
+static void DrawCharMask(const unsigned long* charb, short x, short y, const unsigned short* chosenMask, int bits32)
 {
     unsigned short* planeptr = (unsigned short*)(y * 80 + ((x >> 3) & 0xFFFE));
     unsigned short xinblock = x & 0x000F;
     egc_bitaddrbtmode(EGC_BLOCKTRANSFER_FORWARD | EGC_BITADDRESS_DEST(xinblock));
     setes(GDC_PLANES_SEGMENT);
-    if(xinblock) //Unaligned
+    if (!bits32) //Why bother doing work on an empty cell?
     {
-        __asm volatile (
-            "xor %%cx, %%cx\n\t"
-            "push %%bp\n\t"
-            "movw %w2, %%bp\n"
-            "loop%=: lodsw\n\t"
-            "movw %%cx, %%dx\n\t"
-            "andw $6, %%dx\n\t"
-            "movw %%bp, %w2\n\t"
-            "addw %%dx, %w2\n\t"
-            "movw (%w2), %%dx\n\t"
-            "andw %%dx, %%ax\n\t"
-            "stosw\n\t"
-            "lodsw\n\t"
-            "andw %%dx, %%ax\n\t"
-            "stosw\n\t"
-            "stosw\n\t"
-            "addw $74, %1\n\t"
-            "addw $2, %%cx\n\t"
-            "cmpw $32, %%cx\n\t"
-            "jne loop%=\n\t"
-            "pop %%bp"
-        : "+S" (charb), "+D" (planeptr) : "b" (chosenMask) : "%ax", "%dx", "%cx", "memory");
-        /*/
-        for (unsigned short j = 0; j < 16; j++)
+        egc_bitlen(16);
+        if (xinblock) //Unaligned
         {
-            unsigned long mask = chosenMask[j & 0x3];
-            mask |= (mask << 16);
-            unsigned long charL = charb[j];
-            charL &= mask;
-            *((unsigned long*)(&planeptr[40 * j])) = charL;
-            planeptr[40 * j + 2] = (unsigned short)charL; //Dummy write to empty the EGC's shift buffer
+            __asm volatile ( //Unrolled so that we only need to load each mask once
+                "xor %%cx, %%cx\n\t"
+                "push %%bp\n\t"
+                "movw %w2, %%bp\n\t"
+                ".loop%=: movw %%bp, %w2\n\t"
+                "addw %%cx, %w2\n\t"
+                "movw (%w2), %%dx\n\t"
+                "lodsw\n\t"
+                "andw %%dx, %%ax\n\t"
+                "stosw\n\t"
+                "stosw\n\t"
+                "addw $6, %0\n\t"
+                "addw $316, %1\n\t"
+                "lodsw\n\t"
+                "andw %%dx, %%ax\n\t"
+                "stosw\n\t"
+                "stosw\n\t"
+                "addw $6, %0\n\t"
+                "addw $316, %1\n\t"
+                "lodsw\n\t"
+                "andw %%dx, %%ax\n\t"
+                "stosw\n\t"
+                "stosw\n\t"
+                "addw $6, %0\n\t"
+                "addw $316, %1\n\t"
+                "lodsw\n\t"
+                "andw %%dx, %%ax\n\t"
+                "stosw\n\t"
+                "stosw\n\t"
+                "subw $24, %0\n\t"
+                "subw $884, %1\n\t"
+                "addw $2, %%cx\n\t"
+                "cmpw $8, %%cx\n\t"
+                "jne .loop%=\n\t"
+                "pop %%bp"
+            : "+S" (charb), "+D" (planeptr) : "b" (chosenMask) : "%ax", "%dx", "%cx", "memory");
+            /*/
+            for (unsigned short j = 0; j < 16; j++)
+            {
+                unsigned short mask = chosenMask[j & 0x3];
+                unsigned short charL = ((unsigned short*)charb)[2*j];
+                charL &= mask;
+                planeptr[40 * j] = charL;
+                planeptr[40 * j + 1] = charL; //Dummy write to empty the EGC's shift buffer
+            }
+            //*/
         }
-        //*/
+        else //Aligned
+        {
+            __asm volatile ( //Unrolled so that we only need to load each mask once
+                "xor %%cx, %%cx\n\t"
+                "push %%bp\n\t"
+                "movw %w2, %%bp\n\t"
+                ".loop%=: movw %%bp, %w2\n\t"
+                "addw %%cx, %w2\n\t"
+                "movw (%w2), %%dx\n\t"
+                "lodsw\n\t"
+                "andw %%dx, %%ax\n\t"
+                "stosw\n\t"
+                "addw $6, %0\n\t"
+                "addw $318, %1\n\t"
+                "lodsw\n\t"
+                "andw %%dx, %%ax\n\t"
+                "stosw\n\t"
+                "addw $6, %0\n\t"
+                "addw $318, %1\n\t"
+                "lodsw\n\t"
+                "andw %%dx, %%ax\n\t"
+                "stosw\n\t"
+                "addw $6, %0\n\t"
+                "addw $318, %1\n\t"
+                "lodsw\n\t"
+                "andw %%dx, %%ax\n\t"
+                "stosw\n\t"
+                "subw $24, %0\n\t"
+                "subw $882, %1\n\t"
+                "addw $2, %%cx\n\t"
+                "cmpw $8, %%cx\n\t"
+                "jne .loop%=\n\t"
+                "pop %%bp"
+            : "+S" (charb), "+D" (planeptr) : "b" (chosenMask) : "%ax", "%dx", "%cx", "memory");
+            /*/
+            for (unsigned short j = 0; j < 16; j++)
+            {
+                unsigned short mask = chosenMask[j & 0x3];
+                unsigned short charL = ((unsigned short*)charb)[2*j];
+                planeptr[40 * j] = charL & mask;
+            }
+            //*/
+        }
     }
-    else //Aligned
+    else
     {
-        __asm volatile (
-            "xor %%cx, %%cx\n\t"
-            "push %%bp\n\t"
-            "movw %w2, %%bp\n"
-            "loop%=: lodsw\n\t"
-            "movw %%cx, %%dx\n\t"
-            "andw $6, %%dx\n\t"
-            "movw %%bp, %w2\n\t"
-            "addw %%dx, %w2\n\t"
-            "movw (%w2), %%dx\n\t"
-            "andw %%dx, %%ax\n\t"
-            "stosw\n\t"
-            "lodsw\n\t"
-            "andw %%dx, %%ax\n\t"
-            "stosw\n\t"
-            "addw $76, %1\n\t"
-            "addw $2, %%cx\n\t"
-            "cmpw $32, %%cx\n\t"
-            "jne loop%=\n\t"
-            "pop %%bp"
-        : "+S" (charb), "+D" (planeptr) : "b" (chosenMask) : "%ax", "%dx", "%cx", "memory");
-        /*/
-        for (unsigned short j = 0; j < 16; j++)
+        egc_bitlen(32);
+        if (xinblock) //Unaligned
         {
-            unsigned long mask = chosenMask[j & 0x3];
-            mask |= (mask << 16);
-            unsigned long charL = charb[j];
-            *((unsigned long*)(&planeptr[40 * j])) = charL & mask;
+            __asm volatile ( //Unrolled so that we only need to load each mask once
+                "xor %%cx, %%cx\n\t"
+                "push %%bp\n\t"
+                "movw %w2, %%bp\n\t"
+                ".loop%=: movw %%bp, %w2\n\t"
+                "addw %%cx, %w2\n\t"
+                "movw (%w2), %%dx\n\t"
+                "lodsw\n\t"
+                "andw %%dx, %%ax\n\t"
+                "stosw\n\t"
+                "lodsw\n\t"
+                "andw %%dx, %%ax\n\t"
+                "stosw\n\t"
+                "stosw\n\t"
+                "addw $12, %0\n\t"
+                "addw $314, %1\n\t"
+                "lodsw\n\t"
+                "andw %%dx, %%ax\n\t"
+                "stosw\n\t"
+                "lodsw\n\t"
+                "andw %%dx, %%ax\n\t"
+                "stosw\n\t"
+                "stosw\n\t"
+                "addw $12, %0\n\t"
+                "addw $314, %1\n\t"
+                "lodsw\n\t"
+                "andw %%dx, %%ax\n\t"
+                "stosw\n\t"
+                "lodsw\n\t"
+                "andw %%dx, %%ax\n\t"
+                "stosw\n\t"
+                "stosw\n\t"
+                "addw $12, %0\n\t"
+                "addw $314, %1\n\t"
+                "lodsw\n\t"
+                "andw %%dx, %%ax\n\t"
+                "stosw\n\t"
+                "lodsw\n\t"
+                "andw %%dx, %%ax\n\t"
+                "stosw\n\t"
+                "stosw\n\t"
+                "subw $48, %0\n\t"
+                "subw $886, %1\n\t"
+                "addw $2, %%cx\n\t"
+                "cmpw $8, %%cx\n\t"
+                "jne .loop%=\n\t"
+                "pop %%bp"
+            : "+S" (charb), "+D" (planeptr) : "b" (chosenMask) : "%ax", "%dx", "%cx", "memory");
+            /*/
+            for (unsigned short j = 0; j < 16; j++)
+            {
+                unsigned long mask = chosenMask[j & 0x3];
+                mask |= (mask << 16);
+                unsigned long charL = charb[j];
+                charL &= mask;
+                *((unsigned long*)(&planeptr[40 * j])) = charL;
+                planeptr[40 * j + 2] = (unsigned short)charL; //Dummy write to empty the EGC's shift buffer
+            }
+            //*/
         }
-        //*/
+        else //Aligned
+        {
+            __asm volatile ( //Unrolled so that we only need to load each mask once
+                "xor %%cx, %%cx\n\t"
+                "push %%bp\n\t"
+                "movw %w2, %%bp\n\t"
+                ".loop%=: movw %%bp, %w2\n\t"
+                "addw %%cx, %w2\n\t"
+                "movw (%w2), %%dx\n\t"
+                "lodsw\n\t"
+                "andw %%dx, %%ax\n\t"
+                "stosw\n\t"
+                "lodsw\n\t"
+                "andw %%dx, %%ax\n\t"
+                "stosw\n\t"
+                "addw $12, %0\n\t"
+                "addw $316, %1\n\t"
+                "lodsw\n\t"
+                "andw %%dx, %%ax\n\t"
+                "stosw\n\t"
+                "lodsw\n\t"
+                "andw %%dx, %%ax\n\t"
+                "stosw\n\t"
+                "addw $12, %0\n\t"
+                "addw $316, %1\n\t"
+                "lodsw\n\t"
+                "andw %%dx, %%ax\n\t"
+                "stosw\n\t"
+                "lodsw\n\t"
+                "andw %%dx, %%ax\n\t"
+                "stosw\n\t"
+                "addw $12, %0\n\t"
+                "addw $316, %1\n\t"
+                "lodsw\n\t"
+                "andw %%dx, %%ax\n\t"
+                "stosw\n\t"
+                "lodsw\n\t"
+                "andw %%dx, %%ax\n\t"
+                "stosw\n\t"
+                "subw $48, %0\n\t"
+                "subw $884, %1\n\t"
+                "addw $2, %%cx\n\t"
+                "cmpw $8, %%cx\n\t"
+                "jne .loop%=\n\t"
+                "pop %%bp"
+            : "+S" (charb), "+D" (planeptr) : "b" (chosenMask) : "%ax", "%dx", "%cx", "memory");
+            /*/
+            for (unsigned short j = 0; j < 16; j++)
+            {
+                unsigned long mask = chosenMask[j & 0x3];
+                mask |= (mask << 16);
+                unsigned long charL = charb[j];
+                *((unsigned long*)(&planeptr[40 * j])) = charL & mask;
+            }
+            //*/
+        }
     }
 }
 
@@ -635,16 +918,16 @@ int StringWriteAnimationFrame(unsigned char skip)
                         twobytecode = ((unsigned int)(ch & 0x7F)) | (isKana ? 0x0A00 : 0x0900);
                     }
                     else twobytecode = ch << 8;
+                    if (format & FORMAT_SHADOW) charFlags[chBufStartNum] = 1;
+                    else charFlags[chBufStartNum] = 0;
                     GetCharacterDataEditFriendly(twobytecode, nextCharBuf);
-                    BoldenCharLeft(nextCharBuf);
-                    if (format & FORMAT_ITALIC) ItaliciseChar(nextCharBuf);
-                    if (format & FORMAT_BOLD) BoldenCharRight(nextCharBuf);
+                    BoldenCharLeft(nextCharBuf, 0);
+                    if (format & FORMAT_ITALIC) ItaliciseChar(nextCharBuf, 0);
+                    if (format & FORMAT_BOLD) BoldenCharRight(nextCharBuf, 0);
                     if (format & FORMAT_UNDERLINE) UnderlineChar(nextCharBuf, 8);
-                    if (format & FORMAT_PART_FADE) MaskChar(nextCharBuf, &bayer4x4masks[60 - (FORMAT_FADE_GET(format) << 2)]);
-                    SwapCharDataFormats(nextCharBuf);
+                    if (format & FORMAT_PART_FADE) MaskChar(nextCharBuf, &bayer4x4masks[60 - (FORMAT_FADE_GET(format) << 2)], 0);
+                    SwapCharDataFormats(nextCharBuf, 0);
                     charColours[chBufStartNum] = FORMAT_COLOUR_GET(format);
-                    if (format & FORMAT_SHADOW) charShadowed[chBufStartNum] = 1;
-                    else charShadowed[chBufStartNum] = 0;
                     charXs[chBufStartNum] = curX;
                     charYs[chBufStartNum] = curY;
                     charFade[chBufStartNum] = 0;
@@ -664,16 +947,18 @@ int StringWriteAnimationFrame(unsigned char skip)
                     twobytecode |= ch;
                     twobytecode = SjisToInternalCode(twobytecode);
                     short actualWidth = (twobytecode >= 0x0900 && twobytecode < 0x0C00) ? 8 : 16; //The characters in this range are logically halfwidth
+                    if (format & FORMAT_SHADOW) charFlags[chBufStartNum] = 1;
+                    else charFlags[chBufStartNum] = 0;
                     GetCharacterDataEditFriendly(twobytecode, nextCharBuf);
-                    BoldenCharLeft(nextCharBuf);
-                    if (format & FORMAT_ITALIC) ItaliciseChar(nextCharBuf);
-                    if (format & FORMAT_BOLD) BoldenCharRight(nextCharBuf);
+                    BoldenCharLeft(nextCharBuf, 0);
+                    char is32Pixels = 0;
+                    if (format & FORMAT_ITALIC) { ItaliciseChar(nextCharBuf, 1); is32Pixels = 0x02; }
+                    if (format & FORMAT_BOLD) { BoldenCharRight(nextCharBuf, 1); is32Pixels = 0x02; }
                     if (format & FORMAT_UNDERLINE) UnderlineChar(nextCharBuf, actualWidth);
-                    if (format & FORMAT_PART_FADE) MaskChar(nextCharBuf, &bayer4x4masks[60 - (FORMAT_FADE_GET(format) << 2)]);
-                    SwapCharDataFormats(nextCharBuf);
+                    if (format & FORMAT_PART_FADE) MaskChar(nextCharBuf, &bayer4x4masks[60 - (FORMAT_FADE_GET(format) << 2)], is32Pixels);
+                    SwapCharDataFormats(nextCharBuf, is32Pixels);
+                    charFlags[chBufStartNum] |= is32Pixels;
                     charColours[chBufStartNum] = FORMAT_COLOUR_GET(format);
-                    if (format & FORMAT_SHADOW) charShadowed[chBufStartNum] = 1;
-                    else charShadowed[chBufStartNum] = 0;
                     charXs[chBufStartNum] = curX;
                     charYs[chBufStartNum] = curY;
                     charFade[chBufStartNum] = 0;
@@ -713,13 +998,13 @@ int StringWriteAnimationFrame(unsigned char skip)
         {
             charFade[chBufNum]++;
             const unsigned short curcol = charColours[chBufNum];
-            if (charShadowed[chBufNum])
+            if (charFlags[chBufNum] & 0x01)
             {
                 egc_fgcolour(shadowColours[curcol]);
-                DrawCharMask(&animCharBuf[16 * chBufNum], charXs[chBufNum] + 1, charYs[chBufNum] + 1, bayer4x4masks + fadeStart);
+                DrawCharMask(&animCharBuf[16 * chBufNum], charXs[chBufNum] + 1, charYs[chBufNum] + 1, bayer4x4masks + fadeStart, charFlags[chBufNum] & 0x02);
             }
             egc_fgcolour(curcol);
-            DrawCharMask(&animCharBuf[16 * chBufNum], charXs[chBufNum], charYs[chBufNum], bayer4x4masks + fadeStart);
+            DrawCharMask(&animCharBuf[16 * chBufNum], charXs[chBufNum], charYs[chBufNum], bayer4x4masks + fadeStart, charFlags[chBufNum] & 0x02);
         }
     }
     chBufStartNum++;
@@ -811,15 +1096,15 @@ void WriteString(const char* str, const short x, const short y, short format, un
                         if (format & FORMAT_UNDERLINE)
                         {
                             UnderlineChar(charbuf, 8);
-                            if (format & FORMAT_PART_FADE) MaskChar(charbuf, &bayer4x4masks[60 - (FORMAT_FADE_GET(format) << 2)]);
-                            SwapCharDataFormats(charbuf);
+                            if (format & FORMAT_PART_FADE) MaskChar(charbuf, &bayer4x4masks[60 - (FORMAT_FADE_GET(format) << 2)], 0);
+                            SwapCharDataFormats(charbuf, 0);
                             if (format & FORMAT_SHADOW)
                             {
                                 egc_fgcolour(shadowColours[FORMAT_COLOUR_GET(format)]);
-                                DrawChar(charbuf, curX + 1, curY + 1);
+                                DrawChar(charbuf, curX + 1, curY + 1, 0);
                             }
                             egc_fgcolour(FORMAT_COLOUR_GET(format));
-                            DrawChar(charbuf, curX, curY);
+                            DrawChar(charbuf, curX, curY, 0);
                         }
                         curX += 8;
                         break;
@@ -861,19 +1146,19 @@ void WriteString(const char* str, const short x, const short y, short format, un
                 }
                 else twobytecode = ch << 8;
                 GetCharacterDataEditFriendly(twobytecode, charbuf);
-                BoldenCharLeft(charbuf);
-                if (format & FORMAT_ITALIC) ItaliciseChar(charbuf);
-                if (format & FORMAT_BOLD) BoldenCharRight(charbuf);
+                BoldenCharLeft(charbuf, 0);
+                if (format & FORMAT_ITALIC) ItaliciseChar(charbuf, 0);
+                if (format & FORMAT_BOLD) BoldenCharRight(charbuf, 0);
                 if (format & FORMAT_UNDERLINE) UnderlineChar(charbuf, 8);
-                if (format & FORMAT_PART_FADE) MaskChar(charbuf, &bayer4x4masks[60 - (FORMAT_FADE_GET(format) << 2)]);
-                SwapCharDataFormats(charbuf);
+                if (format & FORMAT_PART_FADE) MaskChar(charbuf, &bayer4x4masks[60 - (FORMAT_FADE_GET(format) << 2)], 0);
+                SwapCharDataFormats(charbuf, 0);
                 if (format & FORMAT_SHADOW)
                 {
                     egc_fgcolour(shadowColours[FORMAT_COLOUR_GET(format)]);
-                    DrawChar(charbuf, curX + 1, curY + 1);
+                    DrawChar(charbuf, curX + 1, curY + 1, 0);
                 }
                 egc_fgcolour(FORMAT_COLOUR_GET(format));
-                DrawChar(charbuf, curX, curY);
+                DrawChar(charbuf, curX, curY, 0);
                 curX += 8;
             }
             else //double byte
@@ -885,19 +1170,20 @@ void WriteString(const char* str, const short x, const short y, short format, un
                 twobytecode = SjisToInternalCode(twobytecode);
                 short actualWidth = (twobytecode >= 0x0900 && twobytecode < 0x0C00) ? 8 : 16; //The characters in this range are logically halfwidth
                 GetCharacterDataEditFriendly(twobytecode, charbuf);
-                BoldenCharLeft(charbuf);
-                if (format & FORMAT_ITALIC) ItaliciseChar(charbuf);
-                if (format & FORMAT_BOLD) BoldenCharRight(charbuf);
+                BoldenCharLeft(charbuf, 0);
+                char is32Pixels = 0;
+                if (format & FORMAT_ITALIC) { ItaliciseChar(charbuf, 1); is32Pixels = 1; }
+                if (format & FORMAT_BOLD) { BoldenCharRight(charbuf, 1); is32Pixels = 1; }
                 if (format & FORMAT_UNDERLINE) UnderlineChar(charbuf, actualWidth);
-                if (format & FORMAT_PART_FADE) MaskChar(charbuf, &bayer4x4masks[60 - (FORMAT_FADE_GET(format) << 2)]);
-                SwapCharDataFormats(charbuf);
+                if (format & FORMAT_PART_FADE) MaskChar(charbuf, &bayer4x4masks[60 - (FORMAT_FADE_GET(format) << 2)], is32Pixels);
+                SwapCharDataFormats(charbuf, is32Pixels);
                 if (format & FORMAT_SHADOW)
                 {
                     egc_fgcolour(shadowColours[FORMAT_COLOUR_GET(format)]);
-                    DrawChar(charbuf, curX + 1, curY + 1);
+                    DrawChar(charbuf, curX + 1, curY + 1, is32Pixels);
                 }
                 egc_fgcolour(FORMAT_COLOUR_GET(format));
-                DrawChar(charbuf, curX, curY);
+                DrawChar(charbuf, curX, curY, is32Pixels);
                 curX += actualWidth;
             }
         }

@@ -50,7 +50,6 @@ int main(void)
     egc_patdatandreadmode(EGC_PATTERNSOURCE_FGCOLOUR);
     egc_rwmode(EGC_WRITE_ROPSHIFT | EGC_SOURCE_CPU | EGC_ROP((EGC_ROP_SRC & EGC_ROP_PAT) | ((~EGC_ROP_SRC) & EGC_ROP_DST)));
     egc_bitaddrbtmode(EGC_BLOCKTRANSFER_FORWARD);
-    egc_bitlen(32);
     SetShadowColours(stdShadowCols);
     
     int result = ReadInRootInfo();

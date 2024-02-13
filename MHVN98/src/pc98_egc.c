@@ -9,9 +9,9 @@
 void ClearScreenEGC()
 {
     egc_planeaccess(0xF);
+    egc_mask(0xFFFF);
     egc_patdatandreadmode(EGC_PATTERNSOURCE_BGCOLOUR);
     egc_rwmode(EGC_WRITE_PATSHIFT | EGC_SOURCE_CPU);
-    egc_mask(0xFFFF);
     egc_bitaddrbtmode(EGC_BLOCKTRANSFER_FORWARD);
     egc_bitlen(2048);
     setes(GDC_PLANES_SEGMENT);
@@ -21,9 +21,9 @@ void ClearScreenEGC()
 void ClearLinesEGC(unsigned short startLine, unsigned short numLines)
 {
     egc_planeaccess(0xF);
+    egc_mask(0xFFFF);
     egc_patdatandreadmode(EGC_PATTERNSOURCE_BGCOLOUR);
     egc_rwmode(EGC_WRITE_PATSHIFT | EGC_SOURCE_CPU);
-    egc_mask(0xFFFF);
     egc_bitaddrbtmode(EGC_BLOCKTRANSFER_FORWARD);
     egc_bitlen(2048);
     setes(GDC_PLANES_SEGMENT);
