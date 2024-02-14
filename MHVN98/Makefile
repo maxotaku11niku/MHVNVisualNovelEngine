@@ -1,20 +1,23 @@
 # Directories
-TARGET  := bin
-BUILD   := obj
-SOURCES := src
-GENASM  := genasm
+TARGET   := bin
+BUILD    := obj
+MAINSRC  := src
+PLATFORM := src/platform
+SOURCES  := $(MAINSRC) $(PLATFORM)
+GENASM   := genasm
 # Find source files
 export ASMFILES    := $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.asm)))
 export CFILES      := $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
 export HEADERS     := $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.h)))
 export OFILESC     := $(addprefix $(BUILD)/,$(CFILES:.c=.o))
 export OFILESASM   := $(addprefix $(BUILD)/,$(ASMFILES:.asm=.o))
-export OFILES      := $(addprefix $(BUILD)/,$(ASMFILES:.asm=.o) $(CFILES:.c=.o))
+export OFILES      := $(OFILESC) $(OFILESASM)
 export GENASMFILES := $(addprefix $(GENASM)/,$(CFILES:.c=.asm))
-export SOURCEFILES := $(addprefix $(SOURCES)/,$(ASMFILES) $(CFILES))
-export CFILESWD    := $(addprefix $(SOURCES)/,$(CFILES))
-export HEADERSWD   := $(addprefix $(SOURCES)/,$(HEADERS))
-export ASMFILESWD  := $(addprefix $(SOURCES)/,$(ASMFILES))
+export ASMFILESWD  := $(foreach dir,$(SOURCES),$(wildcard $(dir)/*.asm))
+export CFILESWD    := $(foreach dir,$(SOURCES),$(wildcard $(dir)/*.c))
+export HEADERSWD   := $(foreach dir,$(SOURCES),$(wildcard $(dir)/*.h))
+export SOURCEFILES := $(ASMFILESWD) $(CFILESWD)
+
 # Flags
 export CFLAGSBASE       := -march=i286 -mcmodel=small
 export CFLAGSRELEASE    := $(CFLAGSBASE) -O2
@@ -70,20 +73,28 @@ $(TARGET):
 $(GENASM):
 	mkdir -p $(GENASM)
 
-#Apply some lovely whole program optimisation
 $(TARGET)/MHVN98.EXE : $(OFILES)
 	ia16-elf-gcc $(CFLAGS) $(LINKFLAGS) -o $@ $^ $(LINKLIBS)
 
 $(OFILES) : $(SOURCEFILES) $(HEADERSWD)
 
-wholeprog.o : wholeprog.c $(SOURCEFILES) $(HEADERSWD)
+wholeprog.o : wholeprog.c $(CFILESWD) $(HEADERSWD)
 	ia16-elf-gcc wholeprog.c -o wholeprog.o $(CFLAGS) -fwhole-program -c
 
-$(BUILD)/%.o: $(SOURCES)/%.asm
+$(BUILD)/%.o : $(MAINSRC)/%.asm
 	ia16-elf-as $< -o $@ -O2
 
-$(BUILD)/%.o: $(SOURCES)/%.c
+$(BUILD)/%.o : $(MAINSRC)/%.c
 	ia16-elf-gcc $< -o $@ $(CFLAGS) -c
 
-$(GENASM)/%.asm	: $(SOURCES)/%.c
+$(GENASM)/%.asm : $(MAINSRC)/%.c
+	ia16-elf-gcc $< -S -o $@ $(CFLAGS) -c
+
+$(BUILD)/%.o : $(PLATFORM)/%.asm
+	ia16-elf-as $< -o $@ -O2
+
+$(BUILD)/%.o : $(PLATFORM)/%.c
+	ia16-elf-gcc $< -o $@ $(CFLAGS) -c
+
+$(GENASM)/%.asm : $(PLATFORM)/%.c
 	ia16-elf-gcc $< -S -o $@ $(CFLAGS) -c

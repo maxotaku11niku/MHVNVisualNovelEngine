@@ -26,18 +26,20 @@ What won't be hosted here are tools that are NOT specific to this project (image
 
 At minimum, I'm looking to put the following things into this engine:
 
-* Rich text rendering (mostly done, just need to handle newlines and drawing to a proper graphical box)
-* Changeable character sprites and CG images (I've already made a format and encoder/decoder)
+* Rich text rendering (mostly done, just need to handle drawing to a proper graphical box)
+* Changeable character sprites and CG images (I've already made a format and encoder/decoder, though I will definitely overhaul it soon)
 * Music provided through PMD (I haven't programmed anything like this so this is the best way forward)
+* Sound effects (I made an ADPCM format to keep file sizes down)
 * Branching paths and the possibility of non-linear storylines (i.e. we want more than to just make 'kinetic' VNs)
 * Save and load (including quicksave and quickload)
-* Runs in real mode from a .COM file (for simplicity, as I haven't got a linker to support the MZ format. Even then I make a valid .COM file only through a bit of a hack anyway)
+* Runs in real mode DOS (for simplicity. I use gcc-ia16 to compile my source code to an MZ .EXE file, and make sure it's 80286-compatible)
 
 A few further features may be in order:
 
 * Music room and CG gallery (in principle simple but not necessary)
 * Cross-save persistence (time for some DDLC shenanigans??)
 * Text log (common but not strictly necessary?)
+* Voice acting support (again, that ADPCM format coming in)
 * Video player (I've already written this one, actually. I would use it for intros perhaps)
 
 Another important feature is that this engine should be data-driven. For the most part to create a radically different VN, one wouldn't have to recompile the executable. All unique information should be in data files. This would ease porting to modern systems, as all one would have to do is interpret those data files anyway. If a 'modern system' executable were made, further VNs could be made for the PC-98 and be automatically ported to modern systems. But that's all for later...
@@ -233,7 +235,7 @@ Adding support for multiple languages is therefore a case of adding to this list
 
 * Text data archive (textdat_file) *
 
-This file contains all the text for a single language
+This file contains all the text for a single language.
 
 0x00000000	uint32	systext_ptr	Pointer to the system text strings
 0x00000004	uint32	credits_ptr	Pointer to credits text strings
@@ -354,6 +356,24 @@ This file contains all music data for PMD.
 * Sound effect data archive (sedat_file) *
 
 This file contains all sound effect data.
+
+0x00000000	uint32                     globaleffect_ptr   Pointer to table of pointers to global sound effects
+0x00000004	uint32                     scenespecific_ptr  Pointer to table of pointers to scene-specific sound effect tables
+0x00000008	uint16                     num_globeleffects  Number of global sound effects
+0x0000000A	uint32[num_globeleffects]  globaleffect_table Pointers to global sound effect data
+var         uint32[num_scenes]         sceneptrs_table    Pointers to tables of pointers to scene-specific sound effects
+
+And then for every scene:
+
+0x00000000  uint16                     num_effectsinscene Number of sound effects associated with this scene
+0x00000002  uint32[num_effectsinscene] sceneeffect_table  Pointers to sound effects associated with this scene
+
+All sound effects are 534ADPCM files. Global sound effects can be triggered from anywhere, scene-specific sound effects can only be triggered from the scene they are associated with.
+'Scene-specific' sound effects were mostly invented to provide voice acting support, should one choose to use it. For the sake of saving space, please use a low sample rate and encode voice files to mono. Human voices can still sound recognisable even down to 5000 Hz sample rate and maybe lower. 11025 Hz feels fine enough. Of course, because of the abstraction (this specification doesn't care one bit what the actual audio in the file is) you could put whatever you want.
+
+Please do not abuse this system to provide full PCM background music, as I cannot guarantee that MHVN98 will provide sound effect mixing support. This means perhaps only one sound effect can play at any one time.
+
+See the specification on 534ADPCM for more info on the actual content of the sound files.
 
 * System data archive (systemdat_file) *
 

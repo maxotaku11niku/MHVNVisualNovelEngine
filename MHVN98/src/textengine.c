@@ -3,20 +3,21 @@
 #include <stdio.h>
 #include <string.h>
 #include <dos.h>
-#include "x86ports.h"
-#include "x86strops.h"
-#include "pc98_crtbios.h"
-#include "pc98_gdc.h"
-#include "pc98_chargen.h"
-#include "pc98_keyboard.h"
-#include "pc98_egc.h"
-#include "filehandling.h"
+#include "platform/x86ports.h"
+#include "platform/x86strops.h"
+#include "platform/x86segments.h"
+#include "platform/filehandling.h"
+//#include "platform/unrealhwaddr.h"
+#include "platform/pc98_crtbios.h"
+#include "platform/pc98_gdc.h"
+#include "platform/pc98_chargen.h"
+#include "platform/pc98_keyboard.h"
+#include "platform/pc98_egc.h"
 #include "stdbuffer.h"
-#include "unrealhwaddr.h"
 #include "rootinfo.h"
 #include "sceneengine.h"
 #include "textengine.h"
-#include "x86segments.h"
+
 
 TextInfo textInfo;
 

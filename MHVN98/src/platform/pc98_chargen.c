@@ -78,7 +78,7 @@ void SwapCharDataFormats(unsigned long* buffer, int bits32)
         for (unsigned char i = 0; i < 16; i++)
         {
             unsigned short row = ((unsigned short*)buffer)[2*i + 1];
-            unsigned long temprow = (row & 0x00FF) << 8;
+            unsigned short temprow = (row & 0x00FF) << 8;
             ((unsigned short*)buffer)[i] = temprow | ((row & 0xFF00) >> 8);
         }
     }

@@ -2,11 +2,11 @@
 #include <stdlib.h>
 #include <libi86/malloc.h>
 #include <dos.h>
-//#include "x86strops.h"
-//#include "memalloc.h"
-#include "filehandling.h"
+//#include "platform/x86strops.h"
+//#include "platform/memalloc.h"
+#include "platform/filehandling.h"
+#include "platform/pc98_egc.h"
 #include "stdbuffer.h"
-#include "pc98_egc.h"
 #include "rootinfo.h"
 #include "sceneengine.h"
 #include "textengine.h"

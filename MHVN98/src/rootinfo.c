@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <dos.h>
-#include "x86strops.h"
-//#include "filehandling.h"
+#include "platform/x86strops.h"
+//#include "platform/filehandling.h"
 #include "stdbuffer.h"
 #include "textengine.h"
 #include "rootinfo.h"

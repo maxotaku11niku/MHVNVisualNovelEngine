@@ -1,6 +1,6 @@
 #pragma once
 
-#include "x86interrupt.h"
+#include "platform/x86interrupt.h"
 
 INTFUNC void VsyncInterrupt();
 
