@@ -1,0 +1,20 @@
+-- * MHVNLINK usage * --
+
+mhvnlink -h
+mhvnlink -o [output directory] [options]
+
+Takes the contents of each specified object file together with the master descriptor file to produce a ROOTINFO.DAT and every appropriate archive file. Thus, this program links everything together into a coherent package.
+
+Options:
+
+-h                Displays this help.
+ALL OF THESE FLAGS MUST BE USED!:
+-o [directory]    Defines the directory into which ROOTINFO.DAT and every required data archive is put into.
+-d [filename]     Defines the filename of the master descriptor file.
+-s [filename]     Defines the filename of the scene data object file.
+-t [filename]     Defines the filename of a text data object file to include. This option can be specified as many times as necessary.
+-bg [filename]    Defines the filename of the background image data object file.
+-spr [filename]   Defines the filename of the sprite data object file.
+-m [filename]     Defines the filename of the music data object file.
+-sfx [filename]   Defines the filename of the sound effect data object file.
+-sys [filename]   Defines the filename of the system data object file.

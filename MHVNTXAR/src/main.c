@@ -6,18 +6,18 @@
 
 void DisplayHelp(void)
 {
-    printf("Usage:\n\n");
-    printf("mhvntxar -h\n");
-    printf("mhvntxar -o [output filename] <options> [list of filenames, space separated]\n\n");
-    printf("Options:\n\n");
-    printf("-h             Displays this help.\n");
-    printf("-o [filename]  Defines the filename of the output file, with extension.\n");
-    printf("-s             Convert input format text to Shift-JIS, which is currently necessary for valid text on MHVN98.\n");
+    puts("Usage:\n\n"
+         "mhvntxar -h\n"
+         "mhvntxar -o [output filename] <options> [list of filenames, space separated]\n\n"
+         "Options:\n\n"
+         "-h             Displays this help.\n"
+         "-o [filename]  Defines the filename of the output file, with extension.\n"
+         "-s             Convert input format text to Shift-JIS, which is currently necessary for valid text on MHVN98.");
 }
 
 int main(int argc, char** argv)
 {
-    printf("MHVNTXAR - MHVN text archiver tool - Version 0.1.0 - Maxim Hoxha 2023\n");
+    printf("MHVNTXAR - MHVN text archiver tool - Version 0.1.0 - Maxim Hoxha 2023-2024\n");
 
     if (argc < 2)
     {

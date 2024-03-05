@@ -5,17 +5,17 @@
 
 void DisplayHelp(void)
 {
-    printf("Usage:\n\n");
-    printf("mhvnscas -h\n");
-    printf("mhvnscas -o [output filename] <options> [list of filenames, space separated]\n\n");
-    printf("Options:\n\n");
-    printf("-h             Displays this help.\n");
-    printf("-o [filename]  Defines the filename of the output file, with extension.\n");
+    puts("Usage:\n\n"
+         "mhvnscas -h\n"
+         "mhvnscas -o [output filename] <options> [list of filenames, space separated]\n\n"
+         "Options:\n\n"
+         "-h             Displays this help.\n"
+         "-o [filename]  Defines the filename of the output file, with extension.");
 }
 
 int main(int argc, char** argv)
 {
-    printf("MHVNSCAS - MHVN scene assembler tool - Version 0.0.1 - Maxim Hoxha 2023\n");
+    printf("MHVNSCAS - MHVN scene assembler tool - Version 0.0.1 - Maxim Hoxha 2023-2024\n");
 
     if (argc < 2)
     {

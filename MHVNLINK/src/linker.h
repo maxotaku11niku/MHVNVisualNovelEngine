@@ -1,0 +1,1 @@
+int LinkVN(const char* dir, const char* masterDesc, const char* sceneData, const char** textData, const char* bgData, const char* spriteData, const char* musicData, const char* sfxData, const char* sysData);
