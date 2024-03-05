@@ -42,10 +42,14 @@ const std::unordered_map<std::string, int> mnemonicsToOpcodes =
     {std::string("text"),        0x11},
     {std::string("charname"),    0x12},
     {std::string("nocharname"), 0x112},
-    {std::string("deltext"),     0x1F},
-    {std::string("lut"),         0x20},
-    {std::string("multichoice"), 0x21},
-    {std::string("ynchoice"),    0x22},
+    {std::string("deltext"),     0x13},
+    {std::string("ynchoice"),    0x14},
+    {std::string("choice2"),     0x15},
+    {std::string("choice3"),     0x16},
+    {std::string("choice4"),     0x17},
+    {std::string("lut2"),        0x20},
+    {std::string("lut3"),        0x21},
+    {std::string("lut4"),        0x22},
     {std::string("swapzn"),      0x23},
     {std::string("setvi"),       0x24},
     {std::string("setvv"),       0x25},
@@ -370,8 +374,8 @@ typedef enum
     STATEVAR_SINGLE, //Operation takes a single state variable reference
     STATEVAR_DOUBLE, //Operation takes two state variable references
     STATEVAR_SINGLE_IMMEDIATE, //Operation takes a single state variable reference and an immediate
-    MULTICHOICE, //Operation is the 'multichoice' instruction
-    LUT //Operation is the 'lut' instruction
+    MULTICHOICE, //Operation is a multiple choice instruction
+    LUT //Operation is a LUT instruction
 } OperandType;
 
 int ParseLine(char* line, int* curScene)
@@ -441,19 +445,35 @@ int ParseLine(char* line, int* curScene)
             numBytesInInstruction += 2;
             numArg = 0;
             break;
-        case 0x1F: //deltext
+        case 0x13: //deltext
             numArg = 0;
             break;
-        case 0x20: //lut
-            numArg = 2;
-            type = OperandType::LUT;
+        case 0x14: //ynchoice
+            numArg = 0;
             break;
-        case 0x21: //multichoice
-            numArg = 9;
+        case 0x15: //choice2
+            numArg = 0;
             type = OperandType::MULTICHOICE;
             break;
-        case 0x22: //ynchoice
+        case 0x16: //choice3
             numArg = 0;
+            type = OperandType::MULTICHOICE;
+            break;
+        case 0x17: //choice4
+            numArg = 0;
+            type = OperandType::MULTICHOICE;
+            break;
+        case 0x20: //lut2
+            numArg = 3;
+            type = OperandType::LUT;
+            break;
+        case 0x21: //lut3
+            numArg = 4;
+            type = OperandType::LUT;
+            break;
+        case 0x22: //lut4
+            numArg = 5;
+            type = OperandType::LUT;
             break;
         case 0x23: //swapzn
             numArg = 0;
@@ -672,8 +692,8 @@ int ParseLine(char* line, int* curScene)
                         (*(curScDat->refVarLabels))[locCounter + 2] = std::string(wordptr);
                     }
                     numBytesInInstruction += 2;
-                    instructionBytes[1] = (unsigned char)(arg0 & 0x00FF);
-                    instructionBytes[2] = (unsigned char)((arg0 & 0xFF00) >> 8);
+                    instructionBytes[3] = (unsigned char)(arg0 & 0x00FF);
+                    instructionBytes[4] = (unsigned char)((arg0 & 0xFF00) >> 8);
                     break;
                 case OperandType::STATEVAR_SINGLE_IMMEDIATE:
                     scanStat = ScanForArgument((const char**)&wordptr, (const char**)&wordEndPtr);
@@ -692,12 +712,93 @@ int ParseLine(char* line, int* curScene)
                     *wordEndPtr = '\0';
                     arg0 = atoi(wordptr);
                     numBytesInInstruction += 2;
+                    instructionBytes[3] = (unsigned char)(arg0 & 0x00FF);
+                    instructionBytes[4] = (unsigned char)((arg0 & 0xFF00) >> 8);
+                    break;
+                case OperandType::MULTICHOICE: //TODO: make this able to rearrange text pointers should that be necessary
+                    scanStat = ScanForArgument((const char**)&wordptr, (const char**)&wordEndPtr);
+                    *wordEndPtr = '\0';
+                    arg0 = GetStateVarNum(wordptr);
+                    if (arg0 < 0)
+                    {
+                        arg0 = 0;
+                        (*(curScDat->refVarLabels))[locCounter] = std::string(wordptr);
+                    }
+                    numBytesInInstruction += 2;
                     instructionBytes[1] = (unsigned char)(arg0 & 0x00FF);
                     instructionBytes[2] = (unsigned char)((arg0 & 0xFF00) >> 8);
-                    break;
-                case OperandType::MULTICHOICE:
+                    scanStat = ScanForArgument((const char**)&wordptr, (const char**)&wordEndPtr);
+                    *wordEndPtr = '\0';
+                    numBytesInInstruction += 2;
+                    instructionBytes[3] = (unsigned char)(nT & 0x00FF);
+                    instructionBytes[4] = (unsigned char)((nT & 0xFF00) >> 8);
+                    curScDat->textNames[nT] = sceneTextEntryNamesBufPtr;
+                    pcch = wordptr;
+                    cch = 0xFF;
+                    while (cch)
+                    {
+                        cch = *pcch++;
+                        *sceneTextEntryNamesBufPtr++ = cch;
+                    }
+                    curScDat->numTexts++;
+                    nT++;
+                    for (int i = 2; i < numArg-1; i++)
+                    {
+                        scanStat = ScanForArgument((const char**)&wordptr, (const char**)&wordEndPtr);
+                        *wordEndPtr = '\0';
+                        curScDat->textNames[nT] = sceneTextEntryNamesBufPtr;
+                        pcch = wordptr;
+                        cch = 0xFF;
+                        while (cch)
+                        {
+                            cch = *pcch++;
+                            *sceneTextEntryNamesBufPtr++ = cch;
+                        }
+                        curScDat->numTexts++;
+                        nT++;
+                    }
+                    scanStat = ScanForWord((const char**)&wordptr, (const char**)&wordEndPtr);
+                    *wordEndPtr = '\0';
+                    curScDat->textNames[nT] = sceneTextEntryNamesBufPtr;
+                    pcch = wordptr;
+                    cch = 0xFF;
+                    while (cch)
+                    {
+                        cch = *pcch++;
+                        *sceneTextEntryNamesBufPtr++ = cch;
+                    }
+                    curScDat->numTexts++;
+                    textChain = false; //Since choice labels are taken from the scene's pool of texts, chaining is interrupted
                     break;
                 case OperandType::LUT:
+                    scanStat = ScanForArgument((const char**)&wordptr, (const char**)&wordEndPtr);
+                    *wordEndPtr = '\0';
+                    arg0 = GetStateVarNum(wordptr);
+                    if (arg0 < 0)
+                    {
+                        arg0 = 0;
+                        (*(curScDat->refVarLabels))[locCounter] = std::string(wordptr);
+                    }
+                    numBytesInInstruction += 2;
+                    instructionBytes[1] = (unsigned char)(arg0 & 0x00FF);
+                    instructionBytes[2] = (unsigned char)((arg0 & 0xFF00) >> 8);
+                    for (int i = 1; i < numArg-1; i++)
+                    {
+                        wordptr = wordEndPtr + 1;
+                        scanStat = ScanForArgument((const char**)&wordptr, (const char**)&wordEndPtr);
+                        *wordEndPtr = '\0';
+                        arg0 = atoi(wordptr);
+                        numBytesInInstruction += 2;
+                        instructionBytes[1 + 2*i] = (unsigned char)(arg0 & 0x00FF);
+                        instructionBytes[2 + 2*i] = (unsigned char)((arg0 & 0xFF00) >> 8);
+                    }
+                    wordptr = wordEndPtr + 1;
+                    scanStat = ScanForWord((const char**)&wordptr, (const char**)&wordEndPtr);
+                    *wordEndPtr = '\0';
+                    arg0 = atoi(wordptr);
+                    numBytesInInstruction += 2;
+                    instructionBytes[1 + 2*(numArg-1)] = (unsigned char)(arg0 & 0x00FF);
+                    instructionBytes[2 + 2*(numArg-1)] = (unsigned char)((arg0 & 0xFF00) >> 8);
                     break;
             }
 

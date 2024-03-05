@@ -173,10 +173,14 @@ For each scene, when the data is uncompressed, it takes the form of a bytecode, 
 0x10	nexttext                           Displays the next text. Cannot actually be used in scene assembly, generated automatically by the assembler from sequential 'text' commands.
 0x11	text [uint16 textnum]              Displays the text given in the following local string reference and waits for user input before continuing.
 0x12	charname [uint16 charnum]          Sets the current character name to the string pointed to by charnum. Character number 0xFFFF is reserved for wiping the character name entirely (nocharname pseudoinstruction).
-0x1F	deltext                            Wipes the text from the text box. Implied by a 'text' instruction if not called beforehand.
-0x20	lut [uint16 statevar], [int16 lut1], [int16 lut2]...          Converts choice indices to the given numbers for each state variable. Converted by the assembler into the encoding which is what is actually parsed by the scene processor: lut [uint8 numopts], [uint16 statevar], [numopts int16s]
-0x21	multichoice [uint16 statevar], [label opt1], [label opt2]...  Displays a number of choices to the user (up to some specified limit), and puts the number chosen into the state variable pointed to by statevar. Converted by the assembler into the more space efficient encoding which is what is actually parsed by the scene processor: multichoice [uint8 numopts], [uint16 statevar], [uint16 firstchoicetext].
-0x22	ynchoice                                      Displays a yes/no choice to the user. Sets the Z flag to 0 if no, or to 1 in if yes.
+0x13	deltext                            Wipes the text from the text box. Implied by a 'text' instruction if not called beforehand.
+0x14	ynchoice                           Displays a yes/no choice to the user. Sets the Z flag to 0 if no, or to 1 in if yes.
+0x15	choice2 [uint16 statevar], [label opt1], [label opt2]  Displays two freeform choices to the user and puts the number chosen into the state variable pointed to by statevar. Converted by the assembler into the more space efficient encoding which is what is actually parsed by the scene processor: choice2 [uint16 statevar], [uint16 firstchoicetext].
+0x16	choice3 [uint16 statevar], [label opt1], [label opt2], [label opt3]  Displays three freeform choices to the user and puts the number chosen into the state variable pointed to by statevar. Converted by the assembler into the more space efficient encoding which is what is actually parsed by the scene processor: choice3 [uint16 statevar], [uint16 firstchoicetext].
+0x17	choice4 [uint16 statevar], [label opt1], [label opt2], [label opt3], [label opt4]  Displays four freeform choices to the user and puts the number chosen into the state variable pointed to by statevar. Converted by the assembler into the more space efficient encoding which is what is actually parsed by the scene processor: choice4 [uint16 statevar], [uint16 firstchoicetext].
+0x20	lut2 [uint16 statevar], [int16 lut1], [int16 lut2]  2-element lookup table using statevar as an index and putting the result into statevar.
+0x21	lut3 [uint16 statevar], [int16 lut1], [int16 lut2], [int16 lut3]  3-element lookup table using statevar as an index and putting the result into statevar.
+0x22	lut4 [uint16 statevar], [int16 lut1], [int16 lut2], [int16 lut3], [int16 lut4]  4-element lookup table using statevar as an index and putting the result into statevar.
 0x23	swapzn                                        Swaps the Z and N flags.
 0x24	setvi [uint16 statevar], [int16 imm]          Sets *statevar to equal imm.
 0x25	setvv [uint16 statevar1], [uint16 statevar2]  Sets *statevar1 to equal *statevar2.
@@ -360,7 +364,7 @@ This file contains all sound effect data.
 0x00000000	uint32                     globaleffect_ptr   Pointer to table of pointers to global sound effects
 0x00000004	uint32                     scenespecific_ptr  Pointer to table of pointers to scene-specific sound effect tables
 0x00000008	uint16                     num_globeleffects  Number of global sound effects
-0x0000000A	uint32[num_globeleffects]  globaleffect_table Pointers to global sound effect data
+0x0000000A	uint32[num_globaleffects]  globaleffect_table Pointers to global sound effect data
 var         uint32[num_scenes]         sceneptrs_table    Pointers to tables of pointers to scene-specific sound effects
 
 And then for every scene:

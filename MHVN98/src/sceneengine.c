@@ -349,22 +349,117 @@ int SceneDataProcess()
             curSceneDataPC += 2;
             break;
         }
-        case 0x1F: //deltext
+        case 0x13: //deltext
             delText:
             ClearTextBox();
             vmFlags &= ~VMFLAG_TEXTINBOX;
             vmFlags &= ~VMFLAG_PROCESS;
             returnStatus |= SCENE_STATUS_WIPETEXT; //for later, when text box wiping involves an animation
             break;
-        case 0x20: //lut
-            result = *((unsigned char*)(curSceneData + curSceneDataPC));
-            curSceneDataPC += 3 + (result << 1); //stub
-            break;
-        case 0x21: //multichoice
-            curSceneDataPC += 5; //stub
-            break;
-        case 0x22: //ynchoice
+        case 0x14: //ynchoice
             break; //stub
+        case 0x15: //choice2
+            curSceneDataPC += 4; //stub
+            break;
+        case 0x16: //choice3
+            curSceneDataPC += 4; //stub
+            break;
+        case 0x17: //choice4
+            curSceneDataPC += 4; //stub
+            break;
+        case 0x20: //lut2
+            result = *((unsigned short*)(curSceneData + curSceneDataPC));
+            curSceneDataPC += 2;
+            varptr1 = GetVariableRef(result);
+            result = *((unsigned short*)(curSceneData + curSceneDataPC));
+            if (*varptr1 == 0)
+            {
+                *varptr1 = result;
+                curSceneDataPC += 4;
+                break;
+            }
+            curSceneDataPC += 2;
+            result = *((unsigned short*)(curSceneData + curSceneDataPC));
+            curSceneDataPC += 2;
+            if (*varptr1 == 1)
+            {
+                *varptr1 = result;
+            }
+            else //escape condition
+            {
+                *varptr1 = 0;
+            }
+            break;
+        case 0x21: //lut3
+            result = *((unsigned short*)(curSceneData + curSceneDataPC));
+            curSceneDataPC += 2;
+            varptr1 = GetVariableRef(result);
+            result = *((unsigned short*)(curSceneData + curSceneDataPC));
+            if (*varptr1 == 0)
+            {
+                *varptr1 = result;
+                curSceneDataPC += 6;
+                break;
+            }
+            curSceneDataPC += 2;
+            result = *((unsigned short*)(curSceneData + curSceneDataPC));
+            if (*varptr1 == 1)
+            {
+                *varptr1 = result;
+                curSceneDataPC += 4;
+                break;
+            }
+            curSceneDataPC += 2;
+            result = *((unsigned short*)(curSceneData + curSceneDataPC));
+            curSceneDataPC += 2;
+            if (*varptr1 == 2)
+            {
+                *varptr1 = result;
+            }
+            else //escape condition
+            {
+                *varptr1 = 0;
+            }
+            break;
+        case 0x22: //lut4
+            result = *((unsigned short*)(curSceneData + curSceneDataPC));
+            curSceneDataPC += 2;
+            varptr1 = GetVariableRef(result);
+            result = *((unsigned short*)(curSceneData + curSceneDataPC));
+            if (*varptr1 == 0)
+            {
+                *varptr1 = result;
+                curSceneDataPC += 8;
+                break;
+            }
+            curSceneDataPC += 2;
+            result = *((unsigned short*)(curSceneData + curSceneDataPC));
+            if (*varptr1 == 1)
+            {
+                *varptr1 = result;
+                curSceneDataPC += 6;
+                break;
+            }
+            curSceneDataPC += 2;
+            result = *((unsigned short*)(curSceneData + curSceneDataPC));
+            if (*varptr1 == 2)
+            {
+                *varptr1 = result;
+                curSceneDataPC += 4;
+                break;
+            }
+            curSceneDataPC += 2;
+            result = *((unsigned short*)(curSceneData + curSceneDataPC));
+            curSceneDataPC += 2;
+            if (*varptr1 == 3)
+            {
+                *varptr1 = result;
+            }
+            else //escape condition
+            {
+                *varptr1 = 0;
+            }
+            break;
         case 0x23: //swapzn
             result  = (vmFlags & VMFLAG_Z) << 1;
             result |= (vmFlags & VMFLAG_N) >> 1;
