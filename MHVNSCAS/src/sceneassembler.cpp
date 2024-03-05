@@ -5,6 +5,7 @@
 #include <string.h>
 #include <unordered_map>
 #include <string>
+#include <vector>
 
 #define EOT ((char)0x04)
 
@@ -19,6 +20,7 @@
 #define DEFAULT_ALLOCBLOCK_STENB 65536
 #define DEFAULT_ALLOCBLOCK_SDB 65536
 #define DEFAULT_ALLOCBLOCK_CLB 65536
+#define DEFAULT_ALLOCBLOCK_SEP 256
 
 //This opcode map also accounts for pseudoinstructions by going beyond a byte
 const std::unordered_map<std::string, int> mnemonicsToOpcodes =
@@ -226,7 +228,7 @@ int numLocalVars;
 int numLocalFlags;
 
 std::unordered_map<std::string, int>* foundJumpLabels;
-std::unordered_map<int, std::string>* refJumpLabels;
+std::vector<std::pair<int, std::string>>* refJumpLabels;
 std::unordered_map<std::string, int>* foundSceneLabels;
 std::unordered_map<std::string, int>* foundCharLabels;
 std::unordered_map<std::string, int>* foundVarLabels;
@@ -281,20 +283,22 @@ int ScanForWord(const char** start, const char** end)
         if (ch == ' ' || ch == '\t' || ch == ';')
         {
             if (ch == ';') foundComment = true;
-            if (lenArg)
+            if (foundWord)
             {
-                *start = wordPtr;
-                foundWord = true;
+                break;
             }
-            lenArg = 0;
             wordPtr = curChPtr;
         }
-        else lenArg++;
+        else
+        {
+            foundWord = true;
+            lenArg++;
+        }
         ch = *curChPtr++;
-        if (foundComment || foundWord) break;
+        if (foundComment) break;
     }
-    if (foundComment || foundWord) *end = wordPtr - 1;
-    else *end = curChPtr - 1;
+    *start = wordPtr;
+    *end = curChPtr - 1;
     if (lenArg)
     {
         foundWord = true;
@@ -559,6 +563,8 @@ int ParseLine(char* line, int* curScene)
 
     int nT = curScDat->numTexts;
     int arg0;
+    char* pcch;
+    char cch;
     switch (opcode & 0xFFFF0000)
     {
         case OP_INSTRUCTION: //Actual instruction that is being stored as scene bytecode
@@ -587,6 +593,14 @@ int ParseLine(char* line, int* curScene)
                         instructionBytes[1] = (unsigned char)(nT & 0x00FF);
                         instructionBytes[2] = (unsigned char)((nT & 0xFF00) >> 8);
                     }
+                    curScDat->textNames[nT] = sceneTextEntryNamesBufPtr;
+                    pcch = wordptr;
+                    cch = 0xFF;
+                    while (cch)
+                    {
+                        cch = *pcch++;
+                        *sceneTextEntryNamesBufPtr++ = cch;
+                    }
                     curScDat->numTexts++;
                     textChain = true;
                     break;
@@ -601,6 +615,14 @@ int ParseLine(char* line, int* curScene)
                     {
                         arg0 = numChars;
                         (*foundCharLabels)[std::string(wordptr)] = arg0;
+                        charLabels[numChars] = charLabelsBufPtr;
+                        pcch = wordptr;
+                        cch = 0xFF;
+                        while (cch)
+                        {
+                            cch = *pcch++;
+                            *charLabelsBufPtr++ = cch;
+                        }
                         numChars++;
                     }
                     numBytesInInstruction += 2;
@@ -610,7 +632,7 @@ int ParseLine(char* line, int* curScene)
                 case OperandType::JUMP: //Resolve jumps after parsing all lines (we'll just put a dummy value in for now)
                     scanStat = ScanForWord((const char**)&wordptr, (const char**)&wordEndPtr);
                     *wordEndPtr = '\0';
-                    (*refJumpLabels)[locCounter] = std::string(wordptr);
+                    refJumpLabels->push_back(std::pair<int, std::string>(locCounter, std::string(wordptr)));
                     numBytesInInstruction += 2;
                     instructionBytes[1] = 0x00;
                     instructionBytes[2] = 0x00;
@@ -705,6 +727,7 @@ int ParseLine(char* line, int* curScene)
                         curScDat->refSceneLabels = new std::unordered_map<int, std::string>();
                         curScDat->foundTextLabels = new std::unordered_map<std::string, int>();
                         curScDat->refVarLabels = new std::unordered_map<int, std::string>();
+                        curScDat->textNames = (char**)malloc(sizeof(char*) * DEFAULT_ALLOCBLOCK_SEP);
                         char ch = *wordptr++;
                         while (ch)
                         {
@@ -724,7 +747,7 @@ int ParseLine(char* line, int* curScene)
             break;
         case OP_JUMPLABEL: //Registers a new jump label
             wordEndPtr[-1] = '\0';
-            (*foundJumpLabels)[std::string(wordptr)] = locCounter;
+            (*foundJumpLabels)[std::string(jumpLabelPtr)] = locCounter;
             textChain = false; //Any valid jump label is a place where we would need to start counting the text number again
             break;
     }
@@ -740,7 +763,7 @@ int ParseInputFile(char* contents, const long length, const char* filename)
     int curScene = -1;
     int lineNum = 1;
     foundJumpLabels = new std::unordered_map<std::string, int>();
-    refJumpLabels = new std::unordered_map<int, std::string>();
+    refJumpLabels = new std::vector<std::pair<int, std::string>>();
     textChain = false;
 
     for (long i = 0; i < length; i++)
@@ -774,6 +797,17 @@ int ParseInputFile(char* contents, const long length, const char* filename)
             if (curChar == '\n') lineNum++;
         }
         contents++;
+    }
+
+    unsigned char* curSceneData;
+    if (curScene >= 0)
+    {
+        curSceneData = scenes[curScene].data;
+        for (int i = 0; i < refJumpLabels->size(); i++)
+        {
+            std::pair<int, std::string> refpair = (*refJumpLabels)[i];
+            *((int16_t*)(&curSceneData[refpair.first])) = (int16_t)((*foundJumpLabels)[refpair.second] - refpair.first - 2);
+        }
     }
 
     delete foundJumpLabels;
@@ -888,10 +922,82 @@ int AssembleScenes(const char* outputFilename, const char** inputFilenames, cons
     {
         fwrite(scenes[i].data, 1, scenes[i].dataLen, outputFileHandle);
     }
+    //Write link info (may need some cleanup)
+    fwrite(&numChars, sizeof(uint16_t), 1, outputFileHandle);
+    fwrite(&numScenes, sizeof(uint16_t), 1, outputFileHandle);
+    fwrite(&numGlobVars, sizeof(uint16_t), 1, outputFileHandle);
+    fwrite(&numGlobFlags, sizeof(uint16_t), 1, outputFileHandle);
+    fwrite(&numLocalVars, sizeof(uint16_t), 1, outputFileHandle);
+    fwrite(&numLocalFlags, sizeof(uint16_t), 1, outputFileHandle);
+    unsigned char zero = 0;
+    for (int i = 0; i < numChars; i++)
+    {
+        fputs(charLabels[i], outputFileHandle);
+        fwrite(&zero, 1, 1, outputFileHandle);
+    }
+    for (int i = 0; i < numGlobVars; i++)
+    {
+        fputs(globVarLabels[i], outputFileHandle);
+        fwrite(&zero, 1, 1, outputFileHandle);
+    }
+    for (int i = 0; i < numGlobFlags; i++)
+    {
+        fputs(globFlagLabels[i], outputFileHandle);
+        fwrite(&zero, 1, 1, outputFileHandle);
+    }
+    for (int i = 0; i < numLocalVars; i++)
+    {
+        fputs(localVarLabels[i], outputFileHandle);
+        fwrite(&zero, 1, 1, outputFileHandle);
+    }
+    for (int i = 0; i < numLocalFlags; i++)
+    {
+        fputs(localFlagLabels[i], outputFileHandle);
+        fwrite(&zero, 1, 1, outputFileHandle);
+    }
 
-    //TODO: link info write
+    std::vector<unsigned char>* linkInfoOutputBuffer = new std::vector<unsigned char>(sizeof(uint64_t) * numScenes);
+    linkInfoOutputBuffer->reserve(0x100000);
+    uint64_t* sceneLinkDatPtrs = (uint64_t*)linkInfoOutputBuffer->data();
+
+    for (int i = 0; i < numScenes; i++)
+    {
+        const char* chptr = scenes[i].label;
+        char ch = 0xFF;
+        while (ch)
+        {
+            ch = *chptr++;
+            linkInfoOutputBuffer->push_back(ch);
+        }
+    }
+
+    uint64_t posCounter = 0;
+    for (int i = 0; i < numScenes; i++)
+    {
+        sceneLinkDatPtrs[i] = posCounter;
+        uint16_t nT = scenes[i].numTexts;
+        linkInfoOutputBuffer->push_back(nT & 0xFF);
+        linkInfoOutputBuffer->push_back((nT >> 8) & 0xFF);
+        const char* const* tlptr = scenes[i].textNames;
+        posCounter += 2;
+        for (int j = 0; j < nT; j++)
+        {
+            const char* chptr = tlptr[j];
+            char ch = 0xFF;
+            while (ch)
+            {
+                ch = *chptr++;
+                linkInfoOutputBuffer->push_back(ch);
+                posCounter++;
+            }
+        }
+    }
+
+    fwrite(linkInfoOutputBuffer->data(), sizeof(unsigned char), linkInfoOutputBuffer->size(), outputFileHandle);
+
 
     fclose(outputFileHandle);
+    delete linkInfoOutputBuffer;
     free(scenePtrs);
     free(sceneNamesBuffer);
     free(sceneTextEntryNamesBuffer);

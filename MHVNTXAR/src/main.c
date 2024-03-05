@@ -82,7 +82,7 @@ int main(int argc, char** argv)
     free(inputFilenames);
     if (!result)
     {
-        printf("Success! Text archive %s prepared!", outputFilename);
+        printf("Success! Text archive %s prepared!\n", outputFilename);
     }
     return result;
 }

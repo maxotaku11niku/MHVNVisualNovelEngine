@@ -28,4 +28,8 @@ var         char[numstvar_glob][]  stvar_glob_labels  All the defined global var
 var         char[numflags_glob][]  flags_glob_labels  All the defined global flag labels in order
 var         char[numstvar_loc][]   stvar_loc_labels   All the defined local variable labels in order
 var         char[numflags_loc][]   flags_loc_labels   All the defined local flag labels in order
+var         uint64[num_scenes]     scene_linkdatptrs  Array of pointers to the starts of each scene's text entry labels
 var         char[num_scenes][]     scene_labels       All the defined scene labels in order
+For each scene:
+0x00000000  uint16               num_entries        Number of text entries
+0x00000002  char[num_entries][]  entry_labels       All the defined text entry labels in this scene in order

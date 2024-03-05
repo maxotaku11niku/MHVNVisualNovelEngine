@@ -78,7 +78,7 @@ int main(int argc, char** argv)
     free(inputFilenames);
     if (!result)
     {
-        printf("Success! Scene data %s prepared!", outputFilename);
+        printf("Success! Scene data %s prepared!\n", outputFilename);
     }
     return result;
 }
