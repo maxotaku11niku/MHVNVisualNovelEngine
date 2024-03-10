@@ -209,6 +209,10 @@ int main(int argc, char** argv)
     }
 
     int result = LinkVN(outputDirectory, masterDescriptorFilename, sceneDataFilename, textDataFilenames, numTextDataFiles, bgDataFilename, spriteDataFilename, musicDataFilename, soundEffectDataFilename, systemDataFilename);
+    if (!result)
+    {
+        puts("Success! All data files linked up!");
+    }
     free(textDataFilenames);
     return result;
 }
