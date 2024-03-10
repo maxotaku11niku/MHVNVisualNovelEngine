@@ -1,1 +1,7 @@
-coming soon
+format_norm = shadow colourF
+format_char = bold shadow colourF
+format_menu_notsel = shadow colourF
+format_menu_sel = bold shadow colourB
+cg_gallery = yes
+music_room = yes
+custom_info = yes

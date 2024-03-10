@@ -57,6 +57,20 @@ Narrator
 @[SCENE_TEST_000D
 What do you think, @p0? Is it surprising?@]
 
+Confused Person
+@[SCENE_TEST_000E
+Ah well, I'll come back when we have some actual graphics, instead of nothing at all.@]
+
+Narrator
+@[SCENE_TEST_000F
+Yes, well we'll just have to wait for the developer to get to it, then.@]
+
+Narrator
+@[SCENE_TEST_0010
+So come on developer! Can't you program more for us? Jesus.@]
+
+I've put these ones out of order to test the linker
+
 Narrator
 @[SCENE_TEST_000D_YES_0
 Well what do you know, @p0 certainly seems to think it @f(si)is@r(f) surprising.@]
@@ -72,15 +86,3 @@ Well, well, well, looks like @p0 agrees with you.@]
 Confused Person
 @[SCENE_TEST_000D_NO_1
 Hah! 2 vs. 1, you're @c5outnumbered!@]
-
-Confused Person
-@[SCENE_TEST_000E
-Ah well, I'll come back when we have some actual graphics, instead of nothing at all.@]
-
-Narrator
-@[SCENE_TEST_000F
-Yes, well we'll just have to wait for the developer to get to it, then.@]
-
-Narrator
-@[SCENE_TEST_0010
-So come on developer! Can't you program more for us? Jesus.@]

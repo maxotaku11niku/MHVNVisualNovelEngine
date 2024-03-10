@@ -13,7 +13,7 @@ export OBJFILESSCX	:= SCENE.odat
 export OBJFILES	:= $(addprefix $(BUILD)/, $(OBJFILESTXA) $(OBJFILESSCX))
 
 all : $(OBJFILES)
-	tools/mhvnlink -o $(TARGET) -d masterdesc.txt -s SCENE.odat -t EN_GB.otxa -bg BGIMAGE.odat -spr SPRITE.odat -m MUSIC.odat -sfx SOUNDFX.odat -sys SYSTEM.odat
+	tools/mhvnlink -o $(TARGET) -d masterdesc.txt -s $(BUILD)/SCENE.odat -t $(BUILD)/EN_GB.otxa -bg $(BUILD)/BGIMAGE.odat -spr $(BUILD)/SPRITE.odat -m $(BUILD)/MUSIC.odat -sfx $(BUILD)/SOUNDFX.odat -sys $(BUILD)/SYSTEM.odat
 
 $(BUILD)/SCENE.odat : $(SCENEFILES)
 	tools/mhvnscas -o $@ $^

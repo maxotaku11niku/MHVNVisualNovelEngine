@@ -208,7 +208,7 @@ int main(int argc, char** argv)
         puts("You'll need to include these in the future, so make sure your build files have placeholders!");
     }
 
-    int result = LinkVN(outputDirectory, masterDescriptorFilename, sceneDataFilename, textDataFilenames, bgDataFilename, spriteDataFilename, musicDataFilename, soundEffectDataFilename, systemDataFilename);
+    int result = LinkVN(outputDirectory, masterDescriptorFilename, sceneDataFilename, textDataFilenames, numTextDataFiles, bgDataFilename, spriteDataFilename, musicDataFilename, soundEffectDataFilename, systemDataFilename);
     free(textDataFilenames);
     return result;
 }

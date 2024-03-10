@@ -18,3 +18,46 @@ ALL OF THESE FLAGS MUST BE USED!:
 -m [filename]     Defines the filename of the music data object file.
 -sfx [filename]   Defines the filename of the sound effect data object file.
 -sys [filename]   Defines the filename of the system data object file.
+
+-- * Master descriptor specification * --
+
+The master descriptor file is a text file that uses easy to understand key-value pairs written out in natural language, like so:
+
+option = setting
+
+Each option must be on its own line
+
+These are the following options available
+
+format_norm:
+    The default format of text in the text box of VN scenes.
+    A space separated list of options that specify the format like so:
+    format_norm = bold italic underline shadow colourF mask8
+    format_norm will default to using mask 0, colour F, and not having any special formatting if it looks like this:
+    format_norm =
+format_char:
+    The format of text in the character name box in VN scenes, specified exactly like as for format_norm.
+    Defaults to mask 0, colour F, and not having any special formatting.
+format_menu_notsel:
+    The format of text in menus that isn't selected, specified exactly like as for format_norm.
+    Defaults to mask 0, colour F, and not having any special formatting.
+format_menu_sel:
+    The format of text in menus that is selected, specified exactly like as for format_norm.
+    Defaults to mask 0, colour 0, and not having any special formatting.
+cg_gallery:
+    Whether to show a CG gallery or not. Possible options are 'yes' or 'no', defaults to 'no'.
+    e.g. cg_gallery = yes
+music_room:
+    Whether to show a music room or not. Possible options are 'yes' or 'no', defaults to 'no'.
+custom_info:
+    Whether users are allowed to enter custom info for the VN or not. Possible options are 'yes' or 'no', defaults to 'no'.
+
+-- * Linking priority * --
+
+When shuffling around IDs and whatnot, MHVNLINK has a priority in which object files it takes into consideration first and the dependencies of each object file on each other:
+
+The scene data object file comes first, and the contents of the final file embedded in the object file are left unchanged. The information here is used to specify some of the data in ROOTINFO.DAT directly.
+All text data object files depend on the scene data object file. The order of the texts are shuffled to match the order defined by the scene data object file. Note this only means shuffling pointers, since that would be much more efficient.
+The language data file is simply a list of text data archive files that correspond to each language supported.
+
+More details to come as I fully specify other data files.

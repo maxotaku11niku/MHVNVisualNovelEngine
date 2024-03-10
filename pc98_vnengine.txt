@@ -132,10 +132,10 @@ This file contains references to all other data files needed and some info on gl
 0x08	uint16		numflags_glob	Number of global (save independent) bitflags to reserve
 0x0A	uint16		numstvar_loc	Number of save-local state variables to reserve
 0x0C	uint16		numflags_loc	Number of save-local bitflags to reserve
-0x0E	uint16		def_format_norm	Default format number for normal text
+0x0E	uint16		format_norm	Default format number for normal text
 0x10	uint16		format_char	Format number for character name text
-0x12	uint16		format_menu_n	Format number for menu text that is not selected
-0x14	uint16		format_menu_S	Format number for menu text that is selected
+0x12	uint16		format_menu_notsel	Format number for menu text that is not selected
+0x14	uint16		format_menu_sel	Format number for menu text that is selected
 0x16	char[12]	scenedat_file	The filename of the scene data archive, where all scene data is stored. Null terminated
 0x22	char[12]	langdat_file	The filename of the language metadata archive, where every language supported is listed and all corresponding text files given. Null terminated
 0x2E	char[12]	bgdat_file	The filename of the background image data archive, where all BGs and CGs are stored. Null terminated
@@ -146,10 +146,10 @@ This file contains references to all other data files needed and some info on gl
 
 VNflags has the following definition:
 
-0000 PPMC
+0000 0000  0000 0PMC
 C - Present CG gallery? Option is hidden from the menu if 0
 M - Present music room? Option is hidden from the menu if 0
-P - Custom protagonist support (0 -> none, protagonist is fixed, 1 -> name only, gender is fixed, 2 -> name and gender, but no custom pronouns, 3 -> name and gender, custom pronouns)
+P - Custom protagonist support?
 
 * Scene data archive (scenedat_file) *
 
@@ -293,10 +293,7 @@ Text may be given formatting information through 0x1B (the escape character). Wh
 0x2x	Font selector (x -> 0 - Normal halfwidth chars, 1 - Alternate halfwidth chars, 2-F - Reserved, may be used for flags)
 0x3x	Final fade value selector (x -> level of fade, 0 - no fade -> F - very nearly invisible)
 0x4x	Colour selector (x -> palette value)
-0x5x	Custom protagonist information inject
-	0: Name
-	1: Nickname
-	2-F: Relevant pronouns (language defined)... or whatever I guess
+0x5x	Custom protagonist information inject, out of 16 slots (not all of which have to be filled) (x -> information ID)
 0x6x	Wait for 10*(x+1) frames before continuing
 0x7x	Set wait between characters to (x+1) frames
 0x8x	Insert variable value as signed integer (x indicates bits 8-11 of the address, byte following this one indicates bits 0-7)
