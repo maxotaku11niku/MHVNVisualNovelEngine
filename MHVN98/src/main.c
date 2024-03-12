@@ -13,6 +13,7 @@
 #include "textengine.h"
 #include "rootinfo.h"
 #include "sceneengine.h"
+#include "graphics.h"
 
 const unsigned char stdShadowCols[16] = { 0x0, 0x0, 0x0, 0x2, 0x0, 0x4, 0x5, 0x0, 0x0, 0x8, 0x9, 0x7, 0x0, 0xC, 0xD, 0x1 };
 
@@ -47,9 +48,7 @@ int main(void)
     egc_mask(0xFFFF);
     egc_bgcolour(0xC);
     ClearScreenEGC();
-    egc_patdatandreadmode(EGC_PATTERNSOURCE_FGCOLOUR);
-    egc_rwmode(EGC_WRITE_ROPSHIFT | EGC_SOURCE_CPU | EGC_ROP((EGC_ROP_SRC & EGC_ROP_PAT) | ((~EGC_ROP_SRC) & EGC_ROP_DST)));
-    egc_bitaddrbtmode(EGC_BLOCKTRANSFER_FORWARD);
+    SetEGCToMonochromeDrawMode();
     SetShadowColours(stdShadowCols);
     
     int result = ReadInRootInfo();
@@ -70,14 +69,16 @@ int main(void)
     AddPrimaryInterrupts(INTERRUPT_MASK_VSYNC);
     intson();
 
-    textBoxlX = 64;
-    textBoxtY = 128;
-    textBoxrX = 576;
-    textBoxbY = 192;
+    textBoxlX = 80;
+    textBoxtY = 288;
+    textBoxrX = 560;
+    textBoxbY = 352;
     unsigned char hasFinshedStringAnim = 0;
     unsigned char textSkip = 0;
     int sceneProcessResult;
     vsynced = 0;
+    LoadTextBoxIntoVRAM();
+    DrawTextBox(textBoxlX-16, textBoxtY-16, textBoxrX - textBoxlX + 32, textBoxbY - textBoxtY + 32);
     gdc_interruptreset(); //Prevents a spinlock
     while (1)
     {
@@ -132,7 +133,7 @@ int main(void)
     errorquit:
     if (result)
     {
-        WriteString("Press Enter to quit.", 240, 200, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF), 0);
+        WriteString("Press Enter to quit.", 240, 200, FORMAT_SHADOW | FORMAT_COLOUR(0xF), 0);
         while (!key_is_down(K_ENTER))
         {
             UpdatePrevKeyStatus();

@@ -58,5 +58,11 @@
 void ClearScreenEGC();
 //Clears some lines very fast using the EGC (must enable beforehand)
 void ClearLinesEGC(unsigned short startLine, unsigned short numLines);
+//Set some EGC registers to the right setting to allow a simple clear with the background colour
+void SetEGCToBackgroundClearMode();
+//Set some EGC registers to the right setting to allow shapes to be drawn in any single colour (the foreground colour) by using just data from the CPU
+void SetEGCToMonochromeDrawMode();
+//Set some EGC registers to the right setting to allow VRAM-to-VRAM copies
+void SetEGCToVRAMBlit();
 void EGCEnable();
 void EGCDisable();

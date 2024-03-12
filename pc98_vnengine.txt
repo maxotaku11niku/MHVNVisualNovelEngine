@@ -290,7 +290,7 @@ Text may be given formatting information through 0x1B (the escape character). Wh
 
 0x0x	Doesn't do anything, acts as null terminate if x is 0
 0x1x	Main formatting flags (x -> SUIB: B - bold, I - italic, U - underline, S - shadow)
-0x2x	Font selector (x -> 0 - Normal halfwidth chars, 1 - Alternate halfwidth chars, 2-F - Reserved, may be used for flags)
+0x2x	Reserved
 0x3x	Final fade value selector (x -> level of fade, 0 - no fade -> F - very nearly invisible)
 0x4x	Colour selector (x -> palette value)
 0x5x	Custom protagonist information inject, out of 16 slots (not all of which have to be filled) (x -> information ID)
@@ -332,7 +332,6 @@ Most of this will be literal text, though of course there are control sequences 
 @s(l)	Declares a scene with label 'l' and makes the text in every following normal entry associated with that scene.
 @n(l)	Declares a character with label 'l' and all the immediately following text until the next newline is that character's display name.
 @f(f)	Sets the text formatting, where 'f' is a formatting flag (b -> bold, i -> italic, u -> underline, s -> shadow). Combine multiple letters to set multiple formatting flags at once.
-@tn	Sets the font to font number 'n'.
 @mn	Sets the fade level to 'n'.
 @cn	Sets the colour to index 'n'.
 @pn	Insert custom protagonist information unit 'n'.
@@ -340,7 +339,7 @@ Most of this will be literal text, though of course there are control sequences 
 @wn	Set the wait between characters to (n+1) frames.
 @v(l)	Insert the value of the variable named 'l' as a signed 16-bit integer.
 @b(f)n@yy	Switch between the text 'n' and 'y' depending on the state of flag 'f': 'n' if 'f' is unset, 'y' if 'f' is set.
-@r(f)	Reset formatting to default for some parameter (f -> format, t -> font, m -> fade, c -> colour). Combine multiple letters to reset multiple format parameters at once.
+@r(f)	Reset formatting to default for some parameter (f -> format, m -> fade, c -> colour). Combine multiple letters to reset multiple format parameters at once.
 
 * BG data archive (bgdat_file) *
 

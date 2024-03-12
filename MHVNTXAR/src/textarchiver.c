@@ -309,23 +309,6 @@ int ParseInputFile(const char* contents, const long length, const char* filename
                         commandTextInject[2] = '\0';
                     }
                     break;
-                case 't': //Set font
-                    if (pState != NOTINENTRY)
-                    {
-                        curChar = *contents++; i++;
-                        char fmtchar = SingleHexCharToBinary(curChar);
-                        if (fmtchar == -1 || fmtchar > 1) //Not all the bitflags for this parameter have been defined yet, so reject any values out of the current range we'll accept.
-                        {
-                            printf(invalidParamMessage, filename, lineNum, "@t");
-                            continue;
-                        }
-                        fmtchar |= 0x20;
-                        isCommandTextInject = true;
-                        commandTextInject[0] = '\x1B';
-                        commandTextInject[1] = fmtchar;
-                        commandTextInject[2] = '\0';
-                    }
-                    break;
                 case 'm': //Set fade
                     if (pState != NOTINENTRY)
                     {
@@ -439,9 +422,6 @@ int ParseInputFile(const char* contents, const long length, const char* filename
                             case 'f':
                                 fmtchar |= 0x01;
                                 break;
-                            case 't':
-                                fmtchar |= 0x02;
-                                break;
                             case 'm':
                                 fmtchar |= 0x04;
                                 break;
@@ -548,7 +528,7 @@ int ParseInputFile(const char* contents, const long length, const char* filename
                 curChar = commandTextInject[ctInjectPtr];
                 while (curChar != '\0')
                 {
-                    if (curChar = '\n')
+                    if (curChar == '\n')
                     {
                         ctInjectPtr = 0;
                         goto charnameNewline; //fuck you goto haters

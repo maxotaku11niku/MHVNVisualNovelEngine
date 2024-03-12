@@ -89,7 +89,7 @@ int SetupTextInfo()
     if (result)
     //if (ctHandle == 0)
     {
-        WriteString("Error! Could not find text data file!", 172, 184, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF), 0);
+        WriteString("Error! Could not find text data file!", 172, 184, FORMAT_SHADOW | FORMAT_COLOUR(0xF), 0);
         return result; //Error handler
         //return 1; //Error handler
     }
@@ -117,7 +117,7 @@ int LoadCurrentCharacterName(unsigned short charNumber, char* nameBuffer)
     if (result)
     //if (ctHandle == 0)
     {
-        WriteString("Error! Could not find text data file!", 172, 184, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF), 0);
+        WriteString("Error! Could not find text data file!", 172, 184, FORMAT_SHADOW | FORMAT_COLOUR(0xF), 0);
         return result; //Error handler
         //return 1; //Error handler
     }
@@ -151,7 +151,7 @@ int LoadSceneText(unsigned short sceneNumber, __far char* textDataBuffer, unsign
     if (result)
     //if (ctHandle == 0)
     {
-        WriteString("Error! Could not find text data file!", 172, 184, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF), 0);
+        WriteString("Error! Could not find text data file!", 172, 184, FORMAT_SHADOW | FORMAT_COLOUR(0xF), 0);
         return result; //Error handler
         //return 1; //Error handler
     }
@@ -850,7 +850,7 @@ int StringWriteAnimationFrame(unsigned char skip)
                                     format = (format & (~FORMAT_PART_MAIN)) | (ch & 0x0F);
                                     break;
                                 case 0x02: //set formatting flags, section 1
-                                    format = (format & (~FORMAT_PART_FONT)) | ((ch & 0x0F) << 4);
+                                    format = (format & (~FORMAT_PART_UNUSED)) | ((ch & 0x0F) << 4);
                                     break;
                                 case 0x03: //set formatting flags, section 2
                                     format = (format & (~FORMAT_PART_FADE)) | ((ch & 0x0F) << 8);
@@ -876,7 +876,7 @@ int StringWriteAnimationFrame(unsigned char skip)
                                     break;
                                 case 0x0F: //reset sections
                                     format = (format & (~FORMAT_PART_MAIN)) | ((ch & 0x1 ? defFormat : format) & FORMAT_PART_MAIN);
-                                    format = (format & (~FORMAT_PART_FONT)) | ((ch & 0x2 ? defFormat : format) & FORMAT_PART_FONT);
+                                    format = (format & (~FORMAT_PART_UNUSED)) | ((ch & 0x2 ? defFormat : format) & FORMAT_PART_UNUSED);
                                     format = (format & (~FORMAT_PART_FADE)) | ((ch & 0x4 ? defFormat : format) & FORMAT_PART_FADE);
                                     format = (format & (~FORMAT_PART_COLOUR)) | ((ch & 0x8 ? defFormat : format) & FORMAT_PART_COLOUR);
                                     break;
@@ -886,39 +886,7 @@ int StringWriteAnimationFrame(unsigned char skip)
                 }
                 else if (ch <= 0x7F || (ch > 0x9F && ch < 0xE0)) //Single byte
                 {
-                    if (format & FORMAT_FONT_ALTERNATE)
-                    {
-                        char isKana = ch & 0x80;
-                        if (*str == '\xDE') //dakuten
-                        {
-                            if (ch == 0xB3)
-                            {
-                                ch = 0x65;
-                                str++;
-                            }
-                            else if (ch >= 0xB6 && ch <= 0xC4)
-                            {
-                                ch -= 0x50;
-                                str++;
-                            }
-                            else if (ch >= 0xCA && ch <= 0xCE)
-                            {
-                                ch -= 0xCA;
-                                ch <<= 1;
-                                ch += 0x75;
-                                str++;
-                            }
-                        }
-                        else if (*str == '\xDF' && (ch >= 0xCA && ch <= 0xCE)) //handakuten
-                        {
-                            ch -= 0xCA;
-                            ch <<= 1;
-                            ch += 0x76;
-                            str++;
-                        }
-                        twobytecode = ((unsigned int)(ch & 0x7F)) | (isKana ? 0x0A00 : 0x0900);
-                    }
-                    else twobytecode = ch << 8;
+                    twobytecode = ch << 8;
                     if (format & FORMAT_SHADOW) charFlags[chBufStartNum] = 1;
                     else charFlags[chBufStartNum] = 0;
                     GetCharacterDataEditFriendly(twobytecode, nextCharBuf);
@@ -1065,7 +1033,7 @@ void WriteString(const char* str, const short x, const short y, short format, un
                                 format = (format & (~FORMAT_PART_MAIN)) | (ch & 0x0F);
                                 break;
                             case 0x02: //set formatting flags, section 1
-                                format = (format & (~FORMAT_PART_FONT)) | ((ch & 0x0F) << 4);
+                                format = (format & (~FORMAT_PART_UNUSED)) | ((ch & 0x0F) << 4);
                                 break;
                             case 0x03: //set formatting flags, section 2
                                 format = (format & (~FORMAT_PART_FADE)) | ((ch & 0x0F) << 8);
@@ -1086,7 +1054,7 @@ void WriteString(const char* str, const short x, const short y, short format, un
                                 break;
                             case 0x0F: //reset sections
                                 format = (format & (~FORMAT_PART_MAIN)) | ((ch & 0x1 ? defFormat : format) & FORMAT_PART_MAIN);
-                                format = (format & (~FORMAT_PART_FONT)) | ((ch & 0x2 ? defFormat : format) & FORMAT_PART_FONT);
+                                format = (format & (~FORMAT_PART_UNUSED)) | ((ch & 0x2 ? defFormat : format) & FORMAT_PART_UNUSED);
                                 format = (format & (~FORMAT_PART_FADE)) | ((ch & 0x4 ? defFormat : format) & FORMAT_PART_FADE);
                                 format = (format & (~FORMAT_PART_COLOUR)) | ((ch & 0x8 ? defFormat : format) & FORMAT_PART_COLOUR);
                                 break;
@@ -1113,39 +1081,7 @@ void WriteString(const char* str, const short x, const short y, short format, un
             }
             else if (ch <= 0x7F || (ch > 0x9F && ch < 0xE0)) //Single byte
             {
-                if (format & FORMAT_FONT_ALTERNATE)
-                {
-                    char isKana = ch & 0x80;
-                    if (*pstr == '\xDE') //dakuten
-                    {
-                        if (ch == 0xB3)
-                        {
-                            ch = 0x65;
-                            pstr++;
-                        }
-                        else if (ch >= 0xB6 && ch <= 0xC4)
-                        {
-                            ch -= 0x50;
-                            pstr++;
-                        }
-                        else if (ch >= 0xCA && ch <= 0xCE)
-                        {
-                            ch -= 0xCA;
-                            ch <<= 1;
-                            ch += 0x75;
-                            pstr++;
-                        }
-                    }
-                    else if (*pstr == '\xDF' && (ch >= 0xCA && ch <= 0xCE)) //handakuten
-                    {
-                        ch -= 0xCA;
-                        ch <<= 1;
-                        ch += 0x76;
-                        pstr++;
-                    }
-                    twobytecode = (ch & 0x7F) | (isKana ? 0x0A00 : 0x0900);
-                }
-                else twobytecode = ch << 8;
+                twobytecode = ch << 8;
                 GetCharacterDataEditFriendly(twobytecode, charbuf);
                 BoldenCharLeft(charbuf, 0);
                 if (format & FORMAT_ITALIC) ItaliciseChar(charbuf, 0);

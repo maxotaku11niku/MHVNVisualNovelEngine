@@ -22,7 +22,7 @@ int ReadInRootInfo()
     if (result)
     //if (handle == 0)
     {
-        WriteString("Error! Could not find ROOTINFO.DAT!", 180, 184, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF), 0);
+        WriteString("Error! Could not find ROOTINFO.DAT!", 180, 184, FORMAT_SHADOW | FORMAT_COLOUR(0xF), 0);
         return result; //Error handler
         //return 1; //Error handler
     }
@@ -33,7 +33,7 @@ int ReadInRootInfo()
     {
         if (smallFileBuffer[i] != magicNumber[i])
         {
-            WriteString("Error! ROOTINFO.DAT is not valid!", 188, 184, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF), 0);
+            WriteString("Error! ROOTINFO.DAT is not valid!", 188, 184, FORMAT_SHADOW | FORMAT_COLOUR(0xF), 0);
             return 0xFF; //Wrong file format error
         }
     }
@@ -71,7 +71,7 @@ int InitLanguage(unsigned short lang)
     if (result)
     //if (handle == 0)
     {
-        WriteString("Error! Could not find language data file!", 156, 184, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF), 0);
+        WriteString("Error! Could not find language data file!", 156, 184, FORMAT_SHADOW | FORMAT_COLOUR(0xF), 0);
         return result; //Error handler
         //return 1; //Error handler
     }
@@ -102,7 +102,7 @@ int ChangeLanguage(unsigned short newLang)
     if (result)
     //if (handle == 0)
     {
-        WriteString("Error! Could not find language data file!", 156, 184, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF), 0);
+        WriteString("Error! Could not find language data file!", 156, 184, FORMAT_SHADOW | FORMAT_COLOUR(0xF), 0);
         return result; //Error handler
         //return 1; //Error handler
     }

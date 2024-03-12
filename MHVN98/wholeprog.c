@@ -8,5 +8,6 @@
 #include "src/platform/pc98_keyboard.c"
 #include "src/main.c"
 #include "src/rootinfo.c"
+#include "src/graphics.c"
 #include "src/sceneengine.c"
 #include "src/textengine.c"

@@ -10,6 +10,7 @@
 #include "rootinfo.h"
 #include "sceneengine.h"
 #include "textengine.h"
+#include "graphics.h"
 
 #define VMFLAG_Z 0x01
 #define VMFLAG_N 0x02
@@ -56,7 +57,7 @@ int LoadNewScene(unsigned short sceneNum)
     if (result)
     //if (sdHandle == 0)
     {
-        WriteString("Error! Could not find scene data file!", 168, 184, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF), 0);
+        WriteString("Error! Could not find scene data file!", 168, 184, FORMAT_SHADOW | FORMAT_COLOUR(0xF), 0);
         return result; //Error handler
         //return 1; //Error handler
     }
@@ -93,7 +94,7 @@ int SetupSceneEngine()
     if (result)
     //if (sdHandle == 0)
     {
-        WriteString("Error! Could not find scene data file!", 168, 184, FORMAT_SHADOW | FORMAT_FONT_DEFAULT | FORMAT_COLOUR(0xF), 0);
+        WriteString("Error! Could not find scene data file!", 168, 184, FORMAT_SHADOW | FORMAT_COLOUR(0xF), 0);
         return result; //Error handler
         //return 1; //Error handler
     }
@@ -231,19 +232,13 @@ void ControlProcess(unsigned char process)
 
 void ClearTextBox()
 {
-    ClearLinesEGC(textBoxtY, textBoxbY - textBoxtY + 1);
-    egc_patdatandreadmode(EGC_PATTERNSOURCE_FGCOLOUR);
-    egc_rwmode(EGC_WRITE_ROPSHIFT | EGC_SOURCE_CPU | EGC_ROP((EGC_ROP_SRC & EGC_ROP_PAT) | ((~EGC_ROP_SRC) & EGC_ROP_DST)));
-    egc_bitaddrbtmode(EGC_BLOCKTRANSFER_FORWARD);
-    egc_bitlen(32);
+    DrawTextBox(textBoxlX-16, textBoxtY-16, textBoxrX - textBoxlX + 32, textBoxbY - textBoxtY + 32);
 }
 
 void ClearCharacterName()
 {
-    ClearLinesEGC(60, 17);
-    egc_patdatandreadmode(EGC_PATTERNSOURCE_FGCOLOUR);
-    egc_rwmode(EGC_WRITE_ROPSHIFT | EGC_SOURCE_CPU | EGC_ROP((EGC_ROP_SRC & EGC_ROP_PAT) | ((~EGC_ROP_SRC) & EGC_ROP_DST)));
-    egc_bitaddrbtmode(EGC_BLOCKTRANSFER_FORWARD);
+    ClearLinesEGC(252, 17);
+    SetEGCToMonochromeDrawMode();
     egc_bitlen(32);
 }
 
@@ -342,7 +337,7 @@ int SceneDataProcess()
                         vmFlags &= ~VMFLAG_PROCESS;
                         break;
                     }
-                    WriteString(curCharName, 60, 60, rootInfo.defFormatCharName, 0);
+                    WriteString(curCharName, 64, 252, rootInfo.defFormatCharName, 0);
                 }
                 curCharNum = charNum;
             }

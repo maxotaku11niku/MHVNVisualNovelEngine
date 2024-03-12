@@ -6,11 +6,11 @@ Well, would you look at that, we've got ourselves a good bunch of text in front 
 
 Narrator
 @[SCENE_TEST_0001
-Believe it or not, we can change the @c6colour@r(c) of the text!@]
+This is a test of the @f(sb)@cbMHVN Visual Novel Engine@r(fc) to show what it can do.@]
 
 Narrator
 @[SCENE_TEST_0002
-Or perhaps you'd like a bit of@f(sb) bold text@r(f) in your life.@]
+Perhaps you'd like a bit of@f(sb) bold text@r(f) in your life.@]
 
 Narrator
 @[SCENE_TEST_0003
@@ -26,7 +26,7 @@ Narrator
 
 Narrator
 @[SCENE_TEST_0006
-@t1I wonder if you can tell what's different about this text?@]
+@c0All @c1the @c2wonderful @c3colours @c4of @c5the @c6beautiful @c7rainbow @c8are @c9ready @cafor @cbus @ccto @cdmake @ceuse @cfof!@]
 
 Narrator
 @[SCENE_TEST_0007
@@ -59,7 +59,7 @@ What do you think, @p0? Is it surprising?@]
 
 Confused Person
 @[SCENE_TEST_000E
-Ah well, I'll come back when we have some actual graphics, instead of nothing at all.@]
+Ah well, I'll come back when we have some actual graphics, instead of just this silly text box.@]
 
 Narrator
 @[SCENE_TEST_000F
