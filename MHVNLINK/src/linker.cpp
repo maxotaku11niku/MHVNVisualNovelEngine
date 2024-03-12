@@ -203,7 +203,7 @@ int LinkTextData(const char* tDataFilename, char* outputFilename)
         memcpy(curSceneTextPtrs, Ptr16TempArray, sizeof(uint16_t) * numTextsInScene);
         if (numTextsInSceneInText > numTextsInScene)
         {
-            printf("WARNING - Some texts in scene %u in %s correspond to unused scenes!\n", i, tDataFilename);
+            printf("WARNING - Some texts in scene %u in %s correspond to unused texts!\n", i, tDataFilename);
         }
     }
 

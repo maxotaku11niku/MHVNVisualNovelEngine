@@ -46,7 +46,7 @@ int LoadSceneText(unsigned short sceneNumber, __far char* textDataBuffer, unsign
 void SetCustomInfo(unsigned short num, char* str);
 
 //Write a string (str) to the screen at position (x, y) with format given by 'format'.
-void WriteString(const char* str, const short x, const short y, short format, unsigned char autolb);
+void WriteString(const __far char* str, const short x, const short y, short format, unsigned char autolb);
 
 //Start an animated string write of string 'str', starting from position (x, y) with format given by 'format'
 void StartAnimatedStringToWrite(const __far char* str, const short x, const short y, short format);

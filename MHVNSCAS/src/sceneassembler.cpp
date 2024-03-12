@@ -327,21 +327,23 @@ int ScanForArgument(const char** start, const char** end)
         if (ch == ',' || ch == ' ' || ch == '\t' || ch == ';')
         {
             if (ch == ';') foundComment = true;
-            if (lenArg)
+            if (foundWord)
             {
-                *start = wordPtr;
-                foundWord = true;
                 if (ch == ',') foundArgument = true;
+                break;
             }
-            lenArg = 0;
             wordPtr = curChPtr;
         }
-        else lenArg++;
+        else
+        {
+            foundWord = true;
+            lenArg++;
+        }
         ch = *curChPtr++;
-        if (foundComment || foundWord) break;
+        if (foundComment) break;
     }
-    if (foundComment || foundWord) *end = wordPtr - 1;
-    else *end = curChPtr - 1;
+    *start = wordPtr;
+    *end = curChPtr - 1;
     if (lenArg)
     {
         foundWord = true;
@@ -349,6 +351,7 @@ int ScanForArgument(const char** start, const char** end)
     int returnStat = foundWord ? SCANSTAT_WORD : 0x0;
     returnStat |= foundComment ? SCANSTAT_COMMENT : 0x0;
     returnStat |= foundArgument ? SCANSTAT_ARG : 0x0;
+
     return returnStat;
 }
 
@@ -452,15 +455,15 @@ int ParseLine(char* line, int* curScene)
             numArg = 0;
             break;
         case 0x15: //choice2
-            numArg = 0;
+            numArg = 3;
             type = OperandType::MULTICHOICE;
             break;
         case 0x16: //choice3
-            numArg = 0;
+            numArg = 4;
             type = OperandType::MULTICHOICE;
             break;
         case 0x17: //choice4
-            numArg = 0;
+            numArg = 5;
             type = OperandType::MULTICHOICE;
             break;
         case 0x20: //lut2
@@ -727,6 +730,7 @@ int ParseLine(char* line, int* curScene)
                     numBytesInInstruction += 2;
                     instructionBytes[1] = (unsigned char)(arg0 & 0x00FF);
                     instructionBytes[2] = (unsigned char)((arg0 & 0xFF00) >> 8);
+                    wordptr = wordEndPtr + 1;
                     scanStat = ScanForArgument((const char**)&wordptr, (const char**)&wordEndPtr);
                     *wordEndPtr = '\0';
                     numBytesInInstruction += 2;
@@ -744,6 +748,7 @@ int ParseLine(char* line, int* curScene)
                     nT++;
                     for (int i = 2; i < numArg-1; i++)
                     {
+                        wordptr = wordEndPtr + 1;
                         scanStat = ScanForArgument((const char**)&wordptr, (const char**)&wordEndPtr);
                         *wordEndPtr = '\0';
                         curScDat->textNames[nT] = sceneTextEntryNamesBufPtr;
@@ -757,6 +762,7 @@ int ParseLine(char* line, int* curScene)
                         curScDat->numTexts++;
                         nT++;
                     }
+                    wordptr = wordEndPtr + 1;
                     scanStat = ScanForWord((const char**)&wordptr, (const char**)&wordEndPtr);
                     *wordEndPtr = '\0';
                     curScDat->textNames[nT] = sceneTextEntryNamesBufPtr;

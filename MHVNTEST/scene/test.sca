@@ -38,8 +38,83 @@ charname CONFUSED
 text SCENE_TEST_000D_NO_1
 
 endsurprise:
-text SCENE_TEST_000E
 charname NARRATOR
+text SCENE_TEST_000E
+charname CONFUSED
 text SCENE_TEST_000F
+choice2 r0, SCENE_TEST_CHOICE_0001_0, SCENE_TEST_CHOICE_0001_1
+cmpvi r0, 0
+je conperbetter
+text SCENE_TEST_000F_NARR_0
+charname NARRATOR
+text SCENE_TEST_000F_NARR_1
+charname CONFUSED
+text SCENE_TEST_000F_NARR_2
+jmp endpersonbetter
+
+conperbetter:
+text SCENE_TEST_000F_CONPER_0
+charname NARRATOR
+text SCENE_TEST_000F_CONPER_1
+
+endpersonbetter:
+setvi r0, 0
+charname NARRATOR
 text SCENE_TEST_0010
+mathsagain:
+choice3 r1, SCENE_TEST_CHOICE_0002_0, SCENE_TEST_CHOICE_0002_1, SCENE_TEST_CHOICE_0002_2
+cmpvi r1, 0
+je mathscorrect
+cmpvi r1, 1
+je mathsmeme
+addvi r0, 1
+cmpvi r0, 5
+je toomanyconfused
+text SCENE_TEST_0010_CONFUSED
+jmp mathsagain
+
+toomanyconfused:
+text SCENE_TEST_0010_FYOU
+vnend
+
+mathscorrect:
+text SCENE_TEST_0010_CORRECT
+jmp endmaths
+
+mathsmeme:
+charname CONFUSED
+text SCENE_TEST_0010_MEME
+
+endmaths:
+charname CONFUSED
+text SCENE_TEST_0011
+choice4 r2, SCENE_TEST_CHOICE_0003_0, SCENE_TEST_CHOICE_0003_1, SCENE_TEST_CHOICE_0003_2, SCENE_TEST_CHOICE_0003_3
+cmpvi r2, 0
+je consolenintendo
+cmpvi r2, 1
+je consoleps
+cmpvi r2, 2
+je consolexbox
+text SCENE_TEST_0011_PC_0
+charname NARRATOR
+text SCENE_TEST_0011_PC_1
+jmp endconsole
+
+consolenintendo:
+text SCENE_TEST_0011_NINTENDO
+jmp endconsole
+
+consoleps:
+text SCENE_TEST_0011_PLAYSTATION
+jmp endconsole
+
+consolexbox:
+text SCENE_TEST_0011_XBOX
+
+endconsole:
+charname CONFUSED
+text SCENE_TEST_0012
+charname NARRATOR
+text SCENE_TEST_0013
+text SCENE_TEST_0014
 vnend

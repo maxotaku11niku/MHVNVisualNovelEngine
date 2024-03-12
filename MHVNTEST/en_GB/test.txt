@@ -57,19 +57,66 @@ Narrator
 @[SCENE_TEST_000D
 What do you think, @p0? Is it surprising?@]
 
-Confused Person
-@[SCENE_TEST_000E
-Ah well, I'll come back when we have some actual graphics, instead of just this silly text box.@]
-
 Narrator
+@[SCENE_TEST_000E
+Anyway, I hope you've gotten over your confusion now.@]
+
+Confused Person
 @[SCENE_TEST_000F
-Yes, well we'll just have to wait for the developer to get to it, then.@]
+Hey you @p0! Who do you think's better?@]
+
+@[SCENE_TEST_CHOICE_0001_0
+You@]
+
+@[SCENE_TEST_CHOICE_0001_1
+The Narrator@]
 
 Narrator
 @[SCENE_TEST_0010
+Anyway we must press on. Questions with only two answers will get us nowhere. We need to give @p0 more. What's 9 + 10?@]
+
+@[SCENE_TEST_CHOICE_0002_0
+19, obviously@]
+
+@[SCENE_TEST_CHOICE_0002_1
+TWENNY WAN!@]
+
+@[SCENE_TEST_CHOICE_0002_2
+Uh, what?@]
+
+Confused Person
+@[SCENE_TEST_0011
+Alright let's take this even further! Which console is the best, in your objective opinion?@]
+
+@[SCENE_TEST_CHOICE_0003_0
+Nintendo Switch@]
+
+@[SCENE_TEST_CHOICE_0003_1
+Playstation@]
+
+@[SCENE_TEST_CHOICE_0003_2
+Xbox@]
+
+@[SCENE_TEST_CHOICE_0003_3
+None, PC beats them all@]
+
+Confused Person
+@[SCENE_TEST_0012
+Anyway, I'll come back when we have some actual graphics, instead of just this silly text box.@]
+
+Narrator
+@[SCENE_TEST_0013
+Yes, well we'll just have to wait for the developer to get to it, then.@]
+
+Narrator
+@[SCENE_TEST_0014
 So come on developer! Can't you program more for us? Jesus.@]
 
+
+
 I've put these ones out of order to test the linker
+
+
 
 Narrator
 @[SCENE_TEST_000D_YES_0
@@ -86,3 +133,65 @@ Well, well, well, looks like @p0 agrees with you.@]
 Confused Person
 @[SCENE_TEST_000D_NO_1
 Hah! 2 vs. 1, you're @c5outnumbered!@]
+
+
+
+Confused Person
+@[SCENE_TEST_000F_CONPER_0
+Aww hell yeah @f(si)in your face@r(f) stupid Narrator!@]
+
+Narrator
+@[SCENE_TEST_000F_CONPER_1
+Well I'm only a narrator, so what can I say.@]
+
+Confused Person
+@[SCENE_TEST_000F_NARR_0
+@f(sbi)What?!@r(f) How could you choose them?@]
+
+Narrator
+@[SCENE_TEST_000F_NARR_1
+Well, I'm flattered. @c3uwu.@]
+
+Confused Person
+@[SCENE_TEST_000F_NARR_2
+What do you mean '@c3uwu@r(c)'?@]
+
+
+
+Narrator
+@[SCENE_TEST_0010_CORRECT
+Correct. That should've been straightforward.@]
+
+Confused Person
+@[SCENE_TEST_0010_MEME
+That meme is @f(si)soooooooooo@r(f) dead.@]
+
+Narrator
+@[SCENE_TEST_0010_CONFUSED
+*sigh* @m8this should be simple@r(m)@d5 Anyway, let me repeat: what's 9 + 10?@]
+
+Narrator
+@[SCENE_TEST_0010_FYOU
+Fine, if you don't want to cooperate, I guess we should just end this test right here. F*** you. Seriously.@] Bowdlerised since this is a public test
+
+
+
+Confused Person
+@[SCENE_TEST_0011_NINTENDO
+@c5Ooh, fun.@r(c) You must like their exclusives.@]
+
+Confused Person
+@[SCENE_TEST_0011_PLAYSTATION
+@cdOoh, nice.@r(c) They really have a simple naming convention don't they?@]
+
+Confused Person
+@[SCENE_TEST_0011_XBOX
+@c9Ooh, cool.@r(c) I think the X in DirectX and Xbox are related, right?@]
+
+Confused Person
+@[SCENE_TEST_0011_PC_0
+@cb@f(sbiu)BASED!!!! PC MAST-@]
+
+Narrator
+@[SCENE_TEST_0011_PC_1
+Ahem, can you try not to say anything too offensive?@]

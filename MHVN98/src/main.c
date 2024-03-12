@@ -109,7 +109,11 @@ int main(void)
         vsynced = 0;
         if (key_pressed(K_ENTER)) //Next lines
         {
-            if (hasFinshedStringAnim)
+            if (sceneProcessResult & SCENE_STATUS_MAKING_CHOICE)
+            {
+                CommitChoice();
+            }
+            else if (hasFinshedStringAnim)
             {
                 ControlProcess(1);
                 hasFinshedStringAnim = 0;
@@ -118,6 +122,20 @@ int main(void)
             else
             {
                 textSkip = 1;
+            }
+        }
+        if (key_pressed(K_UP)) //Select up
+        {
+            if (sceneProcessResult & SCENE_STATUS_MAKING_CHOICE)
+            {
+                SwitchChoice(SELECT_UP);
+            }
+        }
+        if (key_pressed(K_DOWN)) //Select down
+        {
+            if (sceneProcessResult & SCENE_STATUS_MAKING_CHOICE)
+            {
+                SwitchChoice(SELECT_DOWN);
             }
         }
         if (key_pressed(K_ESC)) //Quit

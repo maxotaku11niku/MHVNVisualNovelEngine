@@ -982,9 +982,8 @@ int StringWriteAnimationFrame(unsigned char skip)
     else return 0;
 }
 
-void WriteString(const char* str, const short x, const short y, short format, unsigned char autolb)
+void WriteStringInternal(const char* str, const short x, const short y, short format)
 {
-    const char* pstr = PreprocessString(str, autolb, x, textBoxrX, y, textBoxbY);
     unsigned char ch = 0xFF;
     short twobytecode;
     short curX = x;
@@ -1002,7 +1001,7 @@ void WriteString(const char* str, const short x, const short y, short format, un
     */
     while (1)
     {
-        ch = *pstr++;
+        ch = *str++;
         if (ch)
         {
             if (ch <= 0x20) //control characters
@@ -1023,7 +1022,7 @@ void WriteString(const char* str, const short x, const short y, short format, un
                         curX = x;
                         break;
                     case 0x1B: //ESC, used for formatting escape sequences
-                        ch = *pstr++;
+                        ch = *str++;
                         switch ((ch & 0xF0) >> 4)
                         {
                             case 0x00: //intentional nop
@@ -1101,7 +1100,7 @@ void WriteString(const char* str, const short x, const short y, short format, un
             else //double byte
             {
                 twobytecode = ch << 8;
-                ch = *pstr++;
+                ch = *str++;
                 if (!ch) return; //Standard null termination
                 twobytecode |= ch;
                 twobytecode = SjisToInternalCode(twobytecode);
@@ -1126,4 +1125,10 @@ void WriteString(const char* str, const short x, const short y, short format, un
         }
         else break; //Standard null termination
     }
+}
+
+void WriteString(const __far char* str, const short x, const short y, short format, unsigned char autolb)
+{
+    const char* pstr = PreprocessString(str, autolb, x, textBoxrX, y, textBoxbY);
+    WriteStringInternal(pstr, x, y, format);
 }
