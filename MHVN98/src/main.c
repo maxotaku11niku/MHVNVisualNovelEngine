@@ -69,16 +69,45 @@ int main(void)
     AddPrimaryInterrupts(INTERRUPT_MASK_VSYNC);
     intson();
 
-    textBoxlX = 80;
-    textBoxtY = 288;
-    textBoxrX = 560;
-    textBoxbY = 352;
+    InitialiseGraphicsSystem();
+    textBoxInnerBounds.pos.x = 80;
+    textBoxInnerBounds.pos.y = 288;
+    textBoxInnerBounds.size.x = 480;
+    textBoxInnerBounds.size.y = 64;
+    Rect2Int textBoxOuterBounds;
+    textBoxOuterBounds.pos.x = textBoxInnerBounds.pos.x - 16;
+    textBoxOuterBounds.pos.y = textBoxInnerBounds.pos.y - 16;
+    textBoxOuterBounds.size.x = textBoxInnerBounds.size.x + 32;
+    textBoxOuterBounds.size.y = textBoxInnerBounds.size.y + 32;
+    textBoxImgInfo = RegisterTextBox(&textBoxOuterBounds);
+    textBoxImgInfo->flags |= IMAGE_DRAWREQ;
+
+    charNameBoxInnerBounds.pos.x = 80;
+    charNameBoxInnerBounds.pos.y = 240;
+    charNameBoxInnerBounds.size.x = 160;
+    charNameBoxInnerBounds.size.y = 16;
+    Rect2Int charNameBoxOuterBounds;
+    charNameBoxOuterBounds.pos.x = charNameBoxInnerBounds.pos.x - 16;
+    charNameBoxOuterBounds.pos.y = charNameBoxInnerBounds.pos.y - 16;
+    charNameBoxOuterBounds.size.x = charNameBoxInnerBounds.size.x + 32;
+    charNameBoxOuterBounds.size.y = charNameBoxInnerBounds.size.y + 32;
+    charNameBoxImgInfo = RegisterCharNameBox(&charNameBoxOuterBounds);
+
+    choiceBoxInnerBounds.pos.x = 336;
+    choiceBoxInnerBounds.pos.y = 160;
+    choiceBoxInnerBounds.size.x = 256;
+    choiceBoxInnerBounds.size.y = 64;
+    Rect2Int choiceBoxOuterBounds;
+    choiceBoxOuterBounds.pos.x = choiceBoxInnerBounds.pos.x - 16;
+    choiceBoxOuterBounds.pos.y = choiceBoxInnerBounds.pos.y - 16;
+    choiceBoxOuterBounds.size.x = choiceBoxInnerBounds.size.x + 32;
+    choiceBoxOuterBounds.size.y = choiceBoxInnerBounds.size.y + 32;
+    choiceBoxImgInfo = RegisterChoiceBox(&choiceBoxOuterBounds);
+
     unsigned char hasFinshedStringAnim = 0;
     unsigned char textSkip = 0;
     int sceneProcessResult;
     vsynced = 0;
-    LoadTextBoxIntoVRAM();
-    DrawTextBox(textBoxlX-16, textBoxtY-16, textBoxrX - textBoxlX + 32, textBoxbY - textBoxtY + 32);
     gdc_interruptreset(); //Prevents a spinlock
     while (1)
     {
@@ -87,6 +116,7 @@ int main(void)
             __asm ("hlt"); //Save energy
             if(vsynced) break;
         }
+        DoDrawRequests();
         sceneProcessResult = SceneDataProcess();
         if (sceneProcessResult & SCENE_STATUS_ERROR)
         {
@@ -148,6 +178,7 @@ int main(void)
     SetPrimaryInterruptMask(oldInterruptMask);
     SetInterruptFunctionRaw(INTERRUPT_VECTOR_VSYNC, oldVsyncVector);
     intson();
+    FreeGraphicsSystem();
     errorquit:
     if (result)
     {

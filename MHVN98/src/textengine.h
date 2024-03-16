@@ -1,6 +1,8 @@
 //Text drawing engine
 #pragma once
 
+#include "graphics.h"
+
 #define FORMAT_BOLD           0x0001
 #define FORMAT_ITALIC         0x0002
 #define FORMAT_UNDERLINE      0x0004
@@ -25,10 +27,12 @@ typedef struct
 } TextInfo;
 
 extern TextInfo textInfo;
-extern short textBoxlX;
-extern short textBoxrX;
-extern short textBoxtY;
-extern short textBoxbY;
+extern Rect2Int textBoxInnerBounds;
+extern ImageInfo* textBoxImgInfo;
+extern Rect2Int charNameBoxInnerBounds;
+extern ImageInfo* charNameBoxImgInfo;
+extern Rect2Int choiceBoxInnerBounds;
+extern ImageInfo* choiceBoxImgInfo;
 
 //Set the indices of the shadow colours
 void SetShadowColours(const unsigned char* cols);

@@ -241,107 +241,100 @@ void ControlProcess(unsigned char process)
 
 void ClearTextBox()
 {
-    DrawTextBox(textBoxlX-16, textBoxtY-16, textBoxrX - textBoxlX + 32, textBoxbY - textBoxtY + 32);
+    Draw9SliceBoxInnerRegion(textBoxImgInfo);
 }
 
 void ClearCharacterName()
 {
-    ClearLinesEGC(252, 17);
-    SetEGCToMonochromeDrawMode();
-    egc_bitlen(32);
+    Draw9SliceBoxInnerRegion(charNameBoxImgInfo);
 }
 
 void SwitchChoice(char dir)
 {
     selectedOption += dir;
+    int cx = choiceBoxInnerBounds.pos.x;
+    int cy = choiceBoxInnerBounds.pos.y;
+    Draw9SliceBoxInnerRegion(choiceBoxImgInfo);
     switch (selectionType)
     {
         case STYPE_YNCHOICE:
             if (selectedOption < 0) selectedOption = 1;
             else if (selectedOption > 1) selectedOption = 0;
-            ClearLinesEGC(160, 37);
-            SetEGCToMonochromeDrawMode();
             if (selectedOption)
             {
-                WriteString("Yes", 320, 160, rootInfo.defFormatMenuItemSelected, 0);
-                WriteString("No", 320, 180, rootInfo.defFormatMenuItem, 0);
+                WriteString("Yes", cx, cy, rootInfo.defFormatMenuItemSelected, 0);
+                WriteString("No", cx, cy + 16, rootInfo.defFormatMenuItem, 0);
             }
             else
             {
-                WriteString("Yes", 320, 160, rootInfo.defFormatMenuItem, 0);
-                WriteString("No", 320, 180, rootInfo.defFormatMenuItemSelected, 0);
+                WriteString("Yes", cx, cy, rootInfo.defFormatMenuItem, 0);
+                WriteString("No", cx, cy + 16, rootInfo.defFormatMenuItemSelected, 0);
             }
             break;
         case STYPE_CHOICE2:
             if (selectedOption < 0) selectedOption = 1;
             else if (selectedOption > 1) selectedOption = 0;
-            ClearLinesEGC(160, 37);
-            SetEGCToMonochromeDrawMode();
             if (selectedOption)
             {
-                WriteString(sceneTextBuffer + curTextArray[selectedFirstText], 320, 160, rootInfo.defFormatMenuItem, 0);
-                WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 1], 320, 180, rootInfo.defFormatMenuItemSelected, 0);
+                WriteString(sceneTextBuffer + curTextArray[selectedFirstText], cx, cy, rootInfo.defFormatMenuItem, 0);
+                WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 1], cx, cy + 16, rootInfo.defFormatMenuItemSelected, 0);
             }
             else
             {
-                WriteString(sceneTextBuffer + curTextArray[selectedFirstText], 320, 160, rootInfo.defFormatMenuItemSelected, 0);
-                WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 1], 320, 180, rootInfo.defFormatMenuItem, 0);
+                WriteString(sceneTextBuffer + curTextArray[selectedFirstText], cx, cy, rootInfo.defFormatMenuItemSelected, 0);
+                WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 1], cx, cy + 16, rootInfo.defFormatMenuItem, 0);
             }
             break;
         case STYPE_CHOICE3:
             if (selectedOption < 0) selectedOption = 2;
             else if (selectedOption > 2) selectedOption = 0;
-            ClearLinesEGC(160, 57);
-            SetEGCToMonochromeDrawMode();
             switch (selectedOption)
             {
                 case 0:
-                    WriteString(sceneTextBuffer + curTextArray[selectedFirstText], 320, 160, rootInfo.defFormatMenuItemSelected, 0);
-                    WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 1], 320, 180, rootInfo.defFormatMenuItem, 0);
-                    WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 2], 320, 200, rootInfo.defFormatMenuItem, 0);
+                    WriteString(sceneTextBuffer + curTextArray[selectedFirstText], cx, cy, rootInfo.defFormatMenuItemSelected, 0);
+                    WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 1], cx, cy + 16, rootInfo.defFormatMenuItem, 0);
+                    WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 2], cx, cy + 32, rootInfo.defFormatMenuItem, 0);
                     break;
                 case 1:
-                    WriteString(sceneTextBuffer + curTextArray[selectedFirstText], 320, 160, rootInfo.defFormatMenuItem, 0);
-                    WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 1], 320, 180, rootInfo.defFormatMenuItemSelected, 0);
-                    WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 2], 320, 200, rootInfo.defFormatMenuItem, 0);
+                    WriteString(sceneTextBuffer + curTextArray[selectedFirstText], cx, cy, rootInfo.defFormatMenuItem, 0);
+                    WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 1], cx, cy + 16, rootInfo.defFormatMenuItemSelected, 0);
+                    WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 2], cx, cy + 32, rootInfo.defFormatMenuItem, 0);
                     break;
                 case 2:
-                    WriteString(sceneTextBuffer + curTextArray[selectedFirstText], 320, 160, rootInfo.defFormatMenuItem, 0);
-                    WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 1], 320, 180, rootInfo.defFormatMenuItem, 0);
-                    WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 2], 320, 200, rootInfo.defFormatMenuItemSelected, 0);
+                    WriteString(sceneTextBuffer + curTextArray[selectedFirstText], cx, cy, rootInfo.defFormatMenuItem, 0);
+                    WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 1], cx, cy + 16, rootInfo.defFormatMenuItem, 0);
+                    WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 2], cx, cy + 32, rootInfo.defFormatMenuItemSelected, 0);
                     break;
             }
             break;
         case STYPE_CHOICE4:
             if (selectedOption < 0) selectedOption = 3;
             else if (selectedOption > 3) selectedOption = 0;
-            ClearLinesEGC(160, 77);
-            SetEGCToMonochromeDrawMode();
             switch (selectedOption)
             {
                 case 0:
-                    WriteString(sceneTextBuffer + curTextArray[selectedFirstText], 320, 160, rootInfo.defFormatMenuItemSelected, 0);
-                    WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 1], 320, 180, rootInfo.defFormatMenuItem, 0);
-                    WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 2], 320, 200, rootInfo.defFormatMenuItem, 0);
-                    WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 3], 320, 220, rootInfo.defFormatMenuItem, 0);
+                    WriteString(sceneTextBuffer + curTextArray[selectedFirstText], cx, cy, rootInfo.defFormatMenuItemSelected, 0);
+                    WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 1], cx, cy + 16, rootInfo.defFormatMenuItem, 0);
+                    WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 2], cx, cy + 32, rootInfo.defFormatMenuItem, 0);
+                    WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 3], cx, cy + 48, rootInfo.defFormatMenuItem, 0);
                     break;
                 case 1:
-                    WriteString(sceneTextBuffer + curTextArray[selectedFirstText], 320, 160, rootInfo.defFormatMenuItem, 0);
-                    WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 1], 320, 180, rootInfo.defFormatMenuItemSelected, 0);
-                    WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 2], 320, 200, rootInfo.defFormatMenuItem, 0);
-                    WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 3], 320, 220, rootInfo.defFormatMenuItem, 0);
+                    WriteString(sceneTextBuffer + curTextArray[selectedFirstText], cx, cy, rootInfo.defFormatMenuItem, 0);
+                    WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 1], cx, cy + 16, rootInfo.defFormatMenuItemSelected, 0);
+                    WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 2], cx, cy + 32, rootInfo.defFormatMenuItem, 0);
+                    WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 3], cx, cy + 48, rootInfo.defFormatMenuItem, 0);
                     break;
                 case 2:
-                    WriteString(sceneTextBuffer + curTextArray[selectedFirstText], 320, 160, rootInfo.defFormatMenuItem, 0);
-                    WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 1], 320, 180, rootInfo.defFormatMenuItem, 0);
-                    WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 2], 320, 200, rootInfo.defFormatMenuItemSelected, 0);
-                    WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 3], 320, 220, rootInfo.defFormatMenuItem, 0);
+                    WriteString(sceneTextBuffer + curTextArray[selectedFirstText], cx, cy, rootInfo.defFormatMenuItem, 0);
+                    WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 1], cx, cy + 16, rootInfo.defFormatMenuItem, 0);
+                    WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 2], cx, cy + 32, rootInfo.defFormatMenuItemSelected, 0);
+                    WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 3], cx, cy + 48, rootInfo.defFormatMenuItem, 0);
                     break;
                 case 3:
-                    WriteString(sceneTextBuffer + curTextArray[selectedFirstText], 320, 160, rootInfo.defFormatMenuItem, 0);
-                    WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 1], 320, 180, rootInfo.defFormatMenuItem, 0);
-                    WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 2], 320, 200, rootInfo.defFormatMenuItem, 0);
-                    WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 3], 320, 220, rootInfo.defFormatMenuItemSelected, 0);
+                    WriteString(sceneTextBuffer + curTextArray[selectedFirstText], cx, cy, rootInfo.defFormatMenuItem, 0);
+                    WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 1], cx, cy + 16, rootInfo.defFormatMenuItem, 0);
+                    WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 2], cx, cy + 32, rootInfo.defFormatMenuItem, 0);
+                    WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 3], cx, cy + 48, rootInfo.defFormatMenuItemSelected, 0);
                     break;
             }
             break;
@@ -356,17 +349,10 @@ void CommitChoice()
         case STYPE_YNCHOICE:
             if (selectedOption) vmFlags |= VMFLAG_Z;
             else vmFlags &= ~(VMFLAG_Z);
-            ClearLinesEGC(160, 37);
             break;
         case STYPE_CHOICE2:
-            ClearLinesEGC(160, 37);
-            goto commitSetVariable;
         case STYPE_CHOICE3:
-            ClearLinesEGC(160, 57);
-            goto commitSetVariable;
         case STYPE_CHOICE4:
-            ClearLinesEGC(160, 77);
-            commitSetVariable:
             varRef = GetVariableRef(selectedVar);
             if (varRef != 0)
             {
@@ -374,6 +360,7 @@ void CommitChoice()
             }
             break;
     }
+    choiceBoxImgInfo->flags &= ~(IMAGE_DRAWREQ);
     SetEGCToMonochromeDrawMode();
     returnStatus &= ~(SCENE_STATUS_MAKING_CHOICE);
     ControlProcess(1);
@@ -453,7 +440,7 @@ int SceneDataProcess()
                 curSceneDataPC--; //compensation
                 goto delText;
             }
-            StartAnimatedStringToWrite(sceneTextBuffer + curTextArray[nextTextNum], textBoxlX, textBoxtY, rootInfo.defFormatNormal);
+            StartAnimatedStringToWrite(sceneTextBuffer + curTextArray[nextTextNum], textBoxInnerBounds.pos.x, textBoxInnerBounds.pos.y, rootInfo.defFormatNormal);
             nextTextNum++;
             vmFlags |= VMFLAG_TEXTINBOX;
             vmFlags &= ~VMFLAG_PROCESS;
@@ -468,13 +455,19 @@ int SceneDataProcess()
                 if (charNum != 0xFFFF)
                 {
                     result = LoadCurrentCharacterName(charNum, curCharName);
+                    charNameBoxImgInfo->flags |= IMAGE_DRAWREQ;
+                    DoDrawRequests();
                     if (result)
                     {
                         returnStatus = SCENE_STATUS_ERROR | result;
                         vmFlags &= ~VMFLAG_PROCESS;
                         break;
                     }
-                    WriteString(curCharName, 64, 252, rootInfo.defFormatCharName, 0);
+                    WriteString(curCharName, charNameBoxInnerBounds.pos.x, charNameBoxInnerBounds.pos.y, rootInfo.defFormatCharName, 0);
+                }
+                else
+                {
+                    charNameBoxImgInfo->flags &= ~(IMAGE_DRAWREQ);
                 }
                 curCharNum = charNum;
             }
@@ -493,8 +486,12 @@ int SceneDataProcess()
             selectionType = STYPE_YNCHOICE;
             vmFlags &= ~VMFLAG_PROCESS;
             returnStatus |= SCENE_STATUS_MAKING_CHOICE;
-            WriteString("Yes", 320, 160, rootInfo.defFormatMenuItemSelected, 0);
-            WriteString("No", 320, 180, rootInfo.defFormatMenuItem, 0);
+            choiceBoxInnerBounds.size.y = 32;
+            choiceBoxImgInfo->boundRect.size.y = 64;
+            choiceBoxImgInfo-> flags |= IMAGE_DRAWREQ;
+            DoDrawRequests();
+            WriteString("Yes", choiceBoxInnerBounds.pos.x, choiceBoxInnerBounds.pos.y, rootInfo.defFormatMenuItemSelected, 0);
+            WriteString("No", choiceBoxInnerBounds.pos.x, choiceBoxInnerBounds.pos.y + 16, rootInfo.defFormatMenuItem, 0);
             break;
         case 0x15: //choice2
             selectedOption = 0;
@@ -505,8 +502,12 @@ int SceneDataProcess()
             curSceneDataPC += 2;
             selectedFirstText = *((unsigned short*)(curSceneData + curSceneDataPC));
             curSceneDataPC += 2;
-            WriteString(sceneTextBuffer + curTextArray[selectedFirstText], 320, 160, rootInfo.defFormatMenuItemSelected, 0);
-            WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 1], 320, 180, rootInfo.defFormatMenuItem, 0);
+            choiceBoxInnerBounds.size.y = 32;
+            choiceBoxImgInfo->boundRect.size.y = 64;
+            choiceBoxImgInfo-> flags |= IMAGE_DRAWREQ;
+            DoDrawRequests();
+            WriteString(sceneTextBuffer + curTextArray[selectedFirstText], choiceBoxInnerBounds.pos.x, choiceBoxInnerBounds.pos.y, rootInfo.defFormatMenuItemSelected, 0);
+            WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 1], choiceBoxInnerBounds.pos.x, choiceBoxInnerBounds.pos.y + 16, rootInfo.defFormatMenuItem, 0);
             break;
         case 0x16: //choice3
             selectedOption = 0;
@@ -517,9 +518,13 @@ int SceneDataProcess()
             curSceneDataPC += 2;
             selectedFirstText = *((unsigned short*)(curSceneData + curSceneDataPC));
             curSceneDataPC += 2;
-            WriteString(sceneTextBuffer + curTextArray[selectedFirstText], 320, 160, rootInfo.defFormatMenuItemSelected, 0);
-            WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 1], 320, 180, rootInfo.defFormatMenuItem, 0);
-            WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 2], 320, 200, rootInfo.defFormatMenuItem, 0);
+            choiceBoxInnerBounds.size.y = 48;
+            choiceBoxImgInfo->boundRect.size.y = 80;
+            choiceBoxImgInfo-> flags |= IMAGE_DRAWREQ;
+            DoDrawRequests();
+            WriteString(sceneTextBuffer + curTextArray[selectedFirstText], choiceBoxInnerBounds.pos.x, choiceBoxInnerBounds.pos.y, rootInfo.defFormatMenuItemSelected, 0);
+            WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 1], choiceBoxInnerBounds.pos.x, choiceBoxInnerBounds.pos.y + 16, rootInfo.defFormatMenuItem, 0);
+            WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 2], choiceBoxInnerBounds.pos.x, choiceBoxInnerBounds.pos.y + 32, rootInfo.defFormatMenuItem, 0);
             break;
         case 0x17: //choice4
             selectedOption = 0;
@@ -530,10 +535,14 @@ int SceneDataProcess()
             curSceneDataPC += 2;
             selectedFirstText = *((unsigned short*)(curSceneData + curSceneDataPC));
             curSceneDataPC += 2;
-            WriteString(sceneTextBuffer + curTextArray[selectedFirstText], 320, 160, rootInfo.defFormatMenuItemSelected, 0);
-            WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 1], 320, 180, rootInfo.defFormatMenuItem, 0);
-            WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 2], 320, 200, rootInfo.defFormatMenuItem, 0);
-            WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 3], 320, 220, rootInfo.defFormatMenuItem, 0);
+            choiceBoxInnerBounds.size.y = 64;
+            choiceBoxImgInfo->boundRect.size.y = 96;
+            choiceBoxImgInfo-> flags |= IMAGE_DRAWREQ;
+            DoDrawRequests();
+            WriteString(sceneTextBuffer + curTextArray[selectedFirstText], choiceBoxInnerBounds.pos.x, choiceBoxInnerBounds.pos.y, rootInfo.defFormatMenuItemSelected, 0);
+            WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 1], choiceBoxInnerBounds.pos.x, choiceBoxInnerBounds.pos.y + 16, rootInfo.defFormatMenuItem, 0);
+            WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 2], choiceBoxInnerBounds.pos.x, choiceBoxInnerBounds.pos.y + 32, rootInfo.defFormatMenuItem, 0);
+            WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 3], choiceBoxInnerBounds.pos.x, choiceBoxInnerBounds.pos.y + 48, rootInfo.defFormatMenuItem, 0);
             break;
         case 0x20: //lut2
             result = *((unsigned short*)(curSceneData + curSceneDataPC));

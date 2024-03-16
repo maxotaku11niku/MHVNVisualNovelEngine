@@ -45,10 +45,12 @@ short animLength;
 short waitFrames;
 short waitPerChar;
 
-short textBoxlX;
-short textBoxrX;
-short textBoxtY;
-short textBoxbY;
+Rect2Int textBoxInnerBounds;
+ImageInfo* textBoxImgInfo;
+Rect2Int charNameBoxInnerBounds;
+ImageInfo* charNameBoxImgInfo;
+Rect2Int choiceBoxInnerBounds;
+ImageInfo* choiceBoxImgInfo;
 
 unsigned char shadowColours[16];
 
@@ -770,7 +772,7 @@ static const char* PreprocessString(const __far char* str, unsigned char autolb,
 
 void StartAnimatedStringToWrite(const __far char* str, const short x, const short y, short format)
 {
-    const char* pstr = PreprocessString(str, 1, x, textBoxrX, y, textBoxbY);
+    const char* pstr = PreprocessString(str, 1, x, x + textBoxInnerBounds.size.x, y, y + textBoxInnerBounds.size.y);
     stringToAnimWrite = pstr;
     curAnimStringPos = pstr;
     currentAnimWriteX = x;
@@ -1129,6 +1131,6 @@ void WriteStringInternal(const char* str, const short x, const short y, short fo
 
 void WriteString(const __far char* str, const short x, const short y, short format, unsigned char autolb)
 {
-    const char* pstr = PreprocessString(str, autolb, x, textBoxrX, y, textBoxbY);
+    const char* pstr = PreprocessString(str, autolb, x, x + textBoxInnerBounds.size.x, y, y + textBoxInnerBounds.size.y);
     WriteStringInternal(pstr, x, y, format);
 }
