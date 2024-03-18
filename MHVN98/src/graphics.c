@@ -852,12 +852,16 @@ void DrawNormalImage(ImageInfo* img, Rect2Int* outRect)
                     "movw %1, %%di\n\t"
                     "movw %2, %%dx\n\t"
                     "movw %3, %%bx\n\t"
+                    "movw %5, %%ax\n\t"
+                    "movw %%ax, %%cs:.add1%=+2\n\t"
+                    "movw %6, %%ax\n\t"
+                    "movw %%ax, %%cs:.add2%=+2\n\t"
                     "movw %4, %%ax\n\t"
                     "movw %%ax, %%ds\n\t"
                     ".loop%=: mov %%dx, %%cx\n\t"
                     "rep movsw\n\t"
-                    "addw %5, %%si\n\t"
-                    "addw %6, %%di\n\t"
+                    ".add1%=: addw $0x6969, %%si\n\t" //self-modifying code, immediate overwritten with srcaddamt
+                    ".add2%=: addw $0x6969, %%di\n\t" //self-modifying code, immediate overwritten with dstaddamt
                     "decw %%bx\n\t"
                     "jnz .loop%=\n\t"
                 : : "m" (planeOffset), "m" (dsttlpos), "m" (dwordw), "m" (h), "m" (planeSegment), "m" (srcaddamt), "m" (dstaddamt) : "%ax", "%cx", "%dx", "%bx", "%si", "%di", "%ds", "%es" );
@@ -874,12 +878,16 @@ void DrawNormalImage(ImageInfo* img, Rect2Int* outRect)
                     "movw %1, %%di\n\t"
                     "movw %2, %%dx\n\t"
                     "movw %3, %%bx\n\t"
+                    "movw %5, %%ax\n\t"
+                    "movw %%ax, %%cs:.add1%=+2\n\t"
+                    "movw %6, %%ax\n\t"
+                    "movw %%ax, %%cs:.add2%=+2\n\t"
                     "movw %4, %%ax\n\t"
                     "movw %%ax, %%ds\n\t"
                     ".loop%=: mov %%dx, %%cx\n\t"
                     "rep movsw\n\t"
-                    "addw %5, %%si\n\t"
-                    "addw %6, %%di\n\t"
+                    ".add1%=: addw $0x6969, %%si\n\t" //self-modifying code, immediate overwritten with srcaddamt
+                    ".add2%=: addw $0x6969, %%di\n\t" //self-modifying code, immediate overwritten with dstaddamt
                     "decw %%bx\n\t"
                     "jnz .loop%=\n\t"
                 : : "m" (planeOffset), "m" (dsttlpos), "m" (dwordw), "m" (h), "m" (planeSegment), "m" (srcaddamt), "m" (dstaddamt) : "%ax", "%cx", "%dx", "%bx", "%si", "%di", "%ds", "%es" );
@@ -896,12 +904,16 @@ void DrawNormalImage(ImageInfo* img, Rect2Int* outRect)
                     "movw %1, %%di\n\t"
                     "movw %2, %%dx\n\t"
                     "movw %3, %%bx\n\t"
+                    "movw %5, %%ax\n\t"
+                    "movw %%ax, %%cs:.add1%=+2\n\t"
+                    "movw %6, %%ax\n\t"
+                    "movw %%ax, %%cs:.add2%=+2\n\t"
                     "movw %4, %%ax\n\t"
                     "movw %%ax, %%ds\n\t"
                     ".loop%=: mov %%dx, %%cx\n\t"
                     "rep movsw\n\t"
-                    "addw %5, %%si\n\t"
-                    "addw %6, %%di\n\t"
+                    ".add1%=: addw $0x6969, %%si\n\t" //self-modifying code, immediate overwritten with srcaddamt
+                    ".add2%=: addw $0x6969, %%di\n\t" //self-modifying code, immediate overwritten with dstaddamt
                     "decw %%bx\n\t"
                     "jnz .loop%=\n\t"
                 : : "m" (planeOffset), "m" (dsttlpos), "m" (dwordw), "m" (h), "m" (planeSegment), "m" (srcaddamt), "m" (dstaddamt) : "%ax", "%cx", "%dx", "%bx", "%si", "%di", "%ds", "%es" );
@@ -918,12 +930,16 @@ void DrawNormalImage(ImageInfo* img, Rect2Int* outRect)
                     "movw %1, %%di\n\t"
                     "movw %2, %%dx\n\t"
                     "movw %3, %%bx\n\t"
+                    "movw %5, %%ax\n\t"
+                    "movw %%ax, %%cs:.add1%=+2\n\t"
+                    "movw %6, %%ax\n\t"
+                    "movw %%ax, %%cs:.add2%=+2\n\t"
                     "movw %4, %%ax\n\t"
                     "movw %%ax, %%ds\n\t"
                     ".loop%=: mov %%dx, %%cx\n\t"
                     "rep movsw\n\t"
-                    "addw %5, %%si\n\t"
-                    "addw %6, %%di\n\t"
+                    ".add1%=: addw $0x6969, %%si\n\t" //self-modifying code, immediate overwritten with srcaddamt
+                    ".add2%=: addw $0x6969, %%di\n\t" //self-modifying code, immediate overwritten with dstaddamt
                     "decw %%bx\n\t"
                     "jnz .loop%=\n\t"
                 : : "m" (planeOffset), "m" (dsttlpos), "m" (dwordw), "m" (h), "m" (planeSegment), "m" (srcaddamt), "m" (dstaddamt) : "%ax", "%cx", "%dx", "%bx", "%si", "%di", "%ds", "%es" );
@@ -1116,16 +1132,25 @@ void Draw9SliceBoxVRAM(ImageInfo* img, Rect2Int* outRect)
         "movw %20, %%si\n\t" //Center tile
         "movw %8, %%di\n\t"
         "movw $16, %%dx\n\t"
+        "movw %13, %%ax\n\t"
+        "movw %%ax, %%cs:.sub1%=+2\n\t"
+        "movw %14, %%ax\n\t"
+        "movw %%ax, %%cs:.mov1%=+1\n\t"
+        "movw %15, %%ax\n\t"
+        "movw %%ax, %%cs:.add1%=+2\n\t"
+        "push %%bp\n\t"
+        "movw %11, %%bp\n\t"
         ".loop91%=: lodsw\n\t"
-        "movw %14, %%bx\n\t"
-        ".loop9%=: movw %11, %%cx\n\t"
+        ".mov1%=: movw $0x6969, %%bx\n\t" //self-modifying code, immediate overwritten with centerh
+        ".loop9%=: movw %%bp, %%cx\n\t"
         "rep stosw\n\t"
-        "addw %15, %%di\n\t"
+        ".add1%=: addw $0x6969, %%di\n\t" //self-modifying code, immediate overwritten with extAddamt
         "decw %%bx\n\t"
         "jnz .loop9%=\n\t"
-        "subw %13, %%di\n\t"
+        ".sub1%=: subw $0x6969, %%di\n\t" //self-modifying code, immediate overwritten with vertSubAmt
         "decw %%dx\n\t"
         "jnz .loop91%=\n\t"
+        "pop %%bp\n\t"
     : : "m" (tlpos), "m" (trpos), "m" (blpos), "m" (brpos), "m" (lpos), "m" (rpos), "m" (tpos), "m" (bpos), "m" (cpos), "m" (unrolledIter), "m" (jumpAmt), "m" (centerw), "m" (addamt), "m" (vertSubAmt), "m" (centerh), "m" (extAddamt), "m" (tileaddr[0]), "m" (tileaddr[1]), "m" (tileaddr[2]), "m" (tileaddr[3]), "m" (tileaddr[4]), "m" (tileaddr[5]), "m" (tileaddr[6]), "m" (tileaddr[7]), "m" (tileaddr[8]) : "%ax", "%cx", "%dx", "%bx", "%si", "%di", "%ds", "%es");
 
     SetEGCToMonochromeDrawMode();
@@ -1164,16 +1189,25 @@ void Draw9SliceBoxInnerRegion(ImageInfo* img)
         "movw %6, %%si\n\t" //Center tile
         "movw %0, %%di\n\t"
         "movw $16, %%dx\n\t"
+        "movw %3, %%ax\n\t"
+        "movw %%ax, %%cs:.sub1%=+2\n\t"
+        "movw %4, %%ax\n\t"
+        "movw %%ax, %%cs:.mov1%=+1\n\t"
+        "movw %5, %%ax\n\t"
+        "movw %%ax, %%cs:.add1%=+2\n\t"
+        "push %%bp\n\t"
+        "movw %2, %%bp\n\t"
         ".loop1%=: lodsw\n\t"
-        "movw %4, %%bx\n\t"
-        ".loop0%=: movw %2, %%cx\n\t"
+        ".mov1%=: movw $0x6969, %%bx\n\t" //self-modifying code, immediate overwritten with centerh
+        ".loop0%=: movw %%bp, %%cx\n\t"
         "rep stosw\n\t"
-        "addw %5, %%di\n\t"
+        ".add1%=: addw $0x6969, %%di\n\t" //self-modifying code, immediate overwritten with extAddamt
         "decw %%bx\n\t"
         "jnz .loop0%=\n\t"
-        "subw %3, %%di\n\t"
+        ".sub1%=: subw $0x6969, %%di\n\t" //self-modifying code, immediate overwritten with vertSubAmt
         "decw %%dx\n\t"
         "jnz .loop1%=\n\t"
+        "pop %%bp\n\t"
 
         "movw %7, %%si\n\t" //Bottom tile (only top row needed, shadow wiping)
         "movw %1, %%di\n\t"
