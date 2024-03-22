@@ -1,4 +1,6 @@
-//PC-98 character generator interface
+//PC98 character generator interface
+//Maxim Hoxha 2023-2024
+
 #pragma once
 
 //Obtains character data from the character generator in a VRAM-compatible format

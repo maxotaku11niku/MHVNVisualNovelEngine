@@ -1,3 +1,6 @@
+//PC-98 keyboard interface
+//Maxim Hoxha 2023-2024
+
 #include "pc98_keyboard.h"
 
 unsigned char prevKeyStatus[16];

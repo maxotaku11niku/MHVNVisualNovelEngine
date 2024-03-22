@@ -1,4 +1,6 @@
-//PMD interface macros
+//Interface for Masahiro Kajihara's PMD
+//Maxim Hoxha 2024
+
 #pragma once
 
 //INT 60 function 00 - Start Song

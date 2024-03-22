@@ -1,4 +1,6 @@
 //DOS memory allocation calls wrapper
+//Maxim Hoxha 2023-2024
+
 /*/
 #include "x86segments.h"
 #include "doscalls.h"

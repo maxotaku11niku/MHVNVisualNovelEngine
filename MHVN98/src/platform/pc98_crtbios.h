@@ -1,4 +1,6 @@
 //PC-98 CRT BIOS calls
+//Maxim Hoxha 2023-2024
+
 #pragma once
 
 //INT 18 function 0A - Text Mode Set (with 'mode')

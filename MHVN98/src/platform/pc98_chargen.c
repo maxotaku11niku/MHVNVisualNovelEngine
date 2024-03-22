@@ -1,3 +1,6 @@
+//PC98 character generator interface
+//Maxim Hoxha 2023-2024
+
 //#include "x86ports.h"
 #include <dos.h>
 

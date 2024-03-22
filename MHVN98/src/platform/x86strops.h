@@ -1,4 +1,6 @@
 //x86 string instruction intrinsics
+//Maxim Hoxha 2023-2024
+
 #pragma once
 
 //16-bit pointers

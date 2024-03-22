@@ -1,4 +1,5 @@
 //PC-98 graphic charger interface
+//Maxim Hoxha 2023-2024
 
 #include "pc98_grcg.h"
 #include "x86strops.h"

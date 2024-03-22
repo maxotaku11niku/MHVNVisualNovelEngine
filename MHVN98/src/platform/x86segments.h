@@ -1,5 +1,7 @@
 //x86 segment management
 //Use with extreme caution
+//Maxim Hoxha 2023-2024
+
 #pragma once
 
 //Get segment registers

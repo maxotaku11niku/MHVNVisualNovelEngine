@@ -1,4 +1,6 @@
 //x86 interrupt management
+//Maxim Hoxha 2023-2024
+
 #pragma once
 
 #define INTFUNC __attribute__((interrupt)) __far

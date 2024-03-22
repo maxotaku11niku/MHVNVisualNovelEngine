@@ -1,4 +1,6 @@
 //MS-DOS system call macros
+//Maxim Hoxha 2023-2024
+
 #pragma once
 
 //Function error codes
