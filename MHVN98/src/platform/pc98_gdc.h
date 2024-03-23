@@ -264,37 +264,37 @@ inline unsigned char GDCReadGraphicsCommandData()
 }
 
 //Resets the text GDC
-inline void ResetTextGDC()
+inline void GDCResetText()
 {
     GDCWriteTextCommand(GDC_COMMAND_RESET);
 }
 
 //Start displaying the text layer
-inline void StartTextGDC()
+inline void GDCStartText()
 {
     GDCWriteTextCommand(GDC_COMMAND_START);
 }
 
 //Stop displaying the text layer
-inline void StopTextGDC()
+inline void GDCStopText()
 {
     GDCWriteTextCommand(GDC_COMMAND_STOP);
 }
 
 //Resets the graphics GDC
-inline void ResetGraphicsGDC()
+inline void GDCResetGraphics()
 {
     GDCWriteGraphicsCommand(GDC_COMMAND_RESET);
 }
 
 //Start displaying the graphics layer
-inline void StartGraphicsGDC()
+inline void GDCStartGraphics()
 {
     GDCWriteGraphicsCommand(GDC_COMMAND_START);
 }
 
 //Stop displaying the graphics layer
-inline void StopGraphicsGDC()
+inline void GDCStopGraphics()
 {
     GDCWriteGraphicsCommand(GDC_COMMAND_STOP);
 }
@@ -302,30 +302,44 @@ inline void StopGraphicsGDC()
 //Sets all 8 colours in the most basic palette. Only used if you're in 8-colour mode for some reason. Upper 4 bits for colours 0-3, lower 4 bits for colours 4-7.
 inline void GDCSet8ColoursPalette(unsigned char col04, unsigned char col15, unsigned char col26, unsigned char col37)
 {
+    volatile register unsigned char c __asm("%al");
+    c = col04;
     __asm volatile (
-        "movb %0, %%al\n\t"
-        "out %%al, $0xAE\n\t"
-        "movb %1, %%al\n\t"
-        "out %%al, $0xAA\n\t"
-        "movb %2, %%al\n\t"
-        "out %%al, $0xAC\n\t"
-        "movb %3, %%al\n\t"
-        "out %%al, $0xA8\n\t"
-        : : "rmi" (col04), "rmi" (col15), "rmi" (col26), "rmi" (col37) );
+        "out %%al, $0xAE"
+    : : "a" (c));
+    c = col15;
+    __asm volatile (
+        "out %%al, $0xAA"
+    : : "a" (c));
+    c = col26;
+    __asm volatile (
+        "out %%al, $0xAC"
+    : : "a" (c));
+    c = col37;
+    __asm volatile (
+        "out %%al, $0xA8"
+    : : "a" (c));
 }
 
 //Sets a single colour in the usual 16 colour palette. Each parameter is in the range 0x0-0xF
 //If in 256-colour mode, each parameter is in the range 0x00-0xFF
 inline void GDCSetPaletteColour(unsigned char index, unsigned char r, unsigned char g, unsigned char b)
 {
+    volatile register unsigned char i __asm("%al");
+    i = index;
     __asm volatile (
-        "movb %0, %%al\n\t"
-        "out %%al, $0xA8\n\t"
-        "movb %1, %%al\n\t"
-        "out %%al, $0xAC\n\t"
-        "movb %2, %%al\n\t"
-        "out %%al, $0xAA\n\t"
-        "movb %3, %%al\n\t"
-        "out %%al, $0xAE\n\t"
-        : : "rmi" (index), "rmi" (r), "rmi" (g), "rmi" (b) );
+        "out %%al, $0xA8"
+    : : "a" (i));
+    i = r;
+    __asm volatile (
+        "out %%al, $0xAC"
+    : : "a" (i));
+    i = g;
+    __asm volatile (
+        "out %%al, $0xAA"
+    : : "a" (i));
+    i = b;
+    __asm volatile (
+        "out %%al, $0xAE"
+    : : "a" (i));
 }

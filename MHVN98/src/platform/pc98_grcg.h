@@ -43,16 +43,23 @@ inline void GRCGDisable()
 //Set all 4 tile registers correctly
 inline void GRCGSetTileRegisters(unsigned char tile0, unsigned char tile1, unsigned char tile2, unsigned char tile3)
 {
+    volatile register unsigned char t __asm("%al");
+    t = tile0;
     __asm volatile (
-        "movb %0, %%al\n\t"
-        "outb %%al, $0x7E\n\t"
-        "movb %1, %%al\n\t"
-        "outb %%al, $0x7E\n\t"
-        "movb %2, %%al\n\t"
-        "outb %%al, $0x7E\n\t"
-        "movb %3, %%al\n\t"
-        "outb %%al, $0x7E\n\t"
-    : : "rmi" (tile0), "rmi" (tile1), "rmi" (tile2), "rmi" (tile3) : "%al");
+        "out %%al, $0x7E"
+    : : "a" (t));
+    t = tile1;
+    __asm volatile (
+        "out %%al, $0x7E"
+    : : "a" (t));
+    t = tile2;
+    __asm volatile (
+        "out %%al, $0x7E"
+    : : "a" (t));
+    t = tile3;
+    __asm volatile (
+        "out %%al, $0x7E"
+    : : "a" (t));
 }
 
 //Set the tile registers so they're ready for a simple fill

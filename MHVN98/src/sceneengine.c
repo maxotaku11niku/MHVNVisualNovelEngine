@@ -22,12 +22,8 @@
  * Scene bytecode loader and interpreter
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <libi86/malloc.h>
-#include <dos.h>
-//#include "platform/x86strops.h"
-//#include "platform/memalloc.h"
+#include "platform/x86strops.h"
+#include "platform/memalloc.h"
 #include "platform/filehandling.h"
 #include "platform/pc98_egc.h"
 #include "stdbuffer.h"
@@ -68,8 +64,6 @@ unsigned short nextTextNum;
 char curCharName[64];
 unsigned int curTextArray[256];
 __far char* sceneTextBuffer = 0;
-int sdHandle;
-//FILE* sdHandle;
 
 short scratchVars[32];
 short globalVars[128];
@@ -85,31 +79,20 @@ int LoadNewScene(unsigned short sceneNum)
     unsigned int realReadLen;
     unsigned long curfilepos;
     unsigned long scenedatpos;
-    int result = _dos_open(rootInfo.sceneDataPath, 0, &sdHandle);
-    //sdHandle = fopen(rootInfo.sceneDataPath, "rb");
+    fileptr handle;
+    int result = OpenFile(rootInfo.sceneDataPath, DOSFILE_OPEN_READ, &handle);
     if (result)
-    //if (sdHandle == 0)
     {
         WriteString("Error! Could not find scene data file!", 168, 184, FORMAT_SHADOW | FORMAT_COLOUR(0xF), 0);
-        return result; //Error handler
-        //return 1; //Error handler
+        return result;
     }
-    /**/
-    SeekFile(sdHandle, FILE_SEEK_ABSOLUTE, 4 + 4 * sceneNum, &curfilepos);
+    SeekFile(handle, DOSFILE_SEEK_ABSOLUTE, 4 + 4 * sceneNum, &curfilepos);
     __far unsigned char* sdp = &scenedatpos;
-    _dos_read(sdHandle, sdp, 4, &realReadLen);
-    SeekFile(sdHandle, FILE_SEEK_ABSOLUTE, 4 + 4 * sceneInfo.numScenes + scenedatpos, &curfilepos);
+    ReadFile(handle, 4, sdp, &realReadLen);
+    SeekFile(handle, DOSFILE_SEEK_ABSOLUTE, 4 + 4 * sceneInfo.numScenes + scenedatpos, &curfilepos);
     __far unsigned char* csd = curSceneData;
-    _dos_read(sdHandle, csd, 1024, &realReadLen);
-    _dos_close(sdHandle);
-    //*/
-    /*/
-    fseek(sdHandle, 4 + 4 * sceneNum, SEEK_SET);
-    fread(&scenedatpos, 1, 4, sdHandle);
-    fseek(sdHandle, 4 + 4 * sceneInfo.numScenes + scenedatpos, SEEK_SET);
-    fread(curSceneData, 1, 1024, sdHandle);
-    fclose(sdHandle);
-    //*/
+    ReadFile(handle, sizeof(curSceneData), csd, &realReadLen);
+    CloseFile(handle);
     result = LoadSceneText(sceneNum, sceneTextBuffer, curTextArray);
     if (result) return result;
     curSceneDataPC = 0;
@@ -122,31 +105,27 @@ int LoadNewScene(unsigned short sceneNum)
 int SetupSceneEngine()
 {
     unsigned int realReadLen;
-    int result = _dos_open(rootInfo.sceneDataPath, 0, &sdHandle);
-    //sdHandle = fopen(rootInfo.sceneDataPath, "rb");
+    fileptr handle;
+    int result = OpenFile(rootInfo.sceneDataPath, DOSFILE_OPEN_READ, &handle);
     if (result)
-    //if (sdHandle == 0)
     {
         WriteString("Error! Could not find scene data file!", 168, 184, FORMAT_SHADOW | FORMAT_COLOUR(0xF), 0);
-        return result; //Error handler
-        //return 1; //Error handler
+        return result;
     }
     __far unsigned char* fb = smallFileBuffer;
-    _dos_read(sdHandle, fb, 4, &realReadLen);
-    //fread(smallFileBuffer, 1, 4, sdHandle);
+    ReadFile(handle, 4, fb, &realReadLen);
     sceneInfo.numScenes = *((unsigned short*)(smallFileBuffer));
     sceneInfo.numChars = *((unsigned short*)(smallFileBuffer + 0x02));
-    sceneTextBuffer = _fmalloc(0xFFFF);
+    sceneTextBuffer = MemAlloc(0x10000);
     sceneInfo.curScene = 0xFFFF;
-    _dos_close(sdHandle);
-    //fclose(sdHandle);
+    CloseFile(handle);
     return LoadNewScene(0);
 }
 
 int FreeSceneEngine()
 {
     if (sceneTextBuffer == 0) return 0;
-    else _ffree(sceneTextBuffer);
+    else MemFree(sceneTextBuffer);
     return 0;
 }
 

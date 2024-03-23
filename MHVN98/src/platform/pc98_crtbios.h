@@ -7,10 +7,12 @@
 //Sets the mode of the text layer
 inline void PC98BIOSTextSetMode(unsigned char mode)
 {
+    register volatile unsigned char m __asm("%al");
+    m = mode;
     __asm volatile (
         "movb $0x0A, %%ah\n\t"
         "int $0x18\n\t"
-    : : "a" (mode));
+    : : "a" (m));
 }
 //Supporting defines
 #define CRT_MODE_TEXT_25_ROWS       0x00
@@ -26,7 +28,7 @@ inline void PC98BIOSTextSetMode(unsigned char mode)
 //Gets the mode of the text layer
 inline unsigned char PC98BIOSTextGetMode()
 {
-    unsigned char mode;
+    register volatile unsigned char mode __asm("%al");
     __asm volatile (
         "movb $0x0B, %%ah\n\t"
         "int $0x18\n\t"
@@ -44,7 +46,7 @@ inline void PC98BIOSTextOn()
     __asm volatile (
         "movb $0x0C, %%ah\n\t"
         "int $0x18\n\t"
-    : : : "ah");
+    : : : "%ah");
 }
 
 //INT 18 function 0D - Turn Text Layer Off
@@ -54,7 +56,7 @@ inline void PC98BIOSTextOff()
     __asm volatile (
         "movb $0x0D, %%ah\n\t"
         "int $0x18\n\t"
-    : : : "ah");
+    : : : "%ah");
 }
 
 //INT 18 function 40 - Turn Graphics Layer On
@@ -64,7 +66,7 @@ inline void PC98BIOSGraphicsOn()
     __asm volatile (
         "movb $0x40, %%ah\n\t"
         "int $0x18\n\t"
-    : : : "ah");
+    : : : "%ah");
 }
 
 //INT 18 function 41 - Turn Graphics Layer Off
@@ -74,18 +76,19 @@ inline void PC98BIOSGraphicsOff()
     __asm volatile (
         "movb $0x41, %%ah\n\t"
         "int $0x18\n\t"
-    : : : "ah");
+    : : : "%ah");
 }
 
 //INT 18 function 42 - Graphics Mode Set
 //Sets the mode of the graphics layer
 inline void PC98BIOSGraphicsSetMode(unsigned char mode)
 {
+    register volatile unsigned char m __asm("%ch");
+    m = mode;
     __asm volatile (
         "movb $0x42, %%ah\n\t"
-        "movb %0, %%ch\n\t"
         "int $0x18\n\t"
-    : : "rmi" (mode) : "ah", "ch");
+    : : "c" (m) : "ah");
 }
 //Supporting defines
 #define CRT_MODE_GRAPHIC_PAGE0         0x00

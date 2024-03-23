@@ -22,7 +22,7 @@
  * Graphics functions - very PC98-specific
  */
 
-#include <libi86/malloc.h>
+#include "platform/memalloc.h"
 #include "platform/pc98_egc.h"
 #include "platform/x86segments.h"
 #include "platform/x86strops.h"
@@ -1321,10 +1321,10 @@ void DoDrawRequests()
 void InitialiseGraphicsSystem()
 {
     LoadStd9SliceBoxIntoVRAM();
-    bgImageDataPlane0 = _fmalloc(32000);
-    bgImageDataPlane1 = _fmalloc(32000);
-    bgImageDataPlane2 = _fmalloc(32000);
-    bgImageDataPlane3 = _fmalloc(32000); //There will always be a background image loaded at some point, so allocate these now
+    bgImageDataPlane0 = (__far unsigned char*)MemAlloc(32000);
+    bgImageDataPlane1 = (__far unsigned char*)MemAlloc(32000);
+    bgImageDataPlane2 = (__far unsigned char*)MemAlloc(32000);
+    bgImageDataPlane3 = (__far unsigned char*)MemAlloc(32000); //There will always be a background image loaded at some point, so allocate these now
 
     //Flag all image infos as unloaded
     bgInfo.flags = 0;
@@ -1386,8 +1386,8 @@ void InitialiseGraphicsSystem()
 
 void FreeGraphicsSystem()
 {
-    _ffree(bgImageDataPlane0);
-    _ffree(bgImageDataPlane1);
-    _ffree(bgImageDataPlane2);
-    _ffree(bgImageDataPlane3);
+    MemFree(bgImageDataPlane0);
+    MemFree(bgImageDataPlane1);
+    MemFree(bgImageDataPlane2);
+    MemFree(bgImageDataPlane3);
 }

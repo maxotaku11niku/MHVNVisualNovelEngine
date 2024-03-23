@@ -4,8 +4,6 @@
 #include "pc98_grcg.h"
 #include "pc98_egc.h"
 #include "x86strops.h"
-#include "x86segments.h"
-//#include "unrealhwaddr.h"
 
 void EGCSetToBackgroundClearMode()
 {
@@ -36,8 +34,7 @@ void EGCClearScreen()
     EGCSetMask(0xFFFF);
     EGCSetToBackgroundClearMode();
     EGCSetBitLength(2048);
-    setes(GDC_PLANES_SEGMENT);
-    Memset16Seg(0xFFFF, 0, 16000);
+    Memset16Far(0xFFFF, GDC_PLANES, 16000);
 }
 
 void EGCClearLines(unsigned short startLine, unsigned short numLines)
@@ -46,8 +43,7 @@ void EGCClearLines(unsigned short startLine, unsigned short numLines)
     EGCSetMask(0xFFFF);
     EGCSetToBackgroundClearMode();
     EGCSetBitLength(2048);
-    setes(GDC_PLANES_SEGMENT);
-    Memset16Seg(0xFFFF, startLine * 80, 40 * numLines);
+    Memset16Far(0xFFFF, GDC_PLANES + startLine * 80, 40 * numLines);
 }
 
 void EGCEnable()

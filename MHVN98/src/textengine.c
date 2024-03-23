@@ -43,8 +43,6 @@
 
 TextInfo textInfo;
 
-int ctHandle;
-//FILE* ctHandle;
 unsigned long charbuf[16];
 
 unsigned long animCharBuf[16 * 16]; //For fade in animation, ring buffer
@@ -102,33 +100,28 @@ char stringBuffer2[512];
 
 void SetShadowColours(const unsigned char* cols)
 {
-    memcpy(shadowColours, cols, 16);
+    Memcpy16Near(cols, shadowColours, 8);
 }
 
 int SetupTextInfo()
 {
     unsigned int realReadLen;
-    int result = _dos_open(rootInfo.curTextDataPath, 0, &ctHandle);
-    //ctHandle = fopen(rootInfo.curTextDataPath, "rb");
+    fileptr handle;
+    int result = OpenFile(rootInfo.curTextDataPath, DOSFILE_OPEN_READ, &handle);
     if (result)
-    //if (ctHandle == 0)
     {
         WriteString("Error! Could not find text data file!", 172, 184, FORMAT_SHADOW | FORMAT_COLOUR(0xF), 0);
-        return result; //Error handler
-        //return 1; //Error handler
+        return result;
     }
     __far unsigned char* fb = smallFileBuffer;
-    _dos_read(ctHandle, fb, 0x18, &realReadLen);
-    //fread(smallFileBuffer, 1, 0x18, ctHandle);
+    ReadFile(handle, 0x18, fb, &realReadLen);
     textInfo.systemTextFilePtr = *((unsigned long*)(smallFileBuffer));
     textInfo.creditsTextFilePtr = *((unsigned long*)(smallFileBuffer + 0x04));
     textInfo.characterNamesFilePtr = *((unsigned long*)(smallFileBuffer + 0x08));
     textInfo.sceneTextFilePtr = *((unsigned long*)(smallFileBuffer + 0x0C));
     textInfo.CGTextFilePtr = *((unsigned long*)(smallFileBuffer + 0x10));
     textInfo.musicTextFilePtr = *((unsigned long*)(smallFileBuffer + 0x14));
-    //fclose(ctHandle);
-    _dos_close(ctHandle);
-    return 0;
+    return CloseFile(handle);
 }
 
 int LoadCurrentCharacterName(unsigned short charNumber, char* nameBuffer)
@@ -136,32 +129,20 @@ int LoadCurrentCharacterName(unsigned short charNumber, char* nameBuffer)
     unsigned int realReadLen;
     unsigned long curfilepos;
     unsigned short charnamepos;
-    int result = _dos_open(rootInfo.curTextDataPath, 0, &ctHandle);
-    //ctHandle = fopen(rootInfo.curTextDataPath, "rb");
+    fileptr handle;
+    int result = OpenFile(rootInfo.curTextDataPath, DOSFILE_OPEN_READ, &handle);
     if (result)
-    //if (ctHandle == 0)
     {
         WriteString("Error! Could not find text data file!", 172, 184, FORMAT_SHADOW | FORMAT_COLOUR(0xF), 0);
-        return result; //Error handler
-        //return 1; //Error handler
+        return result;
     }
-    /**/
-    SeekFile(ctHandle, FILE_SEEK_ABSOLUTE, textInfo.characterNamesFilePtr + 2 * charNumber, &curfilepos);
+    SeekFile(handle, DOSFILE_SEEK_ABSOLUTE, textInfo.characterNamesFilePtr + 2 * charNumber, &curfilepos);
     __far unsigned char* cnp = &charnamepos;
-    _dos_read(ctHandle, cnp, 2, &realReadLen);
-    SeekFile(ctHandle, FILE_SEEK_ABSOLUTE, textInfo.characterNamesFilePtr + 2 * sceneInfo.numChars + charnamepos, &curfilepos);
+    ReadFile(handle, 2, cnp, &realReadLen);
+    SeekFile(handle, DOSFILE_SEEK_ABSOLUTE, textInfo.characterNamesFilePtr + 2 * sceneInfo.numChars + charnamepos, &curfilepos);
     __far unsigned char* nb = nameBuffer;
-    _dos_read(ctHandle, nb, 64, &realReadLen);
-    _dos_close(ctHandle);
-    //*/
-    /*/
-    fseek(ctHandle, textInfo.characterNamesFilePtr + 2 * charNumber, SEEK_SET);
-    fread(&charnamepos, 1, 2, ctHandle);
-    fseek(ctHandle, textInfo.characterNamesFilePtr + 2 * sceneInfo.numChars + charnamepos, SEEK_SET);
-    fread(nameBuffer, 1, 64, ctHandle);
-    fclose(ctHandle);
-    //*/
-    return 0;
+    ReadFile(handle, 64, nb, &realReadLen);
+    return CloseFile(handle);
 }
 
 int LoadSceneText(unsigned short sceneNumber, __far char* textDataBuffer, unsigned int* textPtrsBuffer)
@@ -170,50 +151,29 @@ int LoadSceneText(unsigned short sceneNumber, __far char* textDataBuffer, unsign
     unsigned long curfilepos;
     unsigned long scenedatpos;
     unsigned short numTexts;
-    int result = _dos_open(rootInfo.curTextDataPath, 0, &ctHandle);
-    //ctHandle = fopen(rootInfo.curTextDataPath, "rb");
+    fileptr handle;
+    int result = OpenFile(rootInfo.curTextDataPath, DOSFILE_OPEN_READ, &handle);
     if (result)
-    //if (ctHandle == 0)
     {
         WriteString("Error! Could not find text data file!", 172, 184, FORMAT_SHADOW | FORMAT_COLOUR(0xF), 0);
-        return result; //Error handler
-        //return 1; //Error handler
+        return result;
     }
-    /**/
-    SeekFile(ctHandle, FILE_SEEK_ABSOLUTE, textInfo.sceneTextFilePtr + 4 * sceneNumber, &curfilepos);
+    SeekFile(handle, DOSFILE_SEEK_ABSOLUTE, textInfo.sceneTextFilePtr + 4 * sceneNumber, &curfilepos);
     __far unsigned char* sdp = &scenedatpos;
-    _dos_read(ctHandle, sdp, 4, &realReadLen);
-    SeekFile(ctHandle, FILE_SEEK_ABSOLUTE, textInfo.sceneTextFilePtr + 4 * sceneInfo.numScenes, &curfilepos);
+    ReadFile(handle, 4, sdp, &realReadLen);
+    SeekFile(handle, DOSFILE_SEEK_ABSOLUTE, textInfo.sceneTextFilePtr + 4 * sceneInfo.numScenes, &curfilepos);
     __far unsigned char* nt = &numTexts;
-    _dos_read(ctHandle, nt, 2, &realReadLen);
+    ReadFile(handle, 2, nt, &realReadLen);
     __far unsigned char* fb = smallFileBuffer;
-    _dos_read(ctHandle, fb, 1024, &realReadLen);
-    //*/
-    /*/
-    fseek(ctHandle, textInfo.sceneTextFilePtr + 4 * sceneNumber, SEEK_SET);
-    fread(&scenedatpos, 1, 4, ctHandle);
-    fseek(ctHandle, textInfo.sceneTextFilePtr + 4 * sceneInfo.numScenes, SEEK_SET);
-    fread(&numTexts, 1, 2, ctHandle);
-    fread(smallFileBuffer, 1, 1024, ctHandle);
-    //*/
+    ReadFile(handle, sizeof(smallFileBuffer), fb, &realReadLen);
     for(int i = 0; i < numTexts; i++)
     {
         textPtrsBuffer[i] = *((unsigned short*)(smallFileBuffer) + i) + (unsigned int)(((unsigned long)textDataBuffer) & 0x0000FFFF);
     }
-    /**/
-    SeekFile(ctHandle, FILE_SEEK_ABSOLUTE, textInfo.sceneTextFilePtr + 4 * sceneInfo.numScenes + 2 * (numTexts + 1), &curfilepos);
-    _dos_read(ctHandle, textDataBuffer, 0x8000, &realReadLen);
-    if (realReadLen == 0x8000) _dos_read(ctHandle, textDataBuffer + 0x8000, 0x8000, &realReadLen);
-    _dos_close(ctHandle);
-    //*/
-    /*/
-    fseek(ctHandle, textInfo.sceneTextFilePtr + 4 * sceneInfo.numScenes + 2 * (numTexts + 1), SEEK_SET);
-    setds((unsigned short)(((unsigned long)textDataBuffer) >> 16));
-    fread((unsigned short)(((unsigned long)textDataBuffer) & 0x0000FFFF), 1, 0xFFFF, ctHandle);
-    resetdstoss();
-    fclose(ctHandle);
-    //*/
-    return 0;
+    SeekFile(handle, DOSFILE_SEEK_ABSOLUTE, textInfo.sceneTextFilePtr + 4 * sceneInfo.numScenes + 2 * (numTexts + 1), &curfilepos);
+    ReadFile(handle, 0x8000, textDataBuffer, &realReadLen);
+    if (realReadLen == 0x8000) ReadFile(handle, 0x8000, textDataBuffer + 0x8000, &realReadLen);
+    return CloseFile(handle);
 }
 
 //Char data must be in 'edit-friendly' format
@@ -338,7 +298,7 @@ static void DrawChar(const unsigned long* charb, short x, short y, int bits32)
     unsigned short* planeptr = (unsigned short*)(y * 80 + ((x >> 3) & 0xFFFE));
     unsigned short xinblock = x & 0x000F;
     EGCSetBitAddressTransferDirection(EGC_BLOCKTRANSFER_FORWARD | EGC_BITADDRESS_DEST(xinblock));
-    setes(GDC_PLANES_SEGMENT);
+    SetES(GDC_PLANES_SEGMENT);
     if (!bits32) //Why bother doing work on an empty cell?
     {
         EGCSetBitLength(16);
@@ -463,7 +423,7 @@ static void DrawCharMask(const unsigned long* charb, short x, short y, const uns
     unsigned short* planeptr = (unsigned short*)(y * 80 + ((x >> 3) & 0xFFFE));
     unsigned short xinblock = x & 0x000F;
     EGCSetBitAddressTransferDirection(EGC_BLOCKTRANSFER_FORWARD | EGC_BITADDRESS_DEST(xinblock));
-    setes(GDC_PLANES_SEGMENT);
+    SetES(GDC_PLANES_SEGMENT);
     if (!bits32) //Why bother doing work on an empty cell?
     {
         EGCSetBitLength(16);
@@ -808,8 +768,8 @@ void StartAnimatedStringToWrite(const __far char* str, const short x, const shor
     animLength = 16;
     waitFrames = 0;
     waitPerChar = 0;
-    memset(animCharBuf, 0, 1024);
-    memset(charFade, 0xFFFF, 16);
+    Memset16Near(0, animCharBuf, 512);
+    Memset16Near(0xFFFF, charFade, 8);
 }
 
 int StringWriteAnimationFrame(unsigned char skip)
@@ -1084,7 +1044,7 @@ void WriteStringInternal(const char* str, const short x, const short y, short fo
                         }
                         break;
                     case 0x20: //space
-                        memset(charbuf, 0, 64);
+                        Memset16Near(0, charbuf, 32);
                         if (format & FORMAT_UNDERLINE)
                         {
                             UnderlineChar(charbuf, 8);

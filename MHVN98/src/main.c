@@ -22,12 +22,7 @@
  * Entry point and main loop
  */
 
-#include "platform/x86strops.h"
 #include "platform/x86interrupt.h"
-//#include "platform/filehandling.h"
-//#include "platform/memalloc.h"
-//#include "platform/unreal_interrupts.h"
-//#include "platform/unrealhwaddr.h"
 #include "platform/pc98_crtbios.h"
 #include "platform/pc98_gdc.h"
 #include "platform/pc98_egc.h"

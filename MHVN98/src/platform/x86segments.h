@@ -5,44 +5,97 @@
 #pragma once
 
 //Get segment registers
-#define getcs(seg) __asm ("movw %%cs, %w0" : "=rm" (seg))
-#define getds(seg) __asm ("movw %%ds, %w0" : "=rm" (seg))
-#define getes(seg) __asm ("movw %%es, %w0" : "=rm" (seg))
-#define getss(seg) __asm ("movw %%ss, %w0" : "=rm" (seg))
-#define getfs(seg) __asm ("movw %%fs, %w0" : "=rm" (seg))
-#define getgs(seg) __asm ("movw %%gs, %w0" : "=rm" (seg))
+inline unsigned short GetCS()
+{
+    unsigned short seg;
+    __asm (
+        "mov %%cs, %0"
+    : "=rm" (seg));
+    return seg;
+}
+
+inline unsigned short GetDS()
+{
+    unsigned short seg;
+    __asm (
+        "mov %%ds, %0"
+    : "=rm" (seg));
+    return seg;
+}
+
+inline unsigned short GetES()
+{
+    unsigned short seg;
+    __asm (
+        "mov %%es, %0"
+    : "=rm" (seg));
+    return seg;
+}
+
+inline unsigned short GetSS()
+{
+    unsigned short seg;
+    __asm (
+        "mov %%ss, %0"
+    : "=rm" (seg));
+    return seg;
+}
+
+inline unsigned short GetFS()
+{
+    unsigned short seg;
+    __asm (
+        "mov %%fs, %0"
+    : "=rm" (seg));
+    return seg;
+}
+
+inline unsigned short GetGS()
+{
+    unsigned short seg;
+    __asm (
+        "mov %%gs, %0"
+    : "=rm" (seg));
+    return seg;
+}
+
 //Set segment registers
-//EXTREMELY DANGEROUS!!!!
-#define setcs(seg) __asm volatile ("movw %w0, %%cs" : : "rm" (seg) : "%cs")
 //VERY DANGEROUS!!
-#define setds(seg) __asm volatile ("movw %w0, %%ds" : : "rm" (seg) : "%ds")
-#define setes(seg) __asm volatile ("movw %w0, %%es" : : "rm" (seg) : "%es")
+inline void SetDS(unsigned short seg)
+{
+    __asm volatile (
+        "mov %0, %%ds"
+    : : "rm" (seg) : "%ds");
+}
+
+inline void SetES(unsigned short seg)
+{
+    __asm volatile  (
+        "mov %0, %%es"
+    : : "rm" (seg) : "%es");
+}
+
 //VERY DANGEROUS!!
-#define setss(seg) __asm volatile ("movw %w0, %%ss" : : "rm" (seg) : "%ss")
-#define setfs(seg) __asm volatile ("movw %w0, %%fs" : : "rm" (seg) : "%fs")
-#define setgs(seg) __asm volatile ("movw %w0, %%gs" : : "rm" (seg) : "%gs")
-//Reset segment registers to cs
-#define resetdstocs() __asm volatile ("movw %%cs, %%ax\n\tmovw %%ax, %%ds" : : : "ax")
-#define resetestocs() __asm volatile ("movw %%cs, %%ax\n\tmovw %%ax, %%es" : : : "ax")
-#define resetsstocs() __asm volatile ("movw %%cs, %%ax\n\tmovw %%ax, %%ss" : : : "ax")
-#define resetfstocs() __asm volatile ("movw %%cs, %%ax\n\tmovw %%ax, %%fs" : : : "ax")
-#define resetgstocs() __asm volatile ("movw %%cs, %%ax\n\tmovw %%ax, %%gs" : : : "ax")
-//Reset segment registers to ds
-#define resetestods() __asm volatile ("movw %%ds, %%ax\n\tmovw %%ax, %%es" : : : "ax")
-#define resetsstods() __asm volatile ("movw %%ds, %%ax\n\tmovw %%ax, %%ss" : : : "ax")
-#define resetfstods() __asm volatile ("movw %%ds, %%ax\n\tmovw %%ax, %%fs" : : : "ax")
-#define resetgstods() __asm volatile ("movw %%ds, %%ax\n\tmovw %%ax, %%gs" : : : "ax")
-//Reset segment registers to ss
-#define resetdstoss() __asm volatile ("movw %%ss, %%ax\n\tmovw %%ax, %%ds" : : : "ax")
-#define resetestoss() __asm volatile ("movw %%ss, %%ax\n\tmovw %%ax, %%es" : : : "ax")
-#define resetfstoss() __asm volatile ("movw %%ss, %%ax\n\tmovw %%ax, %%fs" : : : "ax")
-#define resetgstoss() __asm volatile ("movw %%ss, %%ax\n\tmovw %%ax, %%gs" : : : "ax")
-//Reset ds and es (the 8086 normal data segment registers) to cs
-#define reset8086datasegtocs() __asm volatile ("movw %%cs, %%ax\n\tmovw %%ax, %%ds\n\tmovw %%ax, %%es" : : : "ax")
-//Reset fs and gs (the 80386 extra data segment registers) to cs
-#define reset386datasegtocs() __asm volatile ("movw %%cs, %%ax\n\tmovw %%ax, %%fs\n\tmovw %%ax, %%gs" : : : "ax")
-//Reset ds, es, fs and gs to cs
-#define resetalldatasegtocs() __asm volatile ("movw %%cs, %%ax\n\tmovw %%ax, %%ds\n\tmovw %%ax, %%es\n\tmovw %%ax, %%fs\n\tmovw %%ax, %%gs" : : : "ax")
+inline void SetSS(unsigned short seg)
+{
+    __asm volatile  (
+        "mov %0, %%ss"
+    : : "rm" (seg) : "%ss");
+}
+
+inline void SetFS(unsigned short seg)
+{
+    __asm volatile  (
+        "mov %0, %%fs"
+    : : "rm" (seg) : "%fs");
+}
+
+inline void SetGS(unsigned short seg)
+{
+    __asm volatile  (
+        "mov %0, %%gs"
+    : : "rm" (seg) : "%gs");
+}
 
 /* Explicitly overridden memory operations follow */
 //Load 8-bit number
