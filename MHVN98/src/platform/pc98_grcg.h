@@ -3,12 +3,18 @@
 
 #pragma once
 
-//#include "x86ports.h"
-#include <dos.h>
 #include "pc98_gdc.h"
 
 //OUTPORT 7C - Set GRCG Mode
-#define grcg_writemode(mode) outportb(0x7C, mode)
+//
+inline void GRCGWriteMode(unsigned char mode)
+{
+    volatile register unsigned char m __asm("%al");
+    m = mode;
+    __asm volatile (
+        "outb %%al, $0x7C"
+    : : "a" (m));
+}
 //Supporting defines
 //For convenience, as hardware uses bit = 0 to indicate access, we NOT a mask where bit = 1 indicates access
 #define GRCG_PLANEMASK(mask) (0x0F & (~(mask)))
@@ -21,46 +27,45 @@
 #define GRCG_DISABLE  0x00
 #define GRCG_ENABLE   0x80
 
-//OUTPORT 7E - Set GRCG Tile Register (this cycles through the planes, so be careful when using it)
-#define grcg_writetile(tile) outportb(0x7E, tile)
-
-__attribute__((always_inline)) inline void GRCGEnable()
+inline void GRCGEnable()
 {
-    grcg_writemode(GRCG_ENABLE);
+    GRCGWriteMode(GRCG_ENABLE);
 }
 
-__attribute__((always_inline)) inline void GRCGDisable()
+inline void GRCGDisable()
 {
-    grcg_writemode(GRCG_DISABLE);
+    GRCGWriteMode(GRCG_DISABLE);
 }
 
+//OUTPORT 7E - Set GRCG Tile Register
+//Since this register cycles through the planes, it's not ideal to write to it directly, so here are some convenience functions
+//We're assuming the GRCG is already in a sane state, mind you. It should be if we've just turned it on
 //Set all 4 tile registers correctly
-__attribute__((always_inline)) inline void SetGRCGTileRegisters(unsigned char tile0, unsigned char tile1, unsigned char tile2, unsigned char tile3)
+inline void GRCGSetTileRegisters(unsigned char tile0, unsigned char tile1, unsigned char tile2, unsigned char tile3)
 {
-    grcg_writetile(tile0);
-    grcg_writetile(tile1);
-    grcg_writetile(tile2);
-    grcg_writetile(tile3);
+    __asm volatile (
+        "movb %0, %%al\n\t"
+        "outb %%al, $0x7E\n\t"
+        "movb %1, %%al\n\t"
+        "outb %%al, $0x7E\n\t"
+        "movb %2, %%al\n\t"
+        "outb %%al, $0x7E\n\t"
+        "movb %3, %%al\n\t"
+        "outb %%al, $0x7E\n\t"
+    : : "rmi" (tile0), "rmi" (tile1), "rmi" (tile2), "rmi" (tile3) : "%al");
 }
 
 //Set the tile registers so they're ready for a simple fill
-__attribute__((always_inline)) inline void SetGRCGTilesToColour(unsigned char col)
+inline void GRCGSetTilesToColour(unsigned char col)
 {
-    grcg_writetile((col & 0x01)? 0xFF : 0x00);
-    grcg_writetile((col & 0x02)? 0xFF : 0x00);
-    grcg_writetile((col & 0x04)? 0xFF : 0x00);
-    grcg_writetile((col & 0x08)? 0xFF : 0x00);
-}
-
-//The following wrappers allow for compile time type checking
-
-//Sets the GRCG mode
-__attribute__((always_inline)) inline void SetGRCGMode(unsigned char mode)
-{
-    grcg_writemode(mode);
+    unsigned char t0 = (col & 0x01) ? 0xFF : 0x00;
+    unsigned char t1 = (col & 0x02) ? 0xFF : 0x00;
+    unsigned char t2 = (col & 0x04) ? 0xFF : 0x00;
+    unsigned char t3 = (col & 0x08) ? 0xFF : 0x00;
+    GRCGSetTileRegisters(t0, t1, t2, t3);
 }
 
 //Clears the screen very fast using the GRCG (must enable beforehand)
-void ClearScreenGRCG(unsigned char clearCol);
+void GRCGClearScreen(unsigned char clearCol);
 //Clears some lines very fast using the GRCG (must enable beforehand)
-void ClearLinesGRCG(unsigned char clearCol, unsigned short startLine, unsigned short numLines);
+void GRCGClearLines(unsigned char clearCol, unsigned short startLine, unsigned short numLines);

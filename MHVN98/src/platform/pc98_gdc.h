@@ -3,8 +3,6 @@
 
 #pragma once
 
-//#include "x86ports.h"
-#include <dos.h>
 //Plane segments
 #define GDC_PLANE0_SEGMENT 0xA800
 #define GDC_PLANE1_SEGMENT 0xB000
@@ -21,7 +19,15 @@
 #define GDC_PLANES ((unsigned __far char*)0xA8000000)
 
 //OUTPORT 68 - Write GDC Mode 1
-#define gdc_writemode1(mode) outportb(0x68, mode)
+//Sets the graphics mode first part, can only change each attribute one at a time
+inline void GDCSetMode1(unsigned char mode)
+{
+    volatile register unsigned char m __asm("%al");
+    m = mode;
+    __asm volatile (
+        "outb %%al, $0x68"
+    : : "a" (m));
+}
 //Supporting defines
 #define GDC_MODE1_ATTRIBUTE4_VERTICALLINE 0x00
 #define GDC_MODE1_ATTRIBUTE4_PATTERN      0x01
@@ -41,9 +47,26 @@
 #define GDC_MODE1_DISPLAY_OFF             0x0F
 
 //OUTPORT 60 - Write GDC Text Command Parameter
-#define gdc_writetextcommandparam(param) outportb(0x60, param)
+//Writes a parameter for a text GDC command
+inline void GDCWriteTextCommandParam(unsigned char param)
+{
+    volatile register unsigned char p __asm("%al");
+    p = param;
+    __asm volatile (
+        "outb %%al, $0x60"
+    : : "a" (p));
+}
+
 //OUTPORT 62 - Write GDC Text Command
-#define gdc_writetextcommand(command) outportb(0x62, command)
+//Writes to the text GDC to start a command
+inline void GDCWriteTextCommand(unsigned char command)
+{
+    volatile register unsigned char c __asm("%al") = command;
+    c = command;
+    __asm volatile (
+        "outb %%al, $0x62"
+    : : "a" (c));
+}
 //Supporting defines (all of these commands will be abstracted behind proper functions)
 //Reinitialises this GDC
 #define GDC_COMMAND_RESET 0x00
@@ -96,7 +119,13 @@
 #define GDC_MOD_SET 0x03
 
 //INPORT 60 - Read GDC Text Status
-//#define gdc_readtextstatus(status) inportb(0x60, status)
+//Read the status of the text GDC
+inline unsigned char GDCReadTextStatus()
+{
+    volatile register unsigned char status __asm("%al");
+    __asm volatile ("inb $0x60, %al");
+    return status;
+}
 //Supporting defines
 #define GDC_STATUS_DATAREADY  0x01
 #define GDC_STATUS_FIFO_FULL  0x02
@@ -111,16 +140,47 @@
 #define GDC_STATUS_HBLANK 0x40
 //Not applicable to the PC-98 (and even if so, actually requires a CRT anyway)
 #define GDC_STATUS_LIGHTPEN_DETECT 0x80
+
 //INPORT 62 - Read GDC Text Command Data
-//#define gdc_readtextcommanddata(data) inportb(0x62, data)
+//Read the data returned from a text GDC command
+inline unsigned char GDCReadTextCommandData()
+{
+    volatile register unsigned char data __asm("%al");
+    __asm volatile (
+        "inb $0x62, %%al"
+    : "=a" (data) : );
+    return data;
+}
 
 
 //OUTPORT 64 - CRT Interrupt Reset
-#define gdc_interruptreset() __asm volatile ("out %al, $100")
+//IMPORTANT - call after you allow VSYNC interrupts to prevent a spinlock
+inline void GDCInterruptReset()
+{
+    __asm volatile ("outb %al, $0x64"); //What's in al doesn't actually matter
+}
+
 //OUTPORT 6C - Set Border Colour
-#define gdc_setbordercolour(col) outportb(0x6C, col)
+//This colour probably won't show up on an emulator or a modern flat display
+inline void GDCSetBorderColour(unsigned char col)
+{
+    volatile register unsigned char c __asm("%al");
+    c = col;
+    __asm volatile (
+        "outb %%al, $0x6C"
+    : : "a" (c));
+}
+
 //OUTPORT 6A - Write GDC Mode 2
-#define gdc_writemode2(mode) outportb(0x6A, mode)
+//Sets the graphics mode second part, can only change each attribute one at a time
+inline void GDCSetMode2(unsigned char mode)
+{
+    volatile register unsigned char m __asm("%al");
+    m = mode;
+    __asm volatile (
+        "outb %%al, $0x6A"
+    : : "a" (m));
+}
 //Supporting defines
 //You probably don't want to use this mode, as the VX supports 16 colours anyway
 #define GDC_MODE2_8COLOURS 0x00
@@ -139,19 +199,105 @@
 #define GDC_MODE2_PAGE_CONNECT    0x69
 
 //OUTPORT A0 - Write GDC Graphics Command Parameter
-#define gdc_writegraphiccommandparam(param) outportb(0xA0, param)
+//Writes a parameter for a graphics GDC command
+inline void GDCWriteGraphicsCommandParam(unsigned char param)
+{
+    volatile register unsigned char p __asm("%al");
+    p = param;
+    __asm volatile (
+        "outb %%al, $0xA0"
+    : : "a" (p));
+}
 //OUTPORT A2 - Write GDC Graphics Command
-#define gdc_writegraphiccommand(command) outportb(0xA2, command)
+//Writes to the graphics GDC to start a command
+inline void GDCWriteGraphicsCommand(unsigned char command)
+{
+    volatile register unsigned char c __asm("%al");
+    c = command;
+    __asm volatile (
+        "outb %%al, $0xA2"
+    : : "a" (c));
+}
 //OUTPORT A4 - Set Display Page
-#define gdc_setdisplaypage(page) outportb(0xA4, page)
+//There are two pages, this sets which page is shown
+inline void GDCSetGraphicsDisplayPage(unsigned char page)
+{
+    volatile register unsigned char p __asm("%al");
+    p = page;
+    __asm volatile (
+        "outb %%al, $0xA4"
+    : : "a" (p));
+}
+
 //OUTPORT A6 - Set Draw Page
-#define gdc_setdrawpage(page) outportb(0xA6, page)
+//There are two pages, this sets which page can be drawn to
+inline void GDCSetGraphicsDrawPage(unsigned char page)
+{
+    volatile register unsigned char p __asm("%al");
+    p = page;
+    __asm volatile (
+        "outb %%al, $0xA6"
+    : : "a" (p));
+}
 
 //INPORT A0 - Read GDC Graphics Status
 //#define gdc_readgraphicstatus(status) inportb(0xA0, status)
+//Read the status of the graphics GDC
+inline unsigned char GDCReadGraphicsStatus()
+{
+    volatile register unsigned char status __asm("%al");
+    __asm volatile (
+        "inb $0xA0, %%al"
+    : "=a" (status) : );
+    return status;
+}
 //INPORT A2 - Read GDC Graphics Command Data
 //#define gdc_readgraphiccommanddata(data) inportb(0xA2, data)
+//Read the data returned from a graphics GDC command
+inline unsigned char GDCReadGraphicsCommandData()
+{
+    volatile register unsigned char data __asm("%al");
+    __asm volatile (
+        "inb $0xA2, %%al"
+    : "=a" (data) : );
+    return data;
+}
 
+//Resets the text GDC
+inline void ResetTextGDC()
+{
+    GDCWriteTextCommand(GDC_COMMAND_RESET);
+}
+
+//Start displaying the text layer
+inline void StartTextGDC()
+{
+    GDCWriteTextCommand(GDC_COMMAND_START);
+}
+
+//Stop displaying the text layer
+inline void StopTextGDC()
+{
+    GDCWriteTextCommand(GDC_COMMAND_STOP);
+}
+
+//Resets the graphics GDC
+inline void ResetGraphicsGDC()
+{
+    GDCWriteGraphicsCommand(GDC_COMMAND_RESET);
+}
+
+//Start displaying the graphics layer
+inline void StartGraphicsGDC()
+{
+    GDCWriteGraphicsCommand(GDC_COMMAND_START);
+}
+
+//Stop displaying the graphics layer
+inline void StopGraphicsGDC()
+{
+    GDCWriteGraphicsCommand(GDC_COMMAND_STOP);
+}
 
 //Sets all 8 colours in the most basic palette. Only used if you're in 8-colour mode for some reason. Upper 4 bits for colours 0-3, lower 4 bits for colours 4-7.
 inline void GDCSet8ColoursPalette(unsigned char col04, unsigned char col15, unsigned char col26, unsigned char col37)
@@ -182,64 +328,4 @@ inline void GDCSetPaletteColour(unsigned char index, unsigned char r, unsigned c
         "movb %3, %%al\n\t"
         "out %%al, $0xAE\n\t"
         : : "rmi" (index), "rmi" (r), "rmi" (g), "rmi" (b) );
-}
-
-//The following wrappers allow for compile time type checking
-
-//Sets the graphics mode first part
-inline void GraphicsSetMode1(unsigned char mode)
-{
-    gdc_writemode1(mode);
-}
-
-//Sets the graphics mode second part
-inline void GraphicsSetMode2(unsigned char mode)
-{
-    gdc_writemode2(mode);
-}
-
-//Resets the text GDC
-inline void ResetTextGDC()
-{
-    gdc_writetextcommand(GDC_COMMAND_RESET);
-}
-
-//Start displaying the text layer
-inline void StartTextGDC()
-{
-    gdc_writetextcommand(GDC_COMMAND_START);
-}
-
-//Stop displaying the text layer
-inline void StopTextGDC()
-{
-    gdc_writetextcommand(GDC_COMMAND_STOP);
-}
-
-inline unsigned char ReadTextGDCStatus()
-{
-    return inportb(0x60);
-}
-
-//Resets the graphics GDC
-inline void ResetGraphicsGDC()
-{
-    gdc_writegraphiccommand(GDC_COMMAND_RESET);
-}
-
-//Start displaying the graphics layer
-inline void StartGraphicsGDC()
-{
-    gdc_writegraphiccommand(GDC_COMMAND_START);
-}
-
-//Stop displaying the graphics layer
-inline void StopGraphicsGDC()
-{
-    gdc_writegraphiccommand(GDC_COMMAND_STOP);
-}
-
-inline unsigned char ReadGraphicsGDCStatus()
-{
-    return inportb(0xA0);
 }

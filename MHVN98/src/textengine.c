@@ -337,11 +337,11 @@ static void DrawChar(const unsigned long* charb, short x, short y, int bits32)
 {
     unsigned short* planeptr = (unsigned short*)(y * 80 + ((x >> 3) & 0xFFFE));
     unsigned short xinblock = x & 0x000F;
-    egc_bitaddrbtmode(EGC_BLOCKTRANSFER_FORWARD | EGC_BITADDRESS_DEST(xinblock));
+    EGCSetBitAddressTransferDirection(EGC_BLOCKTRANSFER_FORWARD | EGC_BITADDRESS_DEST(xinblock));
     setes(GDC_PLANES_SEGMENT);
     if (!bits32) //Why bother doing work on an empty cell?
     {
-        egc_bitlen(16);
+        EGCSetBitLength(16);
         if (xinblock) //Unaligned
         {
             __asm volatile ( //Unrolled a bit to reduce the overhead of jumping
@@ -395,7 +395,7 @@ static void DrawChar(const unsigned long* charb, short x, short y, int bits32)
     }
     else
     {
-        egc_bitlen(32);
+        EGCSetBitLength(32);
         if (xinblock) //Unaligned
         {
             __asm volatile ( //Unrolled a bit to reduce the overhead of jumping
@@ -462,11 +462,11 @@ static void DrawCharMask(const unsigned long* charb, short x, short y, const uns
 {
     unsigned short* planeptr = (unsigned short*)(y * 80 + ((x >> 3) & 0xFFFE));
     unsigned short xinblock = x & 0x000F;
-    egc_bitaddrbtmode(EGC_BLOCKTRANSFER_FORWARD | EGC_BITADDRESS_DEST(xinblock));
+    EGCSetBitAddressTransferDirection(EGC_BLOCKTRANSFER_FORWARD | EGC_BITADDRESS_DEST(xinblock));
     setes(GDC_PLANES_SEGMENT);
     if (!bits32) //Why bother doing work on an empty cell?
     {
-        egc_bitlen(16);
+        EGCSetBitLength(16);
         if (xinblock) //Unaligned
         {
             __asm volatile ( //Unrolled so that we only need to load each mask once
@@ -562,7 +562,7 @@ static void DrawCharMask(const unsigned long* charb, short x, short y, const uns
     }
     else
     {
-        egc_bitlen(32);
+        EGCSetBitLength(32);
         if (xinblock) //Unaligned
         {
             __asm volatile ( //Unrolled so that we only need to load each mask once
@@ -993,10 +993,10 @@ int StringWriteAnimationFrame(unsigned char skip)
             const unsigned short curcol = charColours[chBufNum];
             if (charFlags[chBufNum] & 0x01)
             {
-                egc_fgcolour(shadowColours[curcol]);
+                EGCSetFGColour(shadowColours[curcol]);
                 DrawCharMask(&animCharBuf[16 * chBufNum], charXs[chBufNum] + 1, charYs[chBufNum] + 1, bayer4x4masks + fadeStart, charFlags[chBufNum] & 0x02);
             }
-            egc_fgcolour(curcol);
+            EGCSetFGColour(curcol);
             DrawCharMask(&animCharBuf[16 * chBufNum], charXs[chBufNum], charYs[chBufNum], bayer4x4masks + fadeStart, charFlags[chBufNum] & 0x02);
         }
     }
@@ -1092,10 +1092,10 @@ void WriteStringInternal(const char* str, const short x, const short y, short fo
                             SwapCharDataFormats(charbuf, 0);
                             if (format & FORMAT_SHADOW)
                             {
-                                egc_fgcolour(shadowColours[FORMAT_COLOUR_GET(format)]);
+                                EGCSetFGColour(shadowColours[FORMAT_COLOUR_GET(format)]);
                                 DrawChar(charbuf, curX + 1, curY + 1, 0);
                             }
-                            egc_fgcolour(FORMAT_COLOUR_GET(format));
+                            EGCSetFGColour(FORMAT_COLOUR_GET(format));
                             DrawChar(charbuf, curX, curY, 0);
                         }
                         curX += 8;
@@ -1114,10 +1114,10 @@ void WriteStringInternal(const char* str, const short x, const short y, short fo
                 SwapCharDataFormats(charbuf, 0);
                 if (format & FORMAT_SHADOW)
                 {
-                    egc_fgcolour(shadowColours[FORMAT_COLOUR_GET(format)]);
+                    EGCSetFGColour(shadowColours[FORMAT_COLOUR_GET(format)]);
                     DrawChar(charbuf, curX + 1, curY + 1, 0);
                 }
-                egc_fgcolour(FORMAT_COLOUR_GET(format));
+                EGCSetFGColour(FORMAT_COLOUR_GET(format));
                 DrawChar(charbuf, curX, curY, 0);
                 curX += 8;
             }
@@ -1139,10 +1139,10 @@ void WriteStringInternal(const char* str, const short x, const short y, short fo
                 SwapCharDataFormats(charbuf, is32Pixels);
                 if (format & FORMAT_SHADOW)
                 {
-                    egc_fgcolour(shadowColours[FORMAT_COLOUR_GET(format)]);
+                    EGCSetFGColour(shadowColours[FORMAT_COLOUR_GET(format)]);
                     DrawChar(charbuf, curX + 1, curY + 1, is32Pixels);
                 }
-                egc_fgcolour(FORMAT_COLOUR_GET(format));
+                EGCSetFGColour(FORMAT_COLOUR_GET(format));
                 DrawChar(charbuf, curX, curY, is32Pixels);
                 curX += actualWidth;
             }

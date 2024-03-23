@@ -47,10 +47,10 @@ unsigned char oldInterruptMask;
 int main(void)
 {
     //Set up graphics first
-    TextOff();
-    GraphicsOn();
-    GraphicsSetMode(CRT_MODE_GRAPHIC_PAGE0 | CRT_MODE_GRAPHIC_COLOUR | CRT_MODE_GRAPHIC_640x400);
-    GraphicsSetMode2(GDC_MODE2_16COLOURS);
+    PC98BIOSTextOff();
+    PC98BIOSGraphicsOn();
+    PC98BIOSGraphicsSetMode(CRT_MODE_GRAPHIC_PAGE0 | CRT_MODE_GRAPHIC_COLOUR | CRT_MODE_GRAPHIC_640x400);
+    GDCSetMode2(GDC_MODE2_16COLOURS);
     GDCSetPaletteColour(0x0, 0x1, 0x1, 0x1);
     GDCSetPaletteColour(0x1, 0x7, 0x7, 0x7);
     GDCSetPaletteColour(0x2, 0xB, 0x3, 0xB);
@@ -68,11 +68,11 @@ int main(void)
     GDCSetPaletteColour(0xE, 0x9, 0xF, 0xF);
     GDCSetPaletteColour(0xF, 0xF, 0xF, 0xF);
     EGCEnable();
-    egc_planeaccess(0xF);
-    egc_mask(0xFFFF);
-    egc_bgcolour(0xC);
-    ClearScreenEGC();
-    SetEGCToMonochromeDrawMode();
+    EGCSetPlaneAccess(0xF);
+    EGCSetMask(0xFFFF);
+    EGCSetBGColour(0xC);
+    EGCClearScreen();
+    EGCSetToMonochromeDrawMode();
     SetShadowColours(stdShadowCols);
     
     int result = ReadInRootInfo();
@@ -86,11 +86,11 @@ int main(void)
 
     SetCustomInfo(0, "Player"); //For testing
     
-    oldInterruptMask = GetPrimaryInterruptMask();
+    oldInterruptMask = PC98GetPrimaryInterruptMask();
     intsoff();
     oldVsyncVector = GetInterruptFunctionRaw(INTERRUPT_VECTOR_VSYNC);
     SetInterruptFunctionRaw(INTERRUPT_VECTOR_VSYNC, VsyncInterrupt);
-    AddPrimaryInterrupts(INTERRUPT_MASK_VSYNC);
+    PC98AddPrimaryInterrupts(INTERRUPT_MASK_VSYNC);
     intson();
 
     InitialiseGraphicsSystem();
@@ -132,7 +132,7 @@ int main(void)
     unsigned char textSkip = 0;
     int sceneProcessResult;
     vsynced = 0;
-    gdc_interruptreset(); //Prevents a spinlock
+    GDCInterruptReset(); //Prevents a spinlock
     while (1)
     {
         while (1) //Wait for vsync
@@ -199,7 +199,7 @@ int main(void)
         UpdatePrevKeyStatus();
     }
     intsoff();
-    SetPrimaryInterruptMask(oldInterruptMask);
+    PC98SetPrimaryInterruptMask(oldInterruptMask);
     SetInterruptFunctionRaw(INTERRUPT_VECTOR_VSYNC, oldVsyncVector);
     intson();
     FreeGraphicsSystem();
@@ -213,11 +213,11 @@ int main(void)
         }
     }
     GDCSetPaletteColour(0x0, 0x0, 0x0, 0x0);
-    egc_bgcolour(0x0);
-    ClearScreenEGC();
+    EGCSetBGColour(0x0);
+    EGCClearScreen();
     EGCDisable();
-    GraphicsOff();
-    TextOn();
+    PC98BIOSGraphicsOff();
+    PC98BIOSTextOn();
     FreeSceneEngine();
     return result;
 }

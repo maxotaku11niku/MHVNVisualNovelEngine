@@ -25,19 +25,19 @@ typedef INTFUNC void InterruptFunc();
 typedef InterruptFunc* InterruptFuncPtr;
 
 //Get the raw entry of an interrupt vector
-__attribute__((always_inline)) InterruptFuncPtr GetInterruptFunctionRaw(unsigned char num)
+inline InterruptFuncPtr GetInterruptFunctionRaw(unsigned char num)
 {
     return INTERRUPT_VECTOR_TABLE[num];
 }
 
 //Set the raw entry of an interrupt vector
-__attribute__((always_inline)) inline void SetInterruptFunctionRaw(unsigned char num, InterruptFuncPtr ptr)
+inline void SetInterruptFunctionRaw(unsigned char num, InterruptFuncPtr ptr)
 {
     INTERRUPT_VECTOR_TABLE[num] = ptr;
 }
 
 //Set the entry of an interrupt vector with a function pointer in the same segment
-__attribute__((always_inline)) inline void SetInterruptFunction(unsigned char num, InterruptFuncPtr ptr)
+inline void SetInterruptFunction(unsigned char num, InterruptFuncPtr ptr)
 {
     unsigned short codeSeg;
     getcs(codeSeg);

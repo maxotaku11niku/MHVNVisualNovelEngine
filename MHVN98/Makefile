@@ -88,7 +88,7 @@ $(BUILD)/%.o : $(MAINSRC)/%.c
 	ia16-elf-gcc $< -o $@ $(CFLAGS) -c
 
 $(GENASM)/%.asm : $(MAINSRC)/%.c
-	ia16-elf-gcc $< -S -o $@ $(CFLAGS) -c
+	ia16-elf-gcc $< -S -o $@ $(CFLAGSRELEASE) -c
 
 $(BUILD)/%.o : $(PLATFORM)/%.asm
 	ia16-elf-as $< -o $@ -O2
@@ -97,4 +97,4 @@ $(BUILD)/%.o : $(PLATFORM)/%.c
 	ia16-elf-gcc $< -o $@ $(CFLAGS) -c
 
 $(GENASM)/%.asm : $(PLATFORM)/%.c
-	ia16-elf-gcc $< -S -o $@ $(CFLAGS) -c
+	ia16-elf-gcc $< -S -o $@ $(CFLAGSRELEASE) -c

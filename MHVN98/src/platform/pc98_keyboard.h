@@ -3,9 +3,6 @@
 
 #pragma once
 
-//#include "x86ports.h"
-#include <dos.h>
-
 //Key code defines
 #define key_down(k) k
 #define key_up(k) (k | 0x80)
@@ -127,12 +124,15 @@
 #define KEY_MOD_GRPH  0x08
 #define KEY_MOD_CTRL  0x10
 
-//INPORT 41 - Read Key Data (put into 'data')
+//INPORT 41 - Read Key Data
 inline unsigned char PC98ReadKey()
 {
-    return inportb(0x41);
+    volatile register unsigned char kdata __asm("%al");
+    __asm volatile (
+        "inb $0x41, %%al"
+    : "=a" (kdata) : );
+    return kdata;
 }
-//#define pc98k_readkey(data) inportb(0x41, data)
 
 extern unsigned char prevKeyStatus[16];
 extern unsigned char keyChangeStatus[16];

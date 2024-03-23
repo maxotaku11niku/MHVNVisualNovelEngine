@@ -385,7 +385,7 @@ void CommitChoice()
             break;
     }
     choiceBoxImgInfo->flags &= ~(IMAGE_DRAWREQ);
-    SetEGCToMonochromeDrawMode();
+    EGCSetToMonochromeDrawMode();
     returnStatus &= ~(SCENE_STATUS_MAKING_CHOICE);
     ControlProcess(1);
 }

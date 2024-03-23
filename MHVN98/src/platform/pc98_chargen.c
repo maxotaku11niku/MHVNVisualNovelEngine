@@ -1,22 +1,47 @@
 //PC98 character generator interface
 //Maxim Hoxha 2023-2024
 
-//#include "x86ports.h"
-#include <dos.h>
+static inline void SetJISCode(unsigned short code)
+{
+    __asm volatile (
+        "outb %%al, $0xA1\n\t"
+        "xchg %%al, %%ah\n\t"
+        "outb %%al, $0xA3\n\t"
+        "xchg %%al, %%ah\n\t"
+    : : "a" (code));
+}
+
+static inline unsigned char GetCharacterRAMData(unsigned char addr)
+{
+    volatile register unsigned char data __asm("%al");
+    data = addr;
+    __asm volatile (
+        "outb %%al, $0xA5\n\t"
+        "inb $0xA9, %%al\n\t"
+    : "+a" (data));
+    return data;
+}
+
+static inline void SetCharacterRAMData(unsigned char addr, unsigned char data)
+{
+    __asm volatile (
+        "movb %b0, %%al\n\t"
+        "outb %%al, $0xA5\n\t"
+        "movb %b1, %%al\n\t"
+        "outb %%al, $0xA9\n\t"
+    : : "rmi" (addr), "rmi" (data) : "%al");
+}
 
 void GetCharacterData(unsigned short code, unsigned long* buffer)
 {
-    outportb(0xA1, (unsigned char)code);
-    outportb(0xA3, (unsigned char)(code >> 8)); //Put JIS code in
+    SetJISCode(code); //Put JIS code in
     if (code & 0x00FF) //Fullwidth JIS code
     {
         for (unsigned char i = 0; i < 16; i++)
         {
-            outportb(0xA5, i);
-            unsigned int rowhalf = inportb(0xA9);
+            unsigned int rowhalf = GetCharacterRAMData(i);
             unsigned int row = (rowhalf << 8); //Read in right half
-            outportb(0xA5, i | 0x20);
-            rowhalf = inportb(0xA9);
+            rowhalf = GetCharacterRAMData(i | 0x20);
             row |= rowhalf; //Read in left half
             buffer[i] = row;
         }
@@ -25,8 +50,7 @@ void GetCharacterData(unsigned short code, unsigned long* buffer)
     {
         for (unsigned char i = 0; i < 16; i++)
         {
-            outportb(0xA5, i);
-            unsigned long row = inportb(0xA9); //Read in left half only (both halves are the same, we're technically reading from the right side though)
+            unsigned long row = GetCharacterRAMData(i); //Read in left half only (both halves are the same, we're technically reading from the right side though)
             buffer[i] = row;
         }
     }
@@ -34,16 +58,13 @@ void GetCharacterData(unsigned short code, unsigned long* buffer)
 
 void GetCharacterDataEditFriendly(unsigned short code, unsigned long* buffer)
 {
-    outportb(0xA1, (unsigned char)code);
-    outportb(0xA3, (unsigned char)(code >> 8)); //Put JIS code in
+    SetJISCode(code); //Put JIS code in
     if (code & 0x00FF) //Fullwidth JIS code
     {
         for (unsigned char i = 0; i < 16; i++)
         {
-            outportb(0xA5, i);
-            unsigned int row = inportb(0xA9); //Read in right half
-            outportb(0xA5, i | 0x20);
-            unsigned int rowhalf = inportb(0xA9);
+            unsigned int row = GetCharacterRAMData(i); //Read in right half
+            unsigned int rowhalf = GetCharacterRAMData(i | 0x20);
             row |= (rowhalf << 8); //Read in left half
             ((unsigned int*)(&buffer[i]))[0] = 0;
             ((unsigned int*)(&buffer[i]))[1] = row;
@@ -53,8 +74,7 @@ void GetCharacterDataEditFriendly(unsigned short code, unsigned long* buffer)
     {
         for (unsigned char i = 0; i < 16; i++)
         {
-            outportb(0xA5, i);
-            unsigned long row = inportb(0xA9); //Read in left half only (both halves are the same, we're technically reading from the right side though)
+            unsigned long row = GetCharacterRAMData(i); //Read in left half only (both halves are the same, we're technically reading from the right side though)
             buffer[i] = (row << 24);
         }
     }
@@ -62,15 +82,12 @@ void GetCharacterDataEditFriendly(unsigned short code, unsigned long* buffer)
 
 void SetCharacterData(unsigned short code, const unsigned long* buffer)
 {
-    outportb(0xA1, (unsigned char)code);
-    outportb(0xA3, (unsigned char)(code >> 8)); //Put JIS code in
+    SetJISCode(code); //Put JIS code in
     for (unsigned char i = 0; i < 16; i++)
     {
         unsigned long row = buffer[i];
-        outportb(0xA5, i);
-        outportb(0xA9, (row >> 8) & 0x000000FF); //Write right half
-        outportb(0xA5, i | 0x20);
-        outportb(0xA9, row & 0x000000FF); //Write left half
+        SetCharacterRAMData(i, (row >> 8) & 0x000000FF); //Write right half
+        SetCharacterRAMData(i | 0x20, row & 0x000000FF); //Write left half
     }
 }
 

@@ -775,10 +775,10 @@ void LoadStd9SliceBoxIntoVRAM()
     : : "rmi" (tempDefaultTextBorder), "i" (VRAM_HIDDEN_OFFSET) : "%ax", "%si", "%di", "%cx", "%es");
 
     EGCEnable();
-    egc_planeaccess(0xF);
-    egc_mask(0xFFFF);
-    egc_bgcolour(0xC);
-    SetEGCToMonochromeDrawMode();
+    EGCSetPlaneAccess(0xF);
+    EGCSetMask(0xFFFF);
+    EGCSetBGColour(0xC);
+    EGCSetToMonochromeDrawMode();
 }
 
 static void RegisterStd9SliceBox(unsigned char layer, ImageInfo* img, const Rect2Int* rect)
@@ -977,10 +977,10 @@ void DrawNormalImage(ImageInfo* img, Rect2Int* outRect)
         }
     }
 
-    egc_planeaccess(0xF);
-    egc_mask(0xFFFF);
-    egc_bgcolour(0xC);
-    SetEGCToMonochromeDrawMode();
+    EGCSetPlaneAccess(0xF);
+    EGCSetMask(0xFFFF);
+    EGCSetBGColour(0xC);
+    EGCSetToMonochromeDrawMode();
 }
 
 void Draw9SliceBoxVRAM(ImageInfo* img, Rect2Int* outRect)
@@ -989,8 +989,8 @@ void Draw9SliceBoxVRAM(ImageInfo* img, Rect2Int* outRect)
     int y = img->boundRect.pos.y;
     int w = img->boundRect.size.x;
     int h = img->boundRect.size.y;
-    SetEGCToVRAMBlit();
-    egc_bitlen(16);
+    EGCSetToVRAMBlit();
+    EGCSetBitLength(16);
     int bytex = ((x + 0xF) & 0xFFF0) >> 3;
     int bytew = ((w + 0xF) & 0xFFF0) >> 3;
     int wordw = ((w + 0xF) & 0xFFF0) >> 4;
@@ -1177,7 +1177,7 @@ void Draw9SliceBoxVRAM(ImageInfo* img, Rect2Int* outRect)
         "pop %%bp\n\t"
     : : "m" (tlpos), "m" (trpos), "m" (blpos), "m" (brpos), "m" (lpos), "m" (rpos), "m" (tpos), "m" (bpos), "m" (cpos), "m" (unrolledIter), "m" (jumpAmt), "m" (centerw), "m" (addamt), "m" (vertSubAmt), "m" (centerh), "m" (extAddamt), "m" (tileaddr[0]), "m" (tileaddr[1]), "m" (tileaddr[2]), "m" (tileaddr[3]), "m" (tileaddr[4]), "m" (tileaddr[5]), "m" (tileaddr[6]), "m" (tileaddr[7]), "m" (tileaddr[8]) : "%ax", "%cx", "%dx", "%bx", "%si", "%di", "%ds", "%es");
 
-    SetEGCToMonochromeDrawMode();
+    EGCSetToMonochromeDrawMode();
 }
 
 void Draw9SliceBoxInnerRegion(ImageInfo* img)
@@ -1186,8 +1186,8 @@ void Draw9SliceBoxInnerRegion(ImageInfo* img)
     int y = img->boundRect.pos.y;
     int w = img->boundRect.size.x;
     int h = img->boundRect.size.y;
-    SetEGCToVRAMBlit();
-    egc_bitlen(16);
+    EGCSetToVRAMBlit();
+    EGCSetBitLength(16);
     int bytex = ((x + 0xF) & 0xFFF0) >> 3;
     int bytew = ((w + 0xF) & 0xFFF0) >> 3;
     int wordw = ((w + 0xF) & 0xFFF0) >> 4;
@@ -1240,7 +1240,7 @@ void Draw9SliceBoxInnerRegion(ImageInfo* img)
         "rep stosw\n\t"
     : : "m" (cpos), "m" (bpos), "m" (centerw), "m" (vertSubAmt), "m" (centerh), "m" (extAddamt), "m" (tileaddr[0]), "m" (tileaddr[1]) : "%ax", "%cx", "%dx", "%bx", "%si", "%di", "%ds", "%es");
 
-    SetEGCToMonochromeDrawMode();
+    EGCSetToMonochromeDrawMode();
 }
 
 void DrawImage(ImageInfo* img)

@@ -3,23 +3,44 @@
 
 #pragma once
 
-//#include "x86ports.h"
-#include <dos.h>
 #include "pc98_gdc.h"
 
 //OUTPORT 04A0 - EGC Plane Access Register
 //For convenience, as hardware uses bit = 0 to indicate access, we NOT a mask where bit = 1 indicates access
-#define egc_planeaccess(planemask) outportw(0x04A0, ~(planemask))
+inline void EGCSetPlaneAccess(unsigned short planemask)
+{
+    planemask = ~planemask;
+    __asm volatile (
+        "movw $0x04A0, %%dx\n\t"
+        "out %w0, %%dx\n\t"
+    : : "a" (planemask) : "%dx");
+}
+
 //OUTPORT 04A2 - EGC Pattern Data And Read Setting Register
-//Apparently the lower 8 bits must be 1
-#define egc_patdatandreadmode(mode) outportw(0x04A2, (mode) | 0x00FF)
+//Set the source used for 'pattern data' and the source for single-plane reads
+inline void EGCSetPatternAndReadSource(unsigned short mode)
+{
+    mode |= 0x00FF; //Apparently the lower 8 bits must be 1
+    __asm volatile (
+        "movw $0x04A2, %%dx\n\t"
+        "out %w0, %%dx\n\t"
+    : : "a" (mode) : "%dx");
+}
 //Supporting defines
 #define EGC_PATTERNSOURCE_PATREG   0x0000
 #define EGC_PATTERNSOURCE_BGCOLOUR 0x2000
 #define EGC_PATTERNSOURCE_FGCOLOUR 0x4000
 #define EGC_READSOURCE_PLANE(n) (((n) & 0x7) << 8)
+
 //OUTPORT 04A4 - EGC Read/Write Mode Register
-#define egc_rwmode(mode) outportw(0x04A4, mode)
+//Set how data is read from and written to VRAM
+inline void EGCSetReadWriteMode(unsigned short mode)
+{
+    __asm volatile (
+        "movw $0x04A4, %%dx\n\t"
+        "out %w0, %%dx\n\t"
+    : : "a" (mode) : "%dx");
+}
 //Supporting defines
 #define EGC_READ_SINGLEPLANE 0x0000
 #define EGC_READ_COMPARE     0x2000
@@ -39,32 +60,73 @@
 #define EGC_ROP_DST 0x00CC
 #define EGC_ROP_PAT 0x00AA
 #define EGC_ROP(rop) ((rop) & 0x00FF)
+
 //OUTPORT 04A6 - EGC Foreground Colour Register
-#define egc_fgcolour(col) outportw(0x04A6, col)
+//Sets the 'foreground' colour. Note that this won't immediately change anything on the screen, unfortunately
+inline void EGCSetFGColour(unsigned short col)
+{
+    __asm volatile (
+        "movw $0x04A6, %%dx\n\t"
+        "out %w0, %%dx\n\t"
+    : : "a" (col) : "%dx");
+}
+
 //OUTPORT 04A8 - EGC Mask Register
-#define egc_mask(mask) outportw(0x04A8, mask)
+//Sets the mask for all write operations. For some reason though, if you do set it then you have to reset nearly every other register as well for some reason
+inline void EGCSetMask(unsigned short mask)
+{
+    __asm volatile (
+        "movw $0x04A8, %%dx\n\t"
+        "out %w0, %%dx\n\t"
+    : : "a" (mask) : "%dx");
+}
+
 //OUTPORT 04AA - EGC Background Colour Register
-#define egc_bgcolour(col) outportw(0x04AA, col)
+//Sets the 'background' colour. Note that this won't immediately change anything on the screen, unfortunately
+inline void EGCSetBGColour(unsigned short col)
+{
+    __asm volatile (
+        "movw $0x04AA, %%dx\n\t"
+        "out %w0, %%dx\n\t"
+    : : "a" (col) : "%dx");
+}
+
 //OUTPORT 04AC - EGC Bit Address And Block Transfer Register
-#define egc_bitaddrbtmode(mode) outportw(0x04AC, mode)
+//Sets the block transfer direction and both the source and destination bit addresses
+//This is important for fast unaligned drawing, though if the source bit address is not 0 then you'll have to do a single word transfer before starting a line
+inline void EGCSetBitAddressTransferDirection(unsigned short mode)
+{
+    __asm volatile (
+        "movw $0x04AC, %%dx\n\t"
+        "out %w0, %%dx\n\t"
+    : : "a" (mode) : "%dx");
+}
 //Supporting defines
 #define EGC_BLOCKTRANSFER_FORWARD  0x0000
 #define EGC_BLOCKTRANSFER_BACKWARD 0x1000
 #define EGC_BITADDRESS_DEST(n) (((n) & 0xF) << 4)
 #define EGC_BITADDRESS_SRC(n) ((n) & 0xF)
+
 //OUTPORT 04AE - EGC Bit Length Register
 //There is an implicit +1 to the length, so we account for that
-#define egc_bitlen(len) outportw(0x4AE, (len)-1)
+inline void EGCSetBitLength(unsigned short len)
+{
+    len--;
+    __asm volatile (
+        "movw $0x04AE, %%dx\n\t"
+        "out %w0, %%dx\n\t"
+    : : "a" (len) : "%dx");
+}
 
 //Clears the screen very fast using the EGC (must enable beforehand)
-void ClearScreenEGC();
+void EGCClearScreen();
 //Clears some lines very fast using the EGC (must enable beforehand)
-void ClearLinesEGC(unsigned short startLine, unsigned short numLines);
+void EGCClearLines(unsigned short startLine, unsigned short numLines);
 //Set some EGC registers to the right setting to allow a simple clear with the background colour
-void SetEGCToBackgroundClearMode();
+void EGCSetToBackgroundClearMode();
 //Set some EGC registers to the right setting to allow shapes to be drawn in any single colour (the foreground colour) by using just data from the CPU
-void SetEGCToMonochromeDrawMode();
+void EGCSetToMonochromeDrawMode();
 //Set some EGC registers to the right setting to allow VRAM-to-VRAM copies
-void SetEGCToVRAMBlit();
+void EGCSetToVRAMBlit();
 void EGCEnable();
 void EGCDisable();

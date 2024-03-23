@@ -3,9 +3,6 @@
 
 #pragma once
 
-//#include "x86ports.h"
-#include <dos.h>
-
 //Primary interrupt vector indices
 #define INTERRUPT_VECTOR_TIMER       0x08
 #define INTERRUPT_VECTOR_KEYBOARD    0x09
@@ -25,10 +22,6 @@
 #define INTERRUPT_VECTOR_NDP          0x16
 
 //The interrupt mask is 0 for allow, 1 for forbid
-#define setinterruptmask_primary(mask) outportb(0x02, mask)
-#define setinterruptmask_secondary(mask) outportb(0x0A, mask)
-//#define getinterruptmask_primary(mask) inportb(0x02, mask)
-//#define getinterruptmask_secondary(mask) inportb(0x0A, mask)
 //Just OR together some masks and then use this to make the proper interrupt mask for the above macros
 #define INTERRUPTMASK(m) (~(m))
 //Primary interrupt masks
@@ -49,57 +42,71 @@
 #define INTERRUPT_MASK_MOUSE        0x20
 #define INTERRUPT_MASK_NDP          0x40
 
-//The following wrappers allow for compile time type checking
-
 //Set the interrupt mask for the primary controller
-inline void SetPrimaryInterruptMask(unsigned char mask)
+inline void PC98SetPrimaryInterruptMask(unsigned char mask)
 {
-    setinterruptmask_primary(mask);
+    volatile register unsigned char m __asm("%al");
+    m = mask;
+    __asm volatile (
+        "outb %%al, $0x02"
+    : : "a" (m));
 }
 
 //Set the interrupt mask for the secondary controller
-inline void SetSecondaryInterruptMask(unsigned char mask)
+inline void PC98SetSecondaryInterruptMask(unsigned char mask)
 {
-    setinterruptmask_secondary(mask);
+    volatile register unsigned char m __asm("%al");
+    m = mask;
+    __asm volatile (
+        "outb %%al, $0x0A"
+    : : "a" (m));
 }
 
 //Get the interrupt mask from the primary controller
-inline unsigned char GetPrimaryInterruptMask()
+inline unsigned char PC98GetPrimaryInterruptMask()
 {
-    return inportb(0x02);
+    volatile register unsigned char mask __asm("%al");
+    __asm volatile (
+        "inb $0x02, %%al"
+    : "=a" (mask) : );
+    return mask;
 }
 
 //Get the interrupt mask from the secondary controller
-inline unsigned char GetSecondaryInterruptMask()
+inline unsigned char PC98GetSecondaryInterruptMask()
 {
-    return inportb(0x0A);
+    volatile register unsigned char mask __asm("%al");
+    __asm volatile (
+        "inb $0x0A, %%al"
+    : "=a" (mask) : );
+    return mask;
 }
 
 //You must not use INTERRUPTMASK(m) for these functions
-inline void AddPrimaryInterrupts(const unsigned char mask)
+inline void PC98AddPrimaryInterrupts(const unsigned char mask)
 {
-    unsigned char maskBefore = GetPrimaryInterruptMask();
+    unsigned char maskBefore = PC98GetPrimaryInterruptMask();
     maskBefore &= ~mask;
-    SetPrimaryInterruptMask(maskBefore);
+    PC98SetPrimaryInterruptMask(maskBefore);
 }
 
-inline void AddSecondaryInterrupts(const unsigned char mask)
+inline void PC98AddSecondaryInterrupts(const unsigned char mask)
 {
-    unsigned char maskBefore = GetSecondaryInterruptMask();
+    unsigned char maskBefore = PC98GetSecondaryInterruptMask();
     maskBefore &= ~mask;
-    SetSecondaryInterruptMask(maskBefore);
+    PC98SetSecondaryInterruptMask(maskBefore);
 }
 
-inline void RemovePrimaryInterrupts(const unsigned char mask)
+inline void PC98RemovePrimaryInterrupts(const unsigned char mask)
 {
-    unsigned char maskBefore = GetPrimaryInterruptMask();
+    unsigned char maskBefore = PC98GetPrimaryInterruptMask();
     maskBefore |= mask;
-    SetPrimaryInterruptMask(maskBefore);
+    PC98SetPrimaryInterruptMask(maskBefore);
 }
 
-inline void RemoveSecondaryInterrupts(const unsigned char mask)
+inline void PC98RemoveSecondaryInterrupts(const unsigned char mask)
 {
-    unsigned char maskBefore = GetSecondaryInterruptMask();
+    unsigned char maskBefore = PC98GetSecondaryInterruptMask();
     maskBefore |= mask;
-    SetSecondaryInterruptMask(maskBefore);
+    PC98SetSecondaryInterruptMask(maskBefore);
 }
