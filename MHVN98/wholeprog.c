@@ -5,6 +5,7 @@
 #include "src/platform/pc98_chargen.c"
 #include "src/platform/pc98_egc.c"
 #include "src/platform/pc98_grcg.c"
+#include "src/platform/pc98_gdc.c"
 #include "src/platform/pc98_keyboard.c"
 #include "src/main.c"
 #include "src/rootinfo.c"

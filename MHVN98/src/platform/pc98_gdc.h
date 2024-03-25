@@ -37,8 +37,8 @@ inline void GDCSetMode1(unsigned char mode)
 #define GDC_MODE1_40COLUMN                0x05
 #define GDC_MODE1_6x8CHARS                0x06
 #define GDC_MODE1_7x13CHARS               0x07
-#define GDC_MODE1_LINEDOUBLE_OFF          0x08
-#define GDC_MODE1_LINEDOUBLE_ON           0x09
+#define GDC_MODE1_LINEDOUBLE_ON           0x08
+#define GDC_MODE1_LINEDOUBLE_OFF          0x09
 #define GDC_MODE1_CHARACCESS_CODE         0x0A
 #define GDC_MODE1_CHARACCESS_BITMAP       0x0B
 #define GDC_MODE1_MEMSWITCH_WRITE_ON      0x0C
@@ -73,6 +73,12 @@ inline void GDCWriteTextCommand(unsigned char command)
 //Sets display timing parameters, which can be VERY dangerous. If you don't know what you're doing, just use the BIOS functions.
 #define GDC_COMMAND_SYNC_OFF 0x0E
 #define GDC_COMMAND_SYNC_ON  0x0F
+#define GDC_SYNC_SHRINK      0x01
+#define GDC_SYNC_NOCHAR      0x02
+#define GDC_SYNC_REFRESH     0x04
+#define GDC_SYNC_INTERLACE   0x08
+#define GDC_SYNC_NOFLASH     0x10
+#define GDC_SYNC_NOGRAPH     0x20
 //Start display of this layer
 #define GDC_COMMAND_START 0x0D
 //Stop display of this layer
@@ -80,7 +86,7 @@ inline void GDCWriteTextCommand(unsigned char command)
 //Sets zoom values
 #define GDC_COMMAND_ZOOM 0x46
 //Sets which portions of the screen get displayed and which VRAM portions they correspond to, useful for hardware scrolling
-#define GDC_COMMAND_SCROLL(numsec) (0x70 | (numsec))
+#define GDC_COMMAND_SCROLL(startaddr) (0x70 | ((startaddr) & 0xF))
 //Sets the text cursor format
 #define GDC_COMMAND_CSRFORM 0x4B
 //Sets the number of words per line
@@ -89,6 +95,12 @@ inline void GDCWriteTextCommand(unsigned char command)
 #define GDC_COMMAND_LPEN 0xC0
 //Prepares a draw command
 #define GDC_COMMAND_VECTW 0x4C
+#define GDC_VECTW_DOT         0x00
+#define GDC_VECTW_LINE        0x08
+#define GDC_VECTW_TILE        0x10
+#define GDC_VECTW_CIRCLE      0x20
+#define GDC_VECTW_RECT        0x40
+#define GDC_VECTW_SLANTEDTILE 0x90
 //Executes a draw command
 #define GDC_COMMAND_VECTE 0x6C
 //Prepares a little pattern
@@ -105,9 +117,6 @@ inline void GDCWriteTextCommand(unsigned char command)
 #define GDC_COMMAND_WRITE(mod) (0x20 | (mod))
 //Sets the read operation of any read from VRAM
 #define GDC_COMMAND_READ(mod) (0xA0 | (mod))
-//Useless on the PC-98
-#define GDC_COMMAND_WRITE_DMA(mod) (0x24 | (mod))
-#define GDC_COMMAND_READ_DMA(mod) (0xA4 | (mod))
 //GDC read/write mods
 //DST = SRC
 #define GDC_MOD_REPLACE 0x00
@@ -281,6 +290,20 @@ inline void GDCStopText()
     GDCWriteTextCommand(GDC_COMMAND_STOP);
 }
 
+//Input raw scroll parameters for the text layer
+inline void GDCScrollRawText(unsigned char region, unsigned short startaddr, unsigned short numlines)
+{
+    unsigned char p0 = (unsigned char)startaddr;
+    unsigned char p1 = (unsigned char)(startaddr >> 8) & 0x1F;
+    unsigned char p2 = (unsigned char)(numlines << 4);
+    unsigned char p3 = (unsigned char)(numlines >> 4) & 0x3F;
+    GDCWriteTextCommand(GDC_COMMAND_SCROLL(region << 2));
+    GDCWriteTextCommandParam(p0);
+    GDCWriteTextCommandParam(p1);
+    GDCWriteTextCommandParam(p2);
+    GDCWriteTextCommandParam(p3);
+}
+
 //Resets the graphics GDC
 inline void GDCResetGraphics()
 {
@@ -297,6 +320,20 @@ inline void GDCStartGraphics()
 inline void GDCStopGraphics()
 {
     GDCWriteGraphicsCommand(GDC_COMMAND_STOP);
+}
+
+//Input raw scroll parameters for the graphics layer
+inline void GDCScrollRawGraphics(unsigned char region, unsigned long startaddr, unsigned short numlines)
+{
+    unsigned char p0 = (unsigned char)startaddr;
+    unsigned char p1 = (unsigned char)(startaddr >> 8);
+    unsigned char p2 = (unsigned char)(numlines << 4) | ((unsigned char)(startaddr >>16) & 0x3);
+    unsigned char p3 = (unsigned char)(numlines >> 4) & 0x3F;
+    GDCWriteGraphicsCommand(GDC_COMMAND_SCROLL(region << 2));
+    GDCWriteGraphicsCommandParam(p0);
+    GDCWriteGraphicsCommandParam(p1);
+    GDCWriteGraphicsCommandParam(p2);
+    GDCWriteGraphicsCommandParam(p3);
 }
 
 //Sets all 8 colours in the most basic palette. Only used if you're in 8-colour mode for some reason. Upper 4 bits for colours 0-3, lower 4 bits for colours 4-7.
@@ -343,3 +380,49 @@ inline void GDCSetPaletteColour(unsigned char index, unsigned char r, unsigned c
         "out %%al, $0xAE"
     : : "a" (i));
 }
+
+//Sets the start address and number of lines in the display region, use a byte offset address
+void GDCSetDisplayRegion(unsigned int startaddr, unsigned int lineNumber);
+
+//Set the vertical downsample factor
+void GDCSetGraphicsLineScale(unsigned char scale);
+
+/* Sets the display mode to some custom resolution and framerate. The display will be turned off after this, so reenable each desired GDC
+ * 'width' and 'height' set the displayed width and height, 'scannedLines' determines the framerate as hsync frequency/scannedLines
+ * This function currently has the following safe limits:
+ * Width: 16 - 640 pixels, must be a multiple of 16
+ * scannedLines - height (total vertical blanking period): 40 - 134
+ * 50-70 Hz with hsync frequency at 24.82 kHz -> scannedLines: 355 - 496
+ * 50-70 Hz with hsync frequency at 24.82 kHz -> height: 221 - 456
+ * 50 Hz with hsync frequency at 24.82 kHz ->   height: 362 - 456 (scannedLines = 496)
+ * 56.4 Hz with hsync frequency at 24.82 kHz -> height: 306 - 400 (scannedLines = 440) <- this is the default frequency for a PC-98
+ * 60 Hz with hsync frequency at 24.82 kHz ->   height: 280 - 374 (scannedLines = 414)
+ * 65 Hz with hsync frequency at 24.82 kHz ->   height: 248 - 342 (scannedLines = 382)
+ * 70 Hz with hsync frequency at 24.82 kHz ->   height: 221 - 315 (scannedLines = 355)
+ * WARNING: This function will NEVER check if the desired vsync frequency is safe for the monitor. You have been warned!
+ */
+int GDCSetDisplayMode(unsigned int width, unsigned int height, unsigned int scannedLines);
+//Supporting defines
+#define GDC_SETDISPMODE_ERROR_ZERODIMENSION  0x01
+#define GDC_SETDISPMODE_ERROR_ZEROVLBANK     0x02
+#define GDC_SETDISPMODE_ERROR_VBLANKTOOSHORT 0x03
+#define GDC_SETDISPMODE_ERROR_VBLANKTOOLONG  0x04
+#define GDC_SETDISPMODE_ERROR_HBLANKTOOSHORT 0x05
+
+//Does a simple vertical scroll of the screen
+void GDCScrollSimpleGraphics(unsigned int topline);
+
+//Reprograms the GDC in such a way as to produce a vertical mosaic effect
+void GDCVerticalMosaicEffect(unsigned char scale);
+
+//Uses the GDC to draw a straight line
+void GDCDrawLineGraphics(int x0, int y0, int x1, int y1);
+
+//Uses the GDC to draw a rectangle outline
+void GDCDrawRectangleGraphics(int x0, int y0, int x1, int y1);
+
+//Uses the GDC to draw a filled rectangle
+void GDCDrawFilledRectangleGraphics(int x0, int y0, int x1, int y1);
+
+//Uses the GDC to draw a circular arc, angles 'as' and 'af' are in units of full revolutions/65536
+void GDCDrawArcGraphics(int xc, int yc, int r, int as, int af);

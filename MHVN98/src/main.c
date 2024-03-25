@@ -23,7 +23,6 @@
  */
 
 #include "platform/x86interrupt.h"
-#include "platform/pc98_crtbios.h"
 #include "platform/pc98_gdc.h"
 #include "platform/pc98_egc.h"
 #include "platform/pc98_keyboard.h"
@@ -42,10 +41,17 @@ unsigned char oldInterruptMask;
 int main(void)
 {
     //Set up graphics first
-    PC98BIOSTextOff();
-    PC98BIOSGraphicsOn();
-    PC98BIOSGraphicsSetMode(CRT_MODE_GRAPHIC_PAGE0 | CRT_MODE_GRAPHIC_COLOUR | CRT_MODE_GRAPHIC_640x400);
+    GDCSetDisplayMode(640, 400, 440);
+    GDCStopText();
+    GDCStartGraphics();
+    GDCSetGraphicsLineScale(1);
+    GDCSetMode1(GDC_MODE1_LINEDOUBLE_ON);
+    GDCSetMode1(GDC_MODE1_COLOUR);
+    GDCSetGraphicsDisplayPage(0);
+    GDCSetGraphicsDrawPage(0);
     GDCSetMode2(GDC_MODE2_16COLOURS);
+    GDCSetDisplayRegion(0x0000, 400);
+    GDCScrollSimpleGraphics(0);
     GDCSetPaletteColour(0x0, 0x1, 0x1, 0x1);
     GDCSetPaletteColour(0x1, 0x7, 0x7, 0x7);
     GDCSetPaletteColour(0x2, 0xB, 0x3, 0xB);
@@ -211,8 +217,9 @@ int main(void)
     EGCSetBGColour(0x0);
     EGCClearScreen();
     EGCDisable();
-    PC98BIOSGraphicsOff();
-    PC98BIOSTextOn();
+    GDCSetDisplayMode(640, 400, 440);
+    GDCStartText();
+    GDCStopGraphics();
     FreeSceneEngine();
     return result;
 }
