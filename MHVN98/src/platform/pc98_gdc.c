@@ -27,12 +27,18 @@ void GDCSetGraphicsLineScale(unsigned char scale)
     baseDisplayLineScale = scale;
 }
 
-//This function currently has the following safe limits:
-//Width: 16 - 640 pixels, must be a multiple of 16
-//scannedLines - height (total vertical blanking period): 40 - 134
-//50-70 Hz with hsync frequency at 24.82 kHz -> scannedLines: 355 - 496
-//50-70 Hz with hsync frequency at 24.82 kHz -> height: 221 - 456
-//WARNING: This function will NEVER check if the desired vsync frequency is safe for the monitor. You have been warned!
+/* This function currently has the following safe limits:
+ * Width: 16 - 640 pixels, must be a multiple of 16
+ * scannedLines - height (total vertical blanking period): 40 - 134
+ * 50-70 Hz with hsync frequency at 24.82 kHz -> scannedLines: 355 - 496
+ * 50-70 Hz with hsync frequency at 24.82 kHz -> height: 221 - 456
+ * 50 Hz with hsync frequency at 24.82 kHz ->   height: 362 - 456 (scannedLines = 496)
+ * 56.4 Hz with hsync frequency at 24.82 kHz -> height: 306 - 400 (scannedLines = 440) <- this is the default frequency for a PC-98
+ * 60 Hz with hsync frequency at 24.82 kHz ->   height: 280 - 374 (scannedLines = 414)
+ * 65 Hz with hsync frequency at 24.82 kHz ->   height: 248 - 342 (scannedLines = 382)
+ * 70 Hz with hsync frequency at 24.82 kHz ->   height: 221 - 315 (scannedLines = 355)
+ * WARNING: This function will NEVER check if the desired vsync frequency is safe for the monitor. You have been warned!
+ */
 int GDCSetDisplayMode(unsigned int width, unsigned int height, unsigned int scannedLines)
 {
     if (width == 0 || height == 0) return GDC_SETDISPMODE_ERROR_ZERODIMENSION; //Trying to make the width or height zero?! You crazy bastard!
