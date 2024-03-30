@@ -49,44 +49,60 @@
 //This opcode map also accounts for pseudoinstructions by going beyond a byte
 const std::unordered_map<std::string, int> mnemonicsToOpcodes =
 {
-    {std::string("gotoscene"),   0x00},
-    {std::string("vnend"),      0x100},
-    {std::string("jmp"),         0x01},
-    {std::string("jz"),          0x02},
-    {std::string("je"),          0x02},
-    {std::string("jnz"),         0x03},
-    {std::string("jne"),         0x03},
-    {std::string("jn"),          0x04},
-    {std::string("jl"),          0x04},
-    {std::string("jp"),          0x05},
-    {std::string("jge"),         0x05},
-    {std::string("jle"),         0x06},
-    {std::string("jg"),          0x07},
-    {std::string("nexttext"),    0x10},
-    {std::string("text"),        0x11},
-    {std::string("charname"),    0x12},
-    {std::string("nocharname"), 0x112},
-    {std::string("deltext"),     0x13},
-    {std::string("ynchoice"),    0x14},
-    {std::string("choice2"),     0x15},
-    {std::string("choice3"),     0x16},
-    {std::string("choice4"),     0x17},
-    {std::string("lut2"),        0x20},
-    {std::string("lut3"),        0x21},
-    {std::string("lut4"),        0x22},
-    {std::string("swapzn"),      0x23},
-    {std::string("setvi"),       0x24},
-    {std::string("setvv"),       0x25},
-    {std::string("csetvi"),      0x26},
-    {std::string("csetvv"),      0x27},
-    {std::string("cmpvi"),       0x28},
-    {std::string("cmpvv"),       0x29},
-    {std::string("addvi"),       0x2A},
-    {std::string("addvv"),       0x2B},
-    {std::string("subvi"),       0x2C},
-    {std::string("subvv"),       0x2D},
-    {std::string("ldflg"),       0x2E},
-    {std::string("stflg"),       0x2F},
+    {std::string("gotoscene"),    0x00},
+    {std::string("vnend"),       0x100},
+    {std::string("jmp"),          0x01},
+    {std::string("jz"),           0x02},
+    {std::string("je"),           0x02},
+    {std::string("jnz"),          0x03},
+    {std::string("jne"),          0x03},
+    {std::string("jn"),           0x04},
+    {std::string("jl"),           0x04},
+    {std::string("jp"),           0x05},
+    {std::string("jge"),          0x05},
+    {std::string("jle"),          0x06},
+    {std::string("jg"),           0x07},
+    {std::string("palsetcol"),    0x08},
+    {std::string("paladdcol"),    0x09},
+    {std::string("palsetlum"),    0x0A},
+    {std::string("palsetsat"),    0x0B},
+    {std::string("palsethue"),    0x0C},
+    {std::string("palcolourise"), 0x0D},
+    {std::string("palinvert"),    0x0E},
+    {std::string("nowait"),       0x0F},
+    {std::string("nexttext"),     0x10},
+    {std::string("text"),         0x11},
+    {std::string("charname"),     0x12},
+    {std::string("nocharname"),  0x112},
+    {std::string("deltext"),      0x13},
+    {std::string("ynchoice"),     0x14},
+    {std::string("choice2"),      0x15},
+    {std::string("choice3"),      0x16},
+    {std::string("choice4"),      0x17},
+    {std::string("bfadein"),      0x18},
+    {std::string("bfadeout"),     0x19},
+    {std::string("wfadein"),      0x1A},
+    {std::string("wfadeout"),     0x1B},
+    {std::string("pfadein"),      0x1C},
+    {std::string("pfadeout"),     0x1D},
+    {std::string("phuerotate"),   0x1E},
+    {std::string("shake"),        0x1F},
+    {std::string("lut2"),         0x20},
+    {std::string("lut3"),         0x21},
+    {std::string("lut4"),         0x22},
+    {std::string("swapzn"),       0x23},
+    {std::string("setvi"),        0x24},
+    {std::string("setvv"),        0x25},
+    {std::string("csetvi"),       0x26},
+    {std::string("csetvv"),       0x27},
+    {std::string("cmpvi"),        0x28},
+    {std::string("cmpvv"),        0x29},
+    {std::string("addvi"),        0x2A},
+    {std::string("addvv"),        0x2B},
+    {std::string("subvi"),        0x2C},
+    {std::string("subvv"),        0x2D},
+    {std::string("ldflg"),        0x2E},
+    {std::string("stflg"),        0x2F},
     //Directives included as well for ease of programming
     {std::string(".scene"),   0x10000},
     {std::string(".vnentry"), 0x10001},
@@ -398,6 +414,12 @@ typedef enum
     TEXTREF, //Operation takes a single text reference
     CHARACTERREF, //Operation takes a single character reference
     JUMP, //Operation takes a single jump label
+    UINT8, //Operation takes a single 8-bit unsigned integer
+    INT8, //Operation takes a single 8-bit signed integer
+    UINT5_3, //Operation takes 3 5-bit unsigned integers
+    INT5_3, //Operation takes 3 5-bit signed integers
+    UINT3_UINT5, //Operation takes a 3-bit unsigned integer and a 5-bit unsigned integer
+    UINT6_UINT5_UINT5, //Operation takes a 6-bit unsigned integer and two 5-bit unsigned integers
     STATEVAR_SINGLE, //Operation takes a single state variable reference
     STATEVAR_DOUBLE, //Operation takes two state variable references
     STATEVAR_SINGLE_IMMEDIATE, //Operation takes a single state variable reference and an immediate
@@ -456,6 +478,36 @@ int ParseLine(char* line, int* curScene)
             numArg = 1;
             type = OperandType::JUMP;
             break;
+        case 0x08: //palsetcol
+            numArg = 3;
+            type = OperandType::UINT5_3;
+            break;
+        case 0x09: //paladdcol
+            numArg = 3;
+            type = OperandType::INT5_3;
+            break;
+        case 0x0A: //palsetlum
+            numArg = 1;
+            type = OperandType::INT8;
+            break;
+        case 0x0B: //palsetsat
+            numArg = 1;
+            type = OperandType::UINT8;
+            break;
+        case 0x0C: //palsethue
+            numArg = 1;
+            type = OperandType::INT8;
+            break;
+        case 0x0D: //palcolourise
+            numArg = 3;
+            type = OperandType::UINT5_3;
+            break;
+        case 0x0E: //palinvert
+            numArg = 0;
+            break;
+        case 0x0F: //nowait
+            numArg = 0;
+            break;
         case 0x10: //nexttext
             break;
         case 0x11: //text
@@ -489,6 +541,23 @@ int ParseLine(char* line, int* curScene)
         case 0x17: //choice4
             numArg = 5;
             type = OperandType::MULTICHOICE;
+            break;
+        case 0x18: //bfadein
+        case 0x19: //bfadeout
+        case 0x1A: //wfadein
+        case 0x1B: //wfadeout
+        case 0x1C: //pfadein
+        case 0x1D: //pfadeout
+            numArg = 2;
+            type = OperandType::UINT3_UINT5;
+            break;
+        case 0x1E: //phuerotate
+            numArg = 1;
+            type = OperandType::UINT8;
+            break;
+        case 0x1F:
+            numArg = 3;
+            type = OperandType::UINT6_UINT5_UINT5;
             break;
         case 0x20: //lut2
             numArg = 3;
@@ -608,7 +677,11 @@ int ParseLine(char* line, int* curScene)
 
     wordptr = wordEndPtr + 1;
 
-    int nT = curScDat->numTexts;
+    int nT;
+    if (scene >= 0)
+    {
+        nT = curScDat->numTexts;
+    }
     int arg0;
     char* pcch;
     char cch;
@@ -680,6 +753,33 @@ int ParseLine(char* line, int* curScene)
                     scanStat = ScanForWord((const char**)&wordptr, (const char**)&wordEndPtr);
                     *wordEndPtr = '\0';
                     refJumpLabels->push_back(std::pair<int, std::string>(locCounter, std::string(wordptr)));
+                    numBytesInInstruction += 2;
+                    instructionBytes[1] = 0x00;
+                    instructionBytes[2] = 0x00;
+                    break;
+                case OperandType::UINT8: //stub, TODO
+                    numBytesInInstruction += 1;
+                    instructionBytes[1] = 0x00;
+                    break;
+                case OperandType::INT8: //stub, TODO
+                    numBytesInInstruction += 1;
+                    instructionBytes[1] = 0x00;
+                    break;
+                case OperandType::UINT5_3: //stub, TODO
+                    numBytesInInstruction += 2;
+                    instructionBytes[1] = 0x00;
+                    instructionBytes[2] = 0x00;
+                    break;
+                case OperandType::INT5_3: //stub, TODO
+                    numBytesInInstruction += 2;
+                    instructionBytes[1] = 0x00;
+                    instructionBytes[2] = 0x00;
+                    break;
+                case OperandType::UINT3_UINT5: //stub, TODO
+                    numBytesInInstruction += 1;
+                    instructionBytes[1] = 0x00;
+                    break;
+                case OperandType::UINT6_UINT5_UINT5: //stub, TODO
                     numBytesInInstruction += 2;
                     instructionBytes[1] = 0x00;
                     instructionBytes[2] = 0x00;

@@ -429,6 +429,28 @@ int SceneDataProcess()
             curSceneDataPC += 2;
             if (vmFlags & (VMFLAG_Z | VMFLAG_N)) break;
             else goto vmJump;
+        case 0x08: //palsetcol
+            curSceneDataPC += 2; //stub, TODO
+            break;
+        case 0x09: //paladdcol
+            curSceneDataPC += 2; //stub, TODO
+            break;
+        case 0x0A: //palsetlum
+            curSceneDataPC += 1; //stub, TODO
+            break;
+        case 0x0B: //palsetsat
+            curSceneDataPC += 1; //stub, TODO
+            break;
+        case 0x0C: //palsethue
+            curSceneDataPC += 1; //stub, TODO
+            break;
+        case 0x0D: //palcolourise
+            curSceneDataPC += 2; //stub, TODO
+            break;
+        case 0x0E: //palinvert
+            break; //stub, TODO
+        case 0x0F: //nowait
+            break; //stub, TODO
         case 0x11: //text
             if (vmFlags & VMFLAG_TEXTINBOX)
             {
@@ -546,6 +568,30 @@ int SceneDataProcess()
             WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 1], choiceBoxInnerBounds.pos.x, choiceBoxInnerBounds.pos.y + 16, rootInfo.defFormatMenuItem, 0);
             WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 2], choiceBoxInnerBounds.pos.x, choiceBoxInnerBounds.pos.y + 32, rootInfo.defFormatMenuItem, 0);
             WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 3], choiceBoxInnerBounds.pos.x, choiceBoxInnerBounds.pos.y + 48, rootInfo.defFormatMenuItem, 0);
+            break;
+        case 0x18: //bfadein
+            curSceneDataPC += 1; //stub, TODO
+            break;
+        case 0x19: //bfadeout
+            curSceneDataPC += 1; //stub, TODO
+            break;
+        case 0x1A: //wfadein
+            curSceneDataPC += 1; //stub, TODO
+            break;
+        case 0x1B: //wfadeout
+            curSceneDataPC += 1; //stub, TODO
+            break;
+        case 0x1C: //pfadein
+            curSceneDataPC += 1; //stub, TODO
+            break;
+        case 0x1D: //pfadeout
+            curSceneDataPC += 1; //stub, TODO
+            break;
+        case 0x1E: //phuerotate
+            curSceneDataPC += 1; //stub, TODO
+            break;
+        case 0x1F: //shake
+            curSceneDataPC += 2; //stub, TODO
             break;
         case 0x20: //lut2
             result = *((unsigned short*)(curSceneData + curSceneDataPC));
