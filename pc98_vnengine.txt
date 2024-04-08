@@ -27,10 +27,10 @@ What won't be hosted here are tools that are NOT specific to this project (image
 At minimum, I'm looking to put the following things into this engine:
 
 * Rich text rendering (mostly done, just need to handle drawing to a proper graphical box)
-* Changeable character sprites and CG images (I've already made a format and encoder/decoder, though I will definitely overhaul it soon)
+* Changeable character sprites and CG images (I'm planning out a better format than the attempt I made earlier)
 * Music provided through PMD (I haven't programmed anything like this so this is the best way forward)
 * Sound effects (I made an ADPCM format to keep file sizes down)
-* Branching paths and the possibility of non-linear storylines (i.e. we want more than to just make 'kinetic' VNs)
+* Branching paths and the possibility of non-linear storylines (i.e. we want more than to just make 'kinetic' VNs, this functionality is arguably already here now)
 * Save and load (including quicksave and quickload)
 * Runs in real mode DOS (for simplicity. I use gcc-ia16 to compile my source code to an MZ .EXE file, and make sure it's 80286-compatible)
 
@@ -40,7 +40,7 @@ A few further features may be in order:
 * Cross-save persistence (time for some DDLC shenanigans??)
 * Text log (common but not strictly necessary?)
 * Voice acting support (again, that ADPCM format coming in)
-* Video player (I've already written this one, actually. I would use it for intros perhaps)
+* Video player (I've already written this one, actually. I would use it for intros perhaps. Very likely not to actually be included directly)
 
 Another important feature is that this engine should be data-driven. For the most part to create a radically different VN, one wouldn't have to recompile the executable. All unique information should be in data files. This would ease porting to modern systems, as all one would have to do is interpret those data files anyway. If a 'modern system' executable were made, further VNs could be made for the PC-98 and be automatically ported to modern systems. But that's all for later...
 
@@ -391,7 +391,7 @@ All sound effects are 534ADPCM files. Global sound effects can be triggered from
 
 Please do not abuse this system to provide full PCM background music, as I cannot guarantee that MHVN98 will provide sound effect mixing support. This means perhaps only one sound effect can play at any one time.
 
-See the specification on 534ADPCM for more info on the actual content of the sound files.
+See the specification on 534ADPCM for more info on the actual content of the sound files (not yet public, please wait).
 
 * System data archive (systemdat_file) *
 
