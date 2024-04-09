@@ -555,7 +555,7 @@ int ParseLine(char* line, int* curScene)
             numArg = 1;
             type = OperandType::UINT8;
             break;
-        case 0x1F:
+        case 0x1F: //shake
             numArg = 3;
             type = OperandType::UINT6_UINT5_UINT5;
             break;
@@ -683,6 +683,8 @@ int ParseLine(char* line, int* curScene)
         nT = curScDat->numTexts;
     }
     int arg0;
+    int arg1;
+    int arg2;
     char* pcch;
     char cch;
     switch (opcode & 0xFFFF0000)
@@ -757,32 +759,109 @@ int ParseLine(char* line, int* curScene)
                     instructionBytes[1] = 0x00;
                     instructionBytes[2] = 0x00;
                     break;
-                case OperandType::UINT8: //stub, TODO
+                case OperandType::UINT8:
+                    scanStat = ScanForWord((const char**)&wordptr, (const char**)&wordEndPtr);
+                    *wordEndPtr = '\0';
+                    arg0 = atoi(wordptr);
+                    if (arg0 < 0) arg0 = 0;
+                    else if (arg0 > 0xFF) arg0 = 0xFF;
                     numBytesInInstruction += 1;
-                    instructionBytes[1] = 0x00;
+                    instructionBytes[1] = (unsigned char)arg0;
                     break;
-                case OperandType::INT8: //stub, TODO
+                case OperandType::INT8:
+                    scanStat = ScanForWord((const char**)&wordptr, (const char**)&wordEndPtr);
+                    *wordEndPtr = '\0';
+                    arg0 = atoi(wordptr);
+                    if (arg0 < -0x80) arg0 = -0x80;
+                    else if (arg0 > 0x7F) arg0 = 0x7F;
                     numBytesInInstruction += 1;
-                    instructionBytes[1] = 0x00;
+                    instructionBytes[1] = (char)arg0;
                     break;
-                case OperandType::UINT5_3: //stub, TODO
+                case OperandType::UINT5_3:
+                    scanStat = ScanForArgument((const char**)&wordptr, (const char**)&wordEndPtr);
+                    *wordEndPtr = '\0';
+                    arg0 = atoi(wordptr);
+                    wordptr = wordEndPtr + 1;
+                    scanStat = ScanForArgument((const char**)&wordptr, (const char**)&wordEndPtr);
+                    *wordEndPtr = '\0';
+                    arg1 = atoi(wordptr);
+                    wordptr = wordEndPtr + 1;
+                    scanStat = ScanForWord((const char**)&wordptr, (const char**)&wordEndPtr);
+                    *wordEndPtr = '\0';
+                    arg2 = atoi(wordptr);
+                    if (arg0 < 0) arg0 = 0;
+                    else if (arg0 > 0x1F) arg0 = 0x1F;
+                    if (arg1 < 0) arg1 = 0;
+                    else if (arg1 > 0x1F) arg1 = 0x1F;
+                    if (arg2 < 0) arg2 = 0;
+                    else if (arg2 > 0x1F) arg2 = 0x1F;
+                    arg0 |= (arg1 << 5) | (arg2 << 10);
                     numBytesInInstruction += 2;
-                    instructionBytes[1] = 0x00;
-                    instructionBytes[2] = 0x00;
+                    instructionBytes[1] = (unsigned char)(arg0 & 0xFF);
+                    instructionBytes[2] = (unsigned char)((arg0 >> 8) & 0xFF);
                     break;
-                case OperandType::INT5_3: //stub, TODO
+                case OperandType::INT5_3:
+                    scanStat = ScanForArgument((const char**)&wordptr, (const char**)&wordEndPtr);
+                    *wordEndPtr = '\0';
+                    arg0 = atoi(wordptr);
+                    wordptr = wordEndPtr + 1;
+                    scanStat = ScanForArgument((const char**)&wordptr, (const char**)&wordEndPtr);
+                    *wordEndPtr = '\0';
+                    arg1 = atoi(wordptr);
+                    wordptr = wordEndPtr + 1;
+                    scanStat = ScanForWord((const char**)&wordptr, (const char**)&wordEndPtr);
+                    *wordEndPtr = '\0';
+                    arg2 = atoi(wordptr);
+                    if (arg0 < -0x10) arg0 = -0x10;
+                    else if (arg0 > 0x0F) arg0 = 0x0F;
+                    if (arg1 < -0x10) arg1 = -0x10;
+                    else if (arg1 > 0x0F) arg1 = 0x0F;
+                    if (arg2 < -0x10) arg2 = -0x10;
+                    else if (arg2 > 0x0F) arg2 = 0x0F;
+                    arg0 &= 0x1F; arg1 &= 0x1F; arg2 &= 0x1F;
+                    arg0 |= (arg1 << 5) | (arg2 << 10);
                     numBytesInInstruction += 2;
-                    instructionBytes[1] = 0x00;
-                    instructionBytes[2] = 0x00;
+                    instructionBytes[1] = (unsigned char)(arg0 & 0xFF);
+                    instructionBytes[2] = (unsigned char)((arg0 >> 8) & 0xFF);
                     break;
-                case OperandType::UINT3_UINT5: //stub, TODO
+                case OperandType::UINT3_UINT5:
+                    scanStat = ScanForArgument((const char**)&wordptr, (const char**)&wordEndPtr);
+                    *wordEndPtr = '\0';
+                    arg0 = atoi(wordptr);
+                    wordptr = wordEndPtr + 1;
+                    scanStat = ScanForWord((const char**)&wordptr, (const char**)&wordEndPtr);
+                    *wordEndPtr = '\0';
+                    arg1 = atoi(wordptr);
+                    if (arg0 < 0) arg0 = 0;
+                    else if (arg0 > 0x07) arg0 = 0x07;
+                    if (arg1 < 0) arg1 = 0;
+                    else if (arg1 > 0x1F) arg1 = 0x1F;
+                    arg0 |= (arg1 << 3);
                     numBytesInInstruction += 1;
-                    instructionBytes[1] = 0x00;
+                    instructionBytes[1] = (unsigned char)arg0;
                     break;
-                case OperandType::UINT6_UINT5_UINT5: //stub, TODO
+                case OperandType::UINT6_UINT5_UINT5:
+                    scanStat = ScanForArgument((const char**)&wordptr, (const char**)&wordEndPtr);
+                    *wordEndPtr = '\0';
+                    arg0 = atoi(wordptr);
+                    wordptr = wordEndPtr + 1;
+                    scanStat = ScanForArgument((const char**)&wordptr, (const char**)&wordEndPtr);
+                    *wordEndPtr = '\0';
+                    arg1 = atoi(wordptr);
+                    wordptr = wordEndPtr + 1;
+                    scanStat = ScanForWord((const char**)&wordptr, (const char**)&wordEndPtr);
+                    *wordEndPtr = '\0';
+                    arg2 = atoi(wordptr);
+                    if (arg0 < 0) arg0 = 0;
+                    else if (arg0 > 0x3F) arg0 = 0x3F;
+                    if (arg1 < 0) arg1 = 0;
+                    else if (arg1 > 0x1F) arg1 = 0x1F;
+                    if (arg2 < 0) arg2 = 0;
+                    else if (arg2 > 0x1F) arg2 = 0x1F;
+                    arg0 |= (arg1 << 6) | (arg2 << 11);
                     numBytesInInstruction += 2;
-                    instructionBytes[1] = 0x00;
-                    instructionBytes[2] = 0x00;
+                    instructionBytes[1] = (unsigned char)(arg0 & 0xFF);
+                    instructionBytes[2] = (unsigned char)((arg0 >> 8) & 0xFF);
                     break;
                 case OperandType::STATEVAR_SINGLE:
                     scanStat = ScanForWord((const char**)&wordptr, (const char**)&wordEndPtr);

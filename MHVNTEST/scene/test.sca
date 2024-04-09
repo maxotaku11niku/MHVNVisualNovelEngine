@@ -35,6 +35,8 @@ text SCENE_TEST_0005
 text SCENE_TEST_0006
 text SCENE_TEST_0007
 nocharname
+shake 10, 0, 10
+nowait
 text SCENE_TEST_0008
 charname CONFUSED
 text SCENE_TEST_0009
