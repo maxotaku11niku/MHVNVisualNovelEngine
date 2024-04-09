@@ -35,15 +35,17 @@ text SCENE_TEST_0005
 text SCENE_TEST_0006
 text SCENE_TEST_0007
 nocharname
-shake 10, 0, 10
-nowait
 text SCENE_TEST_0008
+shake 8, 0, 12
+nowait
 charname CONFUSED
 text SCENE_TEST_0009
 charname NARRATOR
 text SCENE_TEST_000A
 charname CONFUSED
 text SCENE_TEST_000B
+shake 16, 0, 12
+nowait
 charname NARRATOR
 text SCENE_TEST_000C
 text SCENE_TEST_000D
@@ -68,6 +70,8 @@ text SCENE_TEST_000F
 choice2 r0, SCENE_TEST_CHOICE_0001_0, SCENE_TEST_CHOICE_0001_1
 cmpvi r0, 0
 je conperbetter
+shake 8, 0, 12
+nowait
 text SCENE_TEST_000F_NARR_0
 charname NARRATOR
 text SCENE_TEST_000F_NARR_1
@@ -118,6 +122,8 @@ cmpvi r2, 1
 je consoleps
 cmpvi r2, 2
 je consolexbox
+shake 16, 1, 8
+nowait
 text SCENE_TEST_0011_PC_0
 charname NARRATOR
 text SCENE_TEST_0011_PC_1

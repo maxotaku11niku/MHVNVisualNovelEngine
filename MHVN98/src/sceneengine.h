@@ -52,5 +52,9 @@ void ControlProcess(unsigned char process);
 void SwitchChoice(char dir);
 //Commits choice and moves forward
 void CommitChoice();
+//Signals to the scene processor that the user has responded and now is the time to move on
+void EndUserWait();
+//Processes any async actions, should be called every frame
+void SceneAsyncActionProcess();
 //Scene script process loop
 int SceneDataProcess();

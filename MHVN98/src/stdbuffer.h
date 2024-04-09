@@ -25,3 +25,8 @@
 #pragma once
 
 extern unsigned char smallFileBuffer[1024];
+
+//0x0000 - 0x7FFF maps to [0 - 2pi), so x is a 1.15 fixed point number representing the number of full turns
+//These return 2.14 signed fixed point numbers
+short Sin(unsigned int x);
+short Cos(unsigned int x);

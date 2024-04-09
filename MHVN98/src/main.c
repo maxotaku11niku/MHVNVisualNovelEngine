@@ -211,6 +211,7 @@ int main(void)
         }
         DoDrawRequests();
         sceneProcessResult = SceneDataProcess();
+        SceneAsyncActionProcess();
         if (sceneProcessResult & SCENE_STATUS_ERROR)
         {
             result = sceneProcessResult & (~SCENE_STATUS_ERROR);
@@ -235,10 +236,12 @@ int main(void)
             if (sceneProcessResult & SCENE_STATUS_MAKING_CHOICE)
             {
                 CommitChoice();
+                EndUserWait();
             }
             else if (hasFinshedStringAnim)
             {
                 ControlProcess(1);
+                EndUserWait();
                 hasFinshedStringAnim = 0;
                 textSkip = 0;
             }

@@ -32,28 +32,52 @@
 #include "textengine.h"
 #include "graphics.h"
 
-#define VMFLAG_Z 0x01
-#define VMFLAG_N 0x02
+#define VMFLAG_Z         0x01
+#define VMFLAG_N         0x02
 #define VMFLAG_TEXTINBOX 0x40
-#define VMFLAG_PROCESS 0x80
+#define VMFLAG_PROCESS   0x80
 
-#define SVAR_BASE 0x0000
-#define SFLG_BASE 0x0020
-#define GVAR_BASE 0x0080
-#define GFLG_BASE 0x0100
-#define LVAR_BASE 0x0400
-#define LFLG_BASE 0x0600
+#define ASYNC_PALETTE 0x01
+#define ASYNC_SCROLL  0x02
+#define ASYNC_USER    0x80
+
+#define APAL_BFADEIN    1
+#define APAL_BFADEOUT   2
+#define APAL_WFADEIN    3
+#define APAL_WFADEOUT   4
+#define APAL_PFADEIN    5
+#define APAL_PFADEOUT   6
+#define APAL_PHUEROTATE 7
+
+#define ASCR_SHAKE 1
+
+#define SVAR_BASE    0x0000
+#define SFLG_BASE    0x0020
+#define GVAR_BASE    0x0080
+#define GFLG_BASE    0x0100
+#define LVAR_BASE    0x0400
+#define LFLG_BASE    0x0600
 #define VARSPACE_TOP 0x1000
 
 #define STYPE_YNCHOICE 0
-#define STYPE_CHOICE2 1
-#define STYPE_CHOICE3 2
-#define STYPE_CHOICE4 3
+#define STYPE_CHOICE2  1
+#define STYPE_CHOICE3  2
+#define STYPE_CHOICE4  3
 
 SceneInfo sceneInfo;
 unsigned char curSceneData[1024];
 unsigned short curSceneDataPC;
 unsigned char vmFlags;
+
+unsigned char curAsyncActions;
+unsigned char curAsyncPaletteAction;
+
+unsigned char curAsyncScrollAction;
+short curShakeAmp; //8.8 fixed point number
+unsigned short curShakeAdv; //1.15 fixed point number
+short curShakeDampFactor; //2.14 fixed point number
+unsigned short curShakePoint; //1.15 fixed point number
+
 int returnStatus;
 unsigned char selectionType;
 char selectedOption;
@@ -98,6 +122,7 @@ int LoadNewScene(unsigned short sceneNum)
     curSceneDataPC = 0;
     returnStatus = 0;
     curCharNum = 0xFFFF;
+    curAsyncActions = 0;
     vmFlags = VMFLAG_PROCESS;
     return 0;
 }
@@ -369,6 +394,75 @@ void CommitChoice()
     ControlProcess(1);
 }
 
+void EndUserWait()
+{
+    curAsyncActions &= ~ASYNC_USER;
+}
+
+
+void SceneAsyncActionProcess()
+{
+    unsigned char ca = curAsyncActions;
+
+    if (ca & ASYNC_PALETTE) //Palette animations
+    {
+        unsigned char atype = curAsyncPaletteAction;
+        switch (atype)
+        {
+            case APAL_BFADEIN:
+                break;
+            case APAL_BFADEOUT:
+                break;
+            case APAL_WFADEIN:
+                break;
+            case APAL_WFADEOUT:
+                break;
+            case APAL_PFADEIN:
+                break;
+            case APAL_PFADEOUT:
+                break;
+            case APAL_PHUEROTATE:
+                break;
+            default:
+                break;
+        }
+        ca &= ~ASYNC_PALETTE; //stub, TODO
+    }
+
+    if (ca & ASYNC_SCROLL) //Scroll animations
+    {
+        unsigned char atype = curAsyncScrollAction;
+        switch (atype)
+        {
+            case ASCR_SHAKE:
+            {
+                long cval = Cos(curShakePoint);
+                cval *= (long)curShakeAmp; //10.22 fixed point
+                cval += 0x00200000;
+                cval >>= 22; //rounded integer
+                unsigned int sval = ((short)cval) + 400;
+                GDCScrollSimpleGraphics(sval % 400);
+
+                curShakePoint += curShakeAdv;
+                long midAmp = ((long)curShakeAmp) * ((long)curShakeDampFactor); //10.22 fixed point
+                curShakeAmp = (short)(midAmp >> 14); //back to 8.8 fixed point
+                if (curShakeAmp < 0x0080) //end when shaking can't be seen anymore
+                {
+                    GDCScrollSimpleGraphics(0);
+                    ca &= ~ASYNC_SCROLL;
+                }
+            }
+                break;
+            default:
+                break;
+        }
+    }
+
+    if (ca == 0) ControlProcess(1);
+
+    curAsyncActions = ca;
+}
+
 int SceneDataProcess()
 {
     unsigned char curOpcode;
@@ -386,7 +480,7 @@ int SceneDataProcess()
             unsigned short sNum = *((unsigned short*)(curSceneData + curSceneDataPC));
             if (sNum == 0xFFFF) //scene number FFFF is a proxy for the end of the whole VN
             {
-                vmFlags &= ~VMFLAG_PROCESS;
+                ControlProcess(0);
                 returnStatus |= SCENE_STATUS_FINALEND;
                 break;
             }
@@ -394,7 +488,7 @@ int SceneDataProcess()
             if (result)
             {
                 returnStatus = SCENE_STATUS_ERROR | result;
-                vmFlags &= ~VMFLAG_PROCESS;
+                ControlProcess(0);
                 break;
             }
             curSceneDataPC += 2;
@@ -468,7 +562,8 @@ int SceneDataProcess()
             StartAnimatedStringToWrite(sceneTextBuffer + curTextArray[nextTextNum], textBoxInnerBounds.pos.x, textBoxInnerBounds.pos.y, rootInfo.defFormatNormal);
             nextTextNum++;
             vmFlags |= VMFLAG_TEXTINBOX;
-            vmFlags &= ~VMFLAG_PROCESS;
+            ControlProcess(0);
+            curAsyncActions |= ASYNC_USER;
             returnStatus |= SCENE_STATUS_RENDERTEXT;
             break;
         case 0x12: //charname
@@ -485,7 +580,7 @@ int SceneDataProcess()
                     if (result)
                     {
                         returnStatus = SCENE_STATUS_ERROR | result;
-                        vmFlags &= ~VMFLAG_PROCESS;
+                        ControlProcess(0);
                         break;
                     }
                     WriteString(curCharName, charNameBoxInnerBounds.pos.x, charNameBoxInnerBounds.pos.y, rootInfo.defFormatCharName, 0);
@@ -503,13 +598,14 @@ int SceneDataProcess()
             delText:
             ClearTextBox();
             vmFlags &= ~VMFLAG_TEXTINBOX;
-            vmFlags &= ~VMFLAG_PROCESS;
+            ControlProcess(0);
             returnStatus |= SCENE_STATUS_WIPETEXT; //for later, when text box wiping involves an animation
             break;
         case 0x14: //ynchoice
             selectedOption = 1;
             selectionType = STYPE_YNCHOICE;
-            vmFlags &= ~VMFLAG_PROCESS;
+            ControlProcess(0);
+            curAsyncActions |= ASYNC_USER;
             returnStatus |= SCENE_STATUS_MAKING_CHOICE;
             choiceBoxInnerBounds.size.y = 32;
             choiceBoxImgInfo->boundRect.size.y = 64;
@@ -521,7 +617,8 @@ int SceneDataProcess()
         case 0x15: //choice2
             selectedOption = 0;
             selectionType = STYPE_CHOICE2;
-            vmFlags &= ~VMFLAG_PROCESS;
+            ControlProcess(0);
+            curAsyncActions |= ASYNC_USER;
             returnStatus |= SCENE_STATUS_MAKING_CHOICE;
             selectedVar = *((unsigned short*)(curSceneData + curSceneDataPC));
             curSceneDataPC += 2;
@@ -537,7 +634,8 @@ int SceneDataProcess()
         case 0x16: //choice3
             selectedOption = 0;
             selectionType = STYPE_CHOICE3;
-            vmFlags &= ~VMFLAG_PROCESS;
+            ControlProcess(0);
+            curAsyncActions |= ASYNC_USER;
             returnStatus |= SCENE_STATUS_MAKING_CHOICE;
             selectedVar = *((unsigned short*)(curSceneData + curSceneDataPC));
             curSceneDataPC += 2;
@@ -554,7 +652,8 @@ int SceneDataProcess()
         case 0x17: //choice4
             selectedOption = 0;
             selectionType = STYPE_CHOICE4;
-            vmFlags &= ~VMFLAG_PROCESS;
+            ControlProcess(0);
+            curAsyncActions |= ASYNC_USER;
             returnStatus |= SCENE_STATUS_MAKING_CHOICE;
             selectedVar = *((unsigned short*)(curSceneData + curSceneDataPC));
             curSceneDataPC += 2;
@@ -570,28 +669,57 @@ int SceneDataProcess()
             WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 3], choiceBoxInnerBounds.pos.x, choiceBoxInnerBounds.pos.y + 48, rootInfo.defFormatMenuItem, 0);
             break;
         case 0x18: //bfadein
+            curAsyncActions |= ASYNC_PALETTE;
+            curAsyncPaletteAction = APAL_BFADEIN;
             curSceneDataPC += 1; //stub, TODO
-            break;
+            goto vmDecideWait;
         case 0x19: //bfadeout
+            curAsyncActions |= ASYNC_PALETTE;
+            curAsyncPaletteAction = APAL_BFADEOUT;
             curSceneDataPC += 1; //stub, TODO
-            break;
+            goto vmDecideWait;
         case 0x1A: //wfadein
+            curAsyncActions |= ASYNC_PALETTE;
+            curAsyncPaletteAction = APAL_WFADEIN;
             curSceneDataPC += 1; //stub, TODO
-            break;
+            goto vmDecideWait;
         case 0x1B: //wfadeout
+            curAsyncActions |= ASYNC_PALETTE;
+            curAsyncPaletteAction = APAL_WFADEOUT;
             curSceneDataPC += 1; //stub, TODO
-            break;
+            goto vmDecideWait;
         case 0x1C: //pfadein
+            curAsyncActions |= ASYNC_PALETTE;
+            curAsyncPaletteAction = APAL_PFADEIN;
             curSceneDataPC += 1; //stub, TODO
-            break;
+            goto vmDecideWait;
         case 0x1D: //pfadeout
+            curAsyncActions |= ASYNC_PALETTE;
+            curAsyncPaletteAction = APAL_PFADEOUT;
             curSceneDataPC += 1; //stub, TODO
-            break;
+            goto vmDecideWait;
         case 0x1E: //phuerotate
+            curAsyncActions |= ASYNC_PALETTE;
+            curAsyncPaletteAction = APAL_PHUEROTATE;
             curSceneDataPC += 1; //stub, TODO
-            break;
+            goto vmDecideWait;
         case 0x1F: //shake
-            curSceneDataPC += 2; //stub, TODO
+            curAsyncActions |= ASYNC_SCROLL;
+            curAsyncScrollAction = ASCR_SHAKE;
+            {
+                unsigned short arg = *((unsigned short*)(curSceneData + curSceneDataPC));
+                unsigned short amp = arg & 0x003F;
+                curShakeAmp = amp << 8;
+                unsigned short period = (arg >> 6) & 0x001F;
+                curShakeAdv = (1 << 14)/(period+1);
+                unsigned short damp = (arg >> 11) & 0x001F;
+                curShakeDampFactor = (1 << 14) - (damp << 6);
+                curShakePoint = 0;
+                curSceneDataPC += 2;
+            }
+            vmDecideWait:
+            if (*(curSceneData + curSceneDataPC) == 0x0F) curSceneDataPC += 1; //Next instruction is nowait -> do not halt processing
+            else ControlProcess(0); //Else, halt it until the async action is complete
             break;
         case 0x20: //lut2
             result = *((unsigned short*)(curSceneData + curSceneDataPC));
