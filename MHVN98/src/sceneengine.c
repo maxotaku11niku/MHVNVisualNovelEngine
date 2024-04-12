@@ -37,17 +37,19 @@
 #define VMFLAG_TEXTINBOX 0x40
 #define VMFLAG_PROCESS   0x80
 
-#define ASYNC_PALETTE 0x01
-#define ASYNC_SCROLL  0x02
+#define ASYNC_FADE 0x02
+#define ASYNC_PALETTE 0x02
+#define ASYNC_SCROLL  0x04
 #define ASYNC_USER    0x80
 
-#define APAL_BFADEIN    1
-#define APAL_BFADEOUT   2
-#define APAL_WFADEIN    3
-#define APAL_WFADEOUT   4
-#define APAL_PFADEIN    5
-#define APAL_PFADEOUT   6
-#define APAL_PHUEROTATE 7
+#define AFADE_BFADEIN    1
+#define AFADE_BFADEOUT   2
+#define AFADE_WFADEIN    3
+#define AFADE_WFADEOUT   4
+#define AFADE_PHUEROTATE 5
+
+#define APAL_PFADEIN    1
+#define APAL_PFADEOUT   2
 
 #define ASCR_SHAKE 1
 
@@ -70,6 +72,8 @@ unsigned short curSceneDataPC;
 unsigned char vmFlags;
 
 unsigned char curAsyncActions;
+unsigned char curAsyncFadeAction;
+
 unsigned char curAsyncPaletteAction;
 
 unsigned char curAsyncScrollAction;
@@ -404,24 +408,35 @@ void SceneAsyncActionProcess()
 {
     unsigned char ca = curAsyncActions;
 
+    if (ca & ASYNC_FADE) //Simple fades and hue rotate
+    {
+        unsigned char atype = curAsyncFadeAction;
+        switch (atype)
+        {
+            case AFADE_BFADEIN:
+                break;
+            case AFADE_BFADEOUT:
+                break;
+            case AFADE_WFADEIN:
+                break;
+            case AFADE_WFADEOUT:
+                break;
+            case AFADE_PHUEROTATE:
+                break;
+            default:
+                break;
+        }
+        ca &= ~ASYNC_FADE; //stub, TODO
+    }
+
     if (ca & ASYNC_PALETTE) //Palette animations
     {
         unsigned char atype = curAsyncPaletteAction;
         switch (atype)
         {
-            case APAL_BFADEIN:
-                break;
-            case APAL_BFADEOUT:
-                break;
-            case APAL_WFADEIN:
-                break;
-            case APAL_WFADEOUT:
-                break;
             case APAL_PFADEIN:
                 break;
             case APAL_PFADEOUT:
-                break;
-            case APAL_PHUEROTATE:
                 break;
             default:
                 break;
@@ -544,7 +559,7 @@ int SceneDataProcess()
         case 0x0E: //palinvert
             break; //stub, TODO
         case 0x0F: //nowait
-            break; //stub, TODO
+            break; //Handled by other parts
         case 0x11: //text
             if (vmFlags & VMFLAG_TEXTINBOX)
             {
@@ -669,23 +684,23 @@ int SceneDataProcess()
             WriteString(sceneTextBuffer + curTextArray[selectedFirstText + 3], choiceBoxInnerBounds.pos.x, choiceBoxInnerBounds.pos.y + 48, rootInfo.defFormatMenuItem, 0);
             break;
         case 0x18: //bfadein
-            curAsyncActions |= ASYNC_PALETTE;
-            curAsyncPaletteAction = APAL_BFADEIN;
+            curAsyncActions |= ASYNC_FADE;
+            curAsyncFadeAction = AFADE_BFADEIN;
             curSceneDataPC += 1; //stub, TODO
             goto vmDecideWait;
         case 0x19: //bfadeout
-            curAsyncActions |= ASYNC_PALETTE;
-            curAsyncPaletteAction = APAL_BFADEOUT;
+            curAsyncActions |= ASYNC_FADE;
+            curAsyncFadeAction = AFADE_BFADEOUT;
             curSceneDataPC += 1; //stub, TODO
             goto vmDecideWait;
         case 0x1A: //wfadein
-            curAsyncActions |= ASYNC_PALETTE;
-            curAsyncPaletteAction = APAL_WFADEIN;
+            curAsyncActions |= ASYNC_FADE;
+            curAsyncFadeAction = AFADE_WFADEIN;
             curSceneDataPC += 1; //stub, TODO
             goto vmDecideWait;
         case 0x1B: //wfadeout
-            curAsyncActions |= ASYNC_PALETTE;
-            curAsyncPaletteAction = APAL_WFADEOUT;
+            curAsyncActions |= ASYNC_FADE;
+            curAsyncFadeAction = AFADE_WFADEOUT;
             curSceneDataPC += 1; //stub, TODO
             goto vmDecideWait;
         case 0x1C: //pfadein
@@ -699,8 +714,8 @@ int SceneDataProcess()
             curSceneDataPC += 1; //stub, TODO
             goto vmDecideWait;
         case 0x1E: //phuerotate
-            curAsyncActions |= ASYNC_PALETTE;
-            curAsyncPaletteAction = APAL_PHUEROTATE;
+            curAsyncActions |= ASYNC_FADE;
+            curAsyncFadeAction = AFADE_PHUEROTATE;
             curSceneDataPC += 1; //stub, TODO
             goto vmDecideWait;
         case 0x1F: //shake

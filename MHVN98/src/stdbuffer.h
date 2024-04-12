@@ -30,3 +30,8 @@ extern unsigned char smallFileBuffer[1024];
 //These return 2.14 signed fixed point numbers
 short Sin(unsigned int x);
 short Cos(unsigned int x);
+//Returns a 1.15 fixed point number, arguments must be the same type of fixed point number for the answer to make sense
+unsigned int Atan2(short y, short x);
+//Doesn't matter if it's fixed point or whatever
+unsigned short Sqrt(unsigned long x);
+short Cbrt(long x);
