@@ -35,16 +35,22 @@ typedef struct
 void SetMainPalette(const ColourRGB* pal);
 //Sets the 'mix' palette to a single colour. This palette is used to mix with the main palette
 void SetMixPaletteToSingleColour(unsigned char r, unsigned char g, unsigned char b);
+void SetMixPaletteToSingleColour5bpc(unsigned char r, unsigned char g, unsigned char b);
 //Sets the mix palette to the main palette added with a single colour
 void SetMixPaletteToMainAdd(short r, short g, short b);
+void SetMixPaletteToMainAdd5bpc(unsigned char r, unsigned char g, unsigned char b);
 //Sets the mix palette to the main palette but with mod added to the luminosity. mod is a 2.14 fixed point number
 void SetMixPaletteToMainLuminosityMod(short mod);
+void SetMixPaletteToMainLuminosityMod8bpc(unsigned char mod);
 //Sets the mix palette to the main palette but with the saturation multiplied by mod. mod is a 4.12 fixed point number
 void SetMixPaletteToMainSaturationMod(short mod);
+void SetMixPaletteToMainSaturationMod8bpc(unsigned char mod);
 //Sets the mix palette to the main palette but with mod added to the hue. mod is a 1.15 fixed point number in units of full revolutions
 void SetMixPaletteToMainHueMod(unsigned short mod);
+void SetMixPaletteToMainHueMod8bpc(unsigned char mod);
 //Sets the mix palette to the main palette but with all chromas set the same as the given colour
 void SetMixPaletteToMainColourised(unsigned char r, unsigned char g, unsigned char b);
+void SetMixPaletteToMainColourised5bpc(unsigned char r, unsigned char g, unsigned char b);
 //Sets the mix palette to the main palette inverted
 void SetMixPaletteToMainInvert();
 //Straight copies the main palette to the 'out' palette, which is one step before actual display
@@ -55,5 +61,7 @@ void MixPalettes(short mixAmt);
 void SetDisplayPaletteToOut();
 //Sets the display palette to the out palette with brightness modfication
 void SetDisplayPaletteToOutBrightnessModify(short add);
+//Sets the display palette to the out palette with hue rotation
+void SetDisplayPaletteToOutHueRotate(unsigned short mod);
 //Sets up everything using the default palette
 void SetDefaultPalette();

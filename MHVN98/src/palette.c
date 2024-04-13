@@ -45,6 +45,11 @@ const short c8bpcto2p14pcTable[256] = { 0,     64,    129,   193,   257,   321, 
                                         14392, 14456, 14521, 14585, 14649, 14713, 14778, 14842, 14906, 14970, 15035, 15099, 15163, 15227, 15292, 15356,
                                         15420, 15484, 15549, 15613, 15677, 15741, 15806, 15870, 15934, 15998, 16063, 16127, 16191, 16255, 16320, 16384 };
 
+const unsigned char c5bpcto8bpcTable[32] = { 0x00, 0x08, 0x10, 0x18, 0x21, 0x29, 0x31, 0x39,
+                                             0x42, 0x4A, 0x52, 0x5A, 0x63, 0x6B, 0x73, 0x7B,
+                                             0x84, 0x8C, 0x94, 0x9C, 0xA5, 0xAD, 0xB5, 0xBD,
+                                             0xC6, 0xCE, 0xD6, 0xDE, 0xE7, 0xEF, 0xF7, 0xFF };
+
 //Mostly for testing, since later the main palette will be changeable
 const ColourRGB defaultPalette[16] =
 {
@@ -161,6 +166,14 @@ void SetMixPaletteToSingleColour(unsigned char r, unsigned char g, unsigned char
     }
 }
 
+void SetMixPaletteToSingleColour5bpc(unsigned char r, unsigned char g, unsigned char b)
+{
+    r = c5bpcto8bpcTable[r];
+    g = c5bpcto8bpcTable[g];
+    b = c5bpcto8bpcTable[b];
+    SetMixPaletteToSingleColour(r, g, b);
+}
+
 void SetMixPaletteToMainAdd(short r, short g, short b)
 {
     for (int i = 0; i < 16; i++)
@@ -175,6 +188,17 @@ void SetMixPaletteToMainAdd(short r, short g, short b)
         ColourRGB outCol = { or, og, ob };
         mixPalette[i] = outCol;
     }
+}
+
+void SetMixPaletteToMainAdd5bpc(unsigned char r, unsigned char g, unsigned char b)
+{
+    short sr = ((short)(r) & 0x0F) * 0x11;
+    if (r & 0x10) sr = -0x110 + sr;
+    short sg = ((short)(g) & 0x0F) * 0x11;
+    if (g & 0x10) sg = -0x110 + sg;
+    short sb = ((short)(b) & 0x0F) * 0x11;
+    if (b & 0x10) sb = -0x110 + sb;
+    SetMixPaletteToMainAdd(sr, sg, sb);
 }
 
 void SetMixPaletteToMainLuminosityMod(short mod)
@@ -248,6 +272,13 @@ void SetMixPaletteToMainLuminosityMod(short mod)
     else Memcpy16Near(mainPalette, mixPalette, 24);
 }
 
+void SetMixPaletteToMainLuminosityMod8bpc(unsigned char mod)
+{
+    short smod = ((short)(mod) & 0x7F) * 130;
+    if (mod & 0x80) smod = -16640 + smod;
+    SetMixPaletteToMainLuminosityMod(smod);
+}
+
 void SetMixPaletteToMainSaturationMod(short mod)
 {
     if (mod == 4096)
@@ -268,6 +299,11 @@ void SetMixPaletteToMainSaturationMod(short mod)
         mainYUV.v = (short)newv;
         mixPalette[i] = YUVToRGB(mainYUV);
     }
+}
+
+void SetMixPaletteToMainSaturationMod8bpc(unsigned char mod)
+{
+    SetMixPaletteToMainSaturationMod((short)(mod) * 32);
 }
 
 void SetMixPaletteToMainHueMod(unsigned short mod)
@@ -297,6 +333,13 @@ void SetMixPaletteToMainHueMod(unsigned short mod)
     }
 }
 
+void SetMixPaletteToMainHueMod8bpc(unsigned char mod)
+{
+    unsigned short smod = ((unsigned short)(mod) & 0x7F) * 0x80;
+    if (mod & 0x80) smod = 0x4000 + smod;
+    SetMixPaletteToMainHueMod(smod);
+}
+
 void SetMixPaletteToMainColourised(unsigned char r, unsigned char g, unsigned char b)
 {
     ColourRGB crgb = { r, g, b };
@@ -309,6 +352,14 @@ void SetMixPaletteToMainColourised(unsigned char r, unsigned char g, unsigned ch
         mainYUV.v = cyuv.v;
         mixPalette[i] = YUVToRGB(mainYUV);
     }
+}
+
+void SetMixPaletteToMainColourised5bpc(unsigned char r, unsigned char g, unsigned char b)
+{
+    r = c5bpcto8bpcTable[r];
+    g = c5bpcto8bpcTable[g];
+    b = c5bpcto8bpcTable[b];
+    SetMixPaletteToMainColourised(r, g, b);
 }
 
 void SetMixPaletteToMainInvert()
@@ -384,6 +435,40 @@ void SetDisplayPaletteToOutBrightnessModify(short add)
         if (og < 0) og = 0; else if (og > 0x0F) og = 0x0F;
         short ob = col.b;
         ob += 0x08 + add; ob /= 0x11;
+        if (ob < 0) ob = 0; else if (ob > 0x0F) ob = 0x0F;
+        GDCSetPaletteColour(i, or, og, ob);
+    }
+}
+
+void SetDisplayPaletteToOutHueRotate(unsigned short mod)
+{
+    for (int i = 0; i < 16; i++)
+    {
+        //Rotate the hue of each colour
+        ColourRGB col = outPalette[i];
+        ColourYUV colYUV = RGBToYUV(col);
+        unsigned int hue = Atan2(colYUV.v, colYUV.u);
+        hue += mod;
+        //4.28 fixed point result
+        long sat = ((long)colYUV.u) * ((long)colYUV.u) + ((long)colYUV.v) * ((long)colYUV.v);
+        sat = (long)(Sqrt(sat)); //18.14 fixed point
+        //4.28 fixed point result
+        long newu = sat * ((long)(Cos(hue)));
+        long newv = sat * ((long)(Sin(hue)));
+        //Back to 2.14 fixed point
+        newu >>= 14; newv >>= 14;
+        colYUV.u = (short)newu;
+        colYUV.v = (short)newv;
+        col = YUVToRGB(colYUV);
+        //Convert each 8bpc colour to a 4bpc colour
+        short or = col.r;
+        or += 0x08; or /= 0x11;
+        if (or < 0) or = 0; else if (or > 0x0F) or = 0x0F;
+        short og = col.g;
+        og += 0x08; og /= 0x11;
+        if (og < 0) og = 0; else if (og > 0x0F) og = 0x0F;
+        short ob = col.b;
+        ob += 0x08; ob /= 0x11;
         if (ob < 0) ob = 0; else if (ob > 0x0F) ob = 0x0F;
         GDCSetPaletteColour(i, or, og, ob);
     }

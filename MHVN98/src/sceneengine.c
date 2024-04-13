@@ -30,6 +30,7 @@
 #include "rootinfo.h"
 #include "sceneengine.h"
 #include "textengine.h"
+#include "palette.h"
 #include "graphics.h"
 
 #define VMFLAG_Z         0x01
@@ -37,7 +38,7 @@
 #define VMFLAG_TEXTINBOX 0x40
 #define VMFLAG_PROCESS   0x80
 
-#define ASYNC_FADE 0x02
+#define ASYNC_FADE    0x01
 #define ASYNC_PALETTE 0x02
 #define ASYNC_SCROLL  0x04
 #define ASYNC_USER    0x80
@@ -73,8 +74,17 @@ unsigned char vmFlags;
 
 unsigned char curAsyncActions;
 unsigned char curAsyncFadeAction;
+short curBFadeAmt; //10.6 fixed point number
+short curWFadeAmt; //10.6 fixed point number
+short curFadeTarget; //10.6 fixed point number
+short curFadeSpeed; //10.6 fixed point number
+unsigned short curHueRotationFactor; //1.15 fixed point number
+unsigned short curHueRotationSpeed; //1.15 fixed point number
 
 unsigned char curAsyncPaletteAction;
+short curPFadeAmt; //10.6 fixed point number
+short curPaletteFadeTarget; //10.6 fixed point number
+short curPaletteFadeSpeed; //10.6 fixed point number
 
 unsigned char curAsyncScrollAction;
 short curShakeAmp; //8.8 fixed point number
@@ -127,6 +137,12 @@ int LoadNewScene(unsigned short sceneNum)
     returnStatus = 0;
     curCharNum = 0xFFFF;
     curAsyncActions = 0;
+    curFadeTarget = 0;
+    curBFadeAmt = 0;
+    curWFadeAmt = 0;
+    curHueRotationFactor = 0;
+    curPaletteFadeTarget = 0;
+    curPFadeAmt = 0;
     vmFlags = VMFLAG_PROCESS;
     return 0;
 }
@@ -414,19 +430,49 @@ void SceneAsyncActionProcess()
         switch (atype)
         {
             case AFADE_BFADEIN:
+                curBFadeAmt -= curFadeSpeed;
+                if (curBFadeAmt <= curFadeTarget)
+                {
+                    curBFadeAmt = curFadeTarget;
+                    ca &= ~ASYNC_FADE;
+                }
+                SetDisplayPaletteToOutBrightnessModify(-(curBFadeAmt >> 6));
                 break;
             case AFADE_BFADEOUT:
+                curBFadeAmt += curFadeSpeed;
+                if (curBFadeAmt >= curFadeTarget)
+                {
+                    curBFadeAmt = curFadeTarget;
+                    ca &= ~ASYNC_FADE;
+                }
+                SetDisplayPaletteToOutBrightnessModify(-(curBFadeAmt >> 6));
                 break;
             case AFADE_WFADEIN:
+                curWFadeAmt -= curFadeSpeed;
+                if (curWFadeAmt <= curFadeTarget)
+                {
+                    curWFadeAmt = curFadeTarget;
+                    ca &= ~ASYNC_FADE;
+                }
+                SetDisplayPaletteToOutBrightnessModify(curWFadeAmt >> 6);
                 break;
             case AFADE_WFADEOUT:
+                curWFadeAmt += curFadeSpeed;
+                if (curWFadeAmt >= curFadeTarget)
+                {
+                    curWFadeAmt = curFadeTarget;
+                    ca &= ~ASYNC_FADE;
+                }
+                SetDisplayPaletteToOutBrightnessModify(curWFadeAmt >> 6);
                 break;
             case AFADE_PHUEROTATE:
-                break;
+                curHueRotationFactor += curHueRotationSpeed;
+                SetDisplayPaletteToOutHueRotate(curHueRotationFactor);
+                break; //This effect must be stopped through some other method
             default:
+                ca &= ~ASYNC_FADE;
                 break;
         }
-        ca &= ~ASYNC_FADE; //stub, TODO
     }
 
     if (ca & ASYNC_PALETTE) //Palette animations
@@ -435,13 +481,35 @@ void SceneAsyncActionProcess()
         switch (atype)
         {
             case APAL_PFADEIN:
+                curPFadeAmt += curPaletteFadeSpeed;
+                if (curPFadeAmt >= curPaletteFadeTarget)
+                {
+                    curPFadeAmt = curPaletteFadeTarget;
+                    ca &= ~ASYNC_PALETTE;
+                }
+                MixPalettes(curPFadeAmt >> 6);
                 break;
             case APAL_PFADEOUT:
+                curPFadeAmt -= curPaletteFadeSpeed;
+                if (curPFadeAmt <= curPaletteFadeTarget)
+                {
+                    curPFadeAmt = curPaletteFadeTarget;
+                    ca &= ~ASYNC_PALETTE;
+                }
+                MixPalettes(curPFadeAmt >> 6);
                 break;
             default:
+                ca &= ~ASYNC_PALETTE;
                 break;
         }
-        ca &= ~ASYNC_PALETTE; //stub, TODO
+
+        if (!(ca & ASYNC_FADE))
+        {
+            if (curBFadeAmt != 0) SetDisplayPaletteToOutBrightnessModify(-(curBFadeAmt >> 6));
+            else if (curWFadeAmt != 0) SetDisplayPaletteToOutBrightnessModify(curWFadeAmt >> 6);
+            else if (curHueRotationFactor != 0) SetDisplayPaletteToOutHueRotate(curHueRotationFactor);
+            else SetDisplayPaletteToOut();
+        }
     }
 
     if (ca & ASYNC_SCROLL) //Scroll animations
@@ -469,6 +537,7 @@ void SceneAsyncActionProcess()
             }
                 break;
             default:
+                ca &= ~ASYNC_SCROLL;
                 break;
         }
     }
@@ -539,25 +608,59 @@ int SceneDataProcess()
             if (vmFlags & (VMFLAG_Z | VMFLAG_N)) break;
             else goto vmJump;
         case 0x08: //palsetcol
-            curSceneDataPC += 2; //stub, TODO
+            {
+                unsigned short arg = *((unsigned short*)(curSceneData + curSceneDataPC));
+                unsigned char r = (unsigned char)(arg & 0x001F);
+                unsigned char g = (unsigned char)((arg >> 5) & 0x001F);
+                unsigned char b = (unsigned char)((arg >> 10) & 0x001F);
+                SetMixPaletteToSingleColour5bpc(r, g, b);
+            }
+            curSceneDataPC += 2;
             break;
         case 0x09: //paladdcol
-            curSceneDataPC += 2; //stub, TODO
+            {
+                unsigned short arg = *((unsigned short*)(curSceneData + curSceneDataPC));
+                unsigned char r = (unsigned char)(arg & 0x001F);
+                unsigned char g = (unsigned char)((arg >> 5) & 0x001F);
+                unsigned char b = (unsigned char)((arg >> 10) & 0x001F);
+                SetMixPaletteToMainAdd5bpc(r, g, b);
+            }
+            curSceneDataPC += 2;
             break;
         case 0x0A: //palsetlum
-            curSceneDataPC += 1; //stub, TODO
+            {
+                unsigned char arg = *(curSceneData + curSceneDataPC);
+                SetMixPaletteToMainLuminosityMod8bpc(arg);
+            }
+            curSceneDataPC += 1;
             break;
         case 0x0B: //palsetsat
-            curSceneDataPC += 1; //stub, TODO
+            {
+                unsigned char arg = *(curSceneData + curSceneDataPC);
+                SetMixPaletteToMainSaturationMod8bpc(arg);
+            }
+            curSceneDataPC += 1;
             break;
         case 0x0C: //palsethue
-            curSceneDataPC += 1; //stub, TODO
+            {
+                unsigned char arg = *(curSceneData + curSceneDataPC);
+                SetMixPaletteToMainHueMod8bpc(arg);
+            }
+            curSceneDataPC += 1;
             break;
         case 0x0D: //palcolourise
-            curSceneDataPC += 2; //stub, TODO
+            {
+                unsigned short arg = *((unsigned short*)(curSceneData + curSceneDataPC));
+                unsigned char r = (unsigned char)(arg & 0x001F);
+                unsigned char g = (unsigned char)((arg >> 5) & 0x001F);
+                unsigned char b = (unsigned char)((arg >> 10) & 0x001F);
+                SetMixPaletteToMainColourised5bpc(r, g, b);
+            }
+            curSceneDataPC += 2;
             break;
         case 0x0E: //palinvert
-            break; //stub, TODO
+            SetMixPaletteToMainInvert();
+            break;
         case 0x0F: //nowait
             break; //Handled by other parts
         case 0x11: //text
@@ -685,39 +788,146 @@ int SceneDataProcess()
             break;
         case 0x18: //bfadein
             curAsyncActions |= ASYNC_FADE;
+            if (curAsyncFadeAction == AFADE_PHUEROTATE)
+            {
+                curHueRotationFactor = 0;
+                SetDisplayPaletteToOut();
+            }
             curAsyncFadeAction = AFADE_BFADEIN;
-            curSceneDataPC += 1; //stub, TODO
+            {
+                unsigned char arg = *(curSceneData + curSceneDataPC);
+                short amt = arg & 0x07;
+                short speed = (arg >> 3) & 0x1F;
+                if (curWFadeAmt > 0)
+                {
+                    curWFadeAmt = 0;
+                    curFadeTarget = 0x3FC0;
+                }
+                curBFadeAmt = curFadeTarget;
+                curFadeTarget -= 0x07F8 * (amt + 1);
+                if (curFadeTarget < 0) curFadeTarget = 0;
+                curFadeSpeed = 0x0020 * (speed + 1);
+            }
+            curSceneDataPC += 1;
             goto vmDecideWait;
         case 0x19: //bfadeout
             curAsyncActions |= ASYNC_FADE;
+            if (curAsyncFadeAction == AFADE_PHUEROTATE)
+            {
+                curHueRotationFactor = 0;
+                SetDisplayPaletteToOut();
+            }
             curAsyncFadeAction = AFADE_BFADEOUT;
-            curSceneDataPC += 1; //stub, TODO
+            {
+                unsigned char arg = *(curSceneData + curSceneDataPC);
+                short amt = arg & 0x07;
+                short speed = (arg >> 3) & 0x1F;
+                if (curWFadeAmt > 0)
+                {
+                    curWFadeAmt = 0;
+                    curFadeTarget = 0;
+                }
+                curBFadeAmt = curFadeTarget;
+                curFadeTarget += 0x07F8 * (amt + 1);
+                if (curFadeTarget > 0x3FC0) curFadeTarget = 0x3FC0;
+                curFadeSpeed = 0x0020 * (speed + 1);
+            }
+            curSceneDataPC += 1;
             goto vmDecideWait;
         case 0x1A: //wfadein
             curAsyncActions |= ASYNC_FADE;
+            if (curAsyncFadeAction == AFADE_PHUEROTATE)
+            {
+                curHueRotationFactor = 0;
+                SetDisplayPaletteToOut();
+            }
             curAsyncFadeAction = AFADE_WFADEIN;
-            curSceneDataPC += 1; //stub, TODO
+            {
+                unsigned char arg = *(curSceneData + curSceneDataPC);
+                short amt = arg & 0x07;
+                short speed = (arg >> 3) & 0x1F;
+                if (curBFadeAmt > 0)
+                {
+                    curBFadeAmt = 0;
+                    curFadeTarget = 0x3FC0;
+                }
+                curWFadeAmt = curFadeTarget;
+                curFadeTarget -= 0x07F8 * (amt + 1);
+                if (curFadeTarget < 0) curFadeTarget = 0;
+                curFadeSpeed = 0x0020 * (speed + 1);
+            }
+            curSceneDataPC += 1;
             goto vmDecideWait;
         case 0x1B: //wfadeout
             curAsyncActions |= ASYNC_FADE;
+            if (curAsyncFadeAction == AFADE_PHUEROTATE)
+            {
+                curHueRotationFactor = 0;
+                SetDisplayPaletteToOut();
+            }
             curAsyncFadeAction = AFADE_WFADEOUT;
-            curSceneDataPC += 1; //stub, TODO
+            {
+                unsigned char arg = *(curSceneData + curSceneDataPC);
+                short amt = arg & 0x07;
+                short speed = (arg >> 3) & 0x1F;
+                if (curBFadeAmt > 0)
+                {
+                    curBFadeAmt = 0;
+                    curFadeTarget = 0;
+                }
+                curWFadeAmt = curFadeTarget;
+                curFadeTarget += 0x07F8 * (amt + 1);
+                if (curFadeTarget > 0x3FC0) curFadeTarget = 0x3FC0;
+                curFadeSpeed = 0x0020 * (speed + 1);
+            }
+            curSceneDataPC += 1;
             goto vmDecideWait;
         case 0x1C: //pfadein
             curAsyncActions |= ASYNC_PALETTE;
             curAsyncPaletteAction = APAL_PFADEIN;
-            curSceneDataPC += 1; //stub, TODO
+            {
+                unsigned char arg = *(curSceneData + curSceneDataPC);
+                short amt = arg & 0x07;
+                short speed = (arg >> 3) & 0x1F;
+                curPFadeAmt = curPaletteFadeTarget;
+                curPaletteFadeTarget += 0x07F8 * (amt + 1);
+                if (curPaletteFadeTarget > 0x3FC0) curPaletteFadeTarget = 0x3FC0;
+                curPaletteFadeSpeed = 0x0020 * (speed + 1);
+            }
+            curSceneDataPC += 1;
             goto vmDecideWait;
         case 0x1D: //pfadeout
             curAsyncActions |= ASYNC_PALETTE;
             curAsyncPaletteAction = APAL_PFADEOUT;
-            curSceneDataPC += 1; //stub, TODO
+            {
+                unsigned char arg = *(curSceneData + curSceneDataPC);
+                short amt = arg & 0x07;
+                short speed = (arg >> 3) & 0x1F;
+                curPFadeAmt = curPaletteFadeTarget;
+                curPaletteFadeTarget -= 0x07F8 * (amt + 1);
+                if (curPaletteFadeTarget < 0) curPaletteFadeTarget = 0;
+                curPaletteFadeSpeed = 0x0020 * (speed + 1);
+            }
+            curSceneDataPC += 1;
             goto vmDecideWait;
         case 0x1E: //phuerotate
-            curAsyncActions |= ASYNC_FADE;
-            curAsyncFadeAction = AFADE_PHUEROTATE;
-            curSceneDataPC += 1; //stub, TODO
-            goto vmDecideWait;
+            {
+                unsigned char arg = *(curSceneData + curSceneDataPC);
+                if (arg == 0)
+                {
+                    curAsyncActions &= ~ASYNC_FADE;
+                    curHueRotationFactor = 0;
+                    SetDisplayPaletteToOut();
+                }
+                else
+                {
+                    curAsyncActions |= ASYNC_FADE;
+                    curAsyncFadeAction = AFADE_PHUEROTATE;
+                    curHueRotationSpeed = (unsigned short)(arg) * 16;
+                }
+            }
+            curSceneDataPC += 1;
+            break;
         case 0x1F: //shake
             curAsyncActions |= ASYNC_SCROLL;
             curAsyncScrollAction = ASCR_SHAKE;
