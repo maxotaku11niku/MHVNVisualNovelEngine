@@ -579,7 +579,7 @@ int ParseInputFile(const char* contents, const long length, const char* filename
     return 0;
 }
 
-int ArchiveText(const char* outputFilename, const char** inputFilenames, const int numInputFiles, const bool sjis)
+int ArchiveText(const char* outputFilename, const char** inputFilenames, const int numInputFiles)
 {
     unsigned char* inputFileContents;
     int numInvalidFiles = 0;

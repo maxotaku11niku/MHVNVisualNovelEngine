@@ -29,12 +29,12 @@
 #include "platform/x86strops.h"
 #include "platform/x86segments.h"
 #include "platform/filehandling.h"
-//#include "platform/unrealhwaddr.h"
 #include "platform/pc98_crtbios.h"
 #include "platform/pc98_gdc.h"
 #include "platform/pc98_chargen.h"
 #include "platform/pc98_keyboard.h"
 #include "platform/pc98_egc.h"
+#include "unicode.h"
 #include "stdbuffer.h"
 #include "rootinfo.h"
 #include "sceneengine.h"
@@ -684,14 +684,15 @@ static const char* PreprocessString(const __far char* str, unsigned char autolb,
     pch = stringBuffer2;
     char* sspch = stringBuffer1;
     char* bpp = 0;
-    ch = *sspch++;
+    //char uch = *sspch++;
+    unsigned int uch = UTF8CharacterDecode(&sspch);
     short curX = lx;
     short curY = ty;
-    while (ch)
+    while (uch)
     {
-        if (ch < 0x21) //control characters
+        if (uch < 0x21) //Control characters
         {
-            switch (ch)
+            switch (uch)
             {
                 case 0x09: //Tab
                     bpp = pch;
@@ -704,6 +705,11 @@ static const char* PreprocessString(const __far char* str, unsigned char autolb,
                     break;
                 case 0x0D: //CR
                     curX = lx;
+                    bpp = 0;
+                    break;
+                case 0x1B: //ESC, kludge to avoid confusing the UTF-8 decoder
+                    sspch++;
+                    uch = 0x0420;
                     break;
                 case 0x20: //Space
                     bpp = pch;
@@ -711,6 +717,15 @@ static const char* PreprocessString(const __far char* str, unsigned char autolb,
                     break;
             }
         }
+        else //Printable characters
+        {
+            int charWidth = UnicodeGetCharacterWidth(uch);
+            if (charWidth > 0)
+            {
+                curX += charWidth;
+            }
+        }
+        /*/
         else if (ch <= 0x7F || (((unsigned char)ch) > 0x9F && ((unsigned char)ch) < 0xE0)) //Single byte
         {
             if (ch == '-') bpp = pch + 1;
@@ -728,6 +743,7 @@ static const char* PreprocessString(const __far char* str, unsigned char autolb,
             twobytecode = SjisToInternalCode(twobytecode);
             curX += (twobytecode >= 0x0900 && twobytecode < 0x0C00) ? 8 : 16; //The characters in this range are logically halfwidth
         }
+        //*/
         if (curY >= by) //Do not allow text to overflow the box
         {
             break;
@@ -745,8 +761,20 @@ static const char* PreprocessString(const __far char* str, unsigned char autolb,
             curX = lx;
             curY += 16;
         }
-        else *pch++ = ch;
-        ch = *sspch++;
+        else
+        {
+             //*pch++ = uch;
+            char* usspch = sspch;
+            if (uch < 0x0080) usspch -= 1; //kludged my way around UTF-8
+            else if (uch < 0x0800) usspch -= 2;
+            else usspch -= 3;
+            while (usspch < sspch)
+            {
+                *pch++ = *usspch++;
+            }
+        }
+        //uch = *sspch++;
+        uch = UTF8CharacterDecode(&sspch);
     }
     *pch = 0; //null terminate, as usual
     return stringBuffer2;
@@ -772,223 +800,31 @@ void StartAnimatedStringToWrite(const __far char* str, const short x, const shor
     Memset16Near(0xFFFF, charFade, 8);
 }
 
-int StringWriteAnimationFrame(unsigned char skip)
-{
-    if (skip) //If a skip is requested, just write the entire string out with its intended formatting, and return the end of animation signal
-    {
-        animReachedEndOfString = 1;
-        animLength = 0;
-        WriteString(stringToAnimWrite, currentAnimWriteX, currentAnimWriteY, currentAnimDefaultFormat, 0);
-        return 1;
-    }
-    unsigned char ch;
-    unsigned short twobytecode;
-    const char* str = curAnimStringPos;
-    short defFormat = currentAnimDefaultFormat;
-    short format = currentAnimFormat;
-    short x = currentAnimWriteX;
-    short y = currentAnimWriteY;
-    short curX = currentAnimNextWriteX;
-    short curY = currentAnimNextWriteY;
-    char nullTerm = animReachedEndOfString;
-    unsigned long* nextCharBuf = animCharBuf + 16 * chBufStartNum;
-    //Input new characters into the buffer
-    if (waitFrames <= 0)
-    {
-        while (!nullTerm)
-        {
-            ch = *str++;
-            if (ch)
-            {
-                if (ch < 0x20) //control characters
-                {
-                    switch (ch)
-                    {
-                        case 0x09: //Tab
-                        {
-                            short delX = curX - x + 32;
-                            delX &= 0xFFE0; //Tab stops every 4 halfwidth characters
-                            curX = x + delX;
-                            waitFrames = waitPerChar;
-                            break;
-                        }
-                        case 0x0A: //LF
-                            curY += 16;
-                            break;
-                        case 0x0D: //CR
-                            curX = x;
-                            waitFrames = waitPerChar;
-                            break;
-                        case 0x1B: //ESC, used for formatting escape sequences
-                            ch = *str++;
-                            switch ((ch & 0xF0) >> 4)
-                            {
-                                case 0x00: //intentional nop
-                                    if (ch & 0x0F) break;
-                                    else
-                                    {
-                                        nullTerm = 1; //null terminate
-                                        break;
-                                    }
-                                case 0x01: //set formatting flags, section 0
-                                    format = (format & (~FORMAT_PART_MAIN)) | (ch & 0x0F);
-                                    break;
-                                case 0x02: //set formatting flags, section 1
-                                    format = (format & (~FORMAT_PART_UNUSED)) | ((ch & 0x0F) << 4);
-                                    break;
-                                case 0x03: //set formatting flags, section 2
-                                    format = (format & (~FORMAT_PART_FADE)) | ((ch & 0x0F) << 8);
-                                    break;
-                                case 0x04: //set formatting flags, text colour
-                                    format = (format & (~FORMAT_PART_COLOUR)) | ((ch & 0x0F) << 12);
-                                    break;
-                                case 0x05: //custom protagonist information inject (this is handled by a preprocessor, so do nothing here)
-                                    break;
-                                case 0x06: //wait for some time before continuing
-                                    waitFrames += 10 * ((ch & 0x0F) + 1);
-                                    goto LdrawT;
-                                case 0x07: //set wait between characters
-                                    waitPerChar = ch & 0x0F;
-                                    break;
-                                case 0x08: //unassigned
-                                case 0x09: //unassigned
-                                case 0x0A: //unassigned
-                                case 0x0B: //unassigned
-                                case 0x0C: //unassigned
-                                case 0x0D: //unassigned
-                                case 0x0E: //unassigned
-                                    break;
-                                case 0x0F: //reset sections
-                                    format = (format & (~FORMAT_PART_MAIN)) | ((ch & 0x1 ? defFormat : format) & FORMAT_PART_MAIN);
-                                    format = (format & (~FORMAT_PART_UNUSED)) | ((ch & 0x2 ? defFormat : format) & FORMAT_PART_UNUSED);
-                                    format = (format & (~FORMAT_PART_FADE)) | ((ch & 0x4 ? defFormat : format) & FORMAT_PART_FADE);
-                                    format = (format & (~FORMAT_PART_COLOUR)) | ((ch & 0x8 ? defFormat : format) & FORMAT_PART_COLOUR);
-                                    break;
-                            }
-                            break;
-                    }
-                }
-                else if (ch <= 0x7F || (ch > 0x9F && ch < 0xE0)) //Single byte
-                {
-                    twobytecode = ch << 8;
-                    if (format & FORMAT_SHADOW) charFlags[chBufStartNum] = 1;
-                    else charFlags[chBufStartNum] = 0;
-                    GetCharacterDataEditFriendly(twobytecode, nextCharBuf);
-                    BoldenCharLeft(nextCharBuf, 0);
-                    if (format & FORMAT_ITALIC) ItaliciseChar(nextCharBuf, 0);
-                    if (format & FORMAT_BOLD) BoldenCharRight(nextCharBuf, 0);
-                    if (format & FORMAT_UNDERLINE) UnderlineChar(nextCharBuf, 8);
-                    if (format & FORMAT_PART_FADE) MaskChar(nextCharBuf, &bayer4x4masks[60 - (FORMAT_FADE_GET(format) << 2)], 0);
-                    SwapCharDataFormats(nextCharBuf, 0);
-                    charColours[chBufStartNum] = FORMAT_COLOUR_GET(format);
-                    charXs[chBufStartNum] = curX;
-                    charYs[chBufStartNum] = curY;
-                    charFade[chBufStartNum] = 0;
-                    curX += 8;
-                    waitFrames = waitPerChar;
-                    break;
-                }
-                else //double byte
-                {
-                    twobytecode = ch << 8;
-                    ch = *str++;
-                    if (!ch)
-                    {
-                        nullTerm = 1;
-                        break; //Standard null termination
-                    }
-                    twobytecode |= ch;
-                    twobytecode = SjisToInternalCode(twobytecode);
-                    short actualWidth = (twobytecode >= 0x0900 && twobytecode < 0x0C00) ? 8 : 16; //The characters in this range are logically halfwidth
-                    if (format & FORMAT_SHADOW) charFlags[chBufStartNum] = 1;
-                    else charFlags[chBufStartNum] = 0;
-                    GetCharacterDataEditFriendly(twobytecode, nextCharBuf);
-                    BoldenCharLeft(nextCharBuf, 0);
-                    char is32Pixels = 0;
-                    if (format & FORMAT_ITALIC) { ItaliciseChar(nextCharBuf, 1); is32Pixels = 0x02; }
-                    if (format & FORMAT_BOLD) { BoldenCharRight(nextCharBuf, 1); is32Pixels = 0x02; }
-                    if (format & FORMAT_UNDERLINE) UnderlineChar(nextCharBuf, actualWidth);
-                    if (format & FORMAT_PART_FADE) MaskChar(nextCharBuf, &bayer4x4masks[60 - (FORMAT_FADE_GET(format) << 2)], is32Pixels);
-                    SwapCharDataFormats(nextCharBuf, is32Pixels);
-                    charFlags[chBufStartNum] |= is32Pixels;
-                    charColours[chBufStartNum] = FORMAT_COLOUR_GET(format);
-                    charXs[chBufStartNum] = curX;
-                    charYs[chBufStartNum] = curY;
-                    charFade[chBufStartNum] = 0;
-                    curX += actualWidth;
-                    waitFrames = waitPerChar;
-                    break;
-                }
-            }
-            else
-            {
-                nullTerm = 1;
-                break;
-            }
-        }
-    }
-    else
-    {
-        waitFrames--;
-    }
-    LdrawT:
-    curAnimStringPos = str;
-    currentAnimFormat = format;
-    currentAnimNextWriteX = curX;
-    currentAnimNextWriteY = curY;
-    animReachedEndOfString = nullTerm;
-    if (nullTerm)
-    {
-        chBufStartNum--;
-        chBufStartNum &= 0xF;
-        animLength--;
-    }
-    for (unsigned short i = 0; i < animLength; i++)
-    {
-        unsigned short chBufNum = (chBufStartNum - i) & 0xF;
-        unsigned short fadeStart = charFade[chBufNum] * 4;
-        if (fadeStart < 64)
-        {
-            charFade[chBufNum]++;
-            const unsigned short curcol = charColours[chBufNum];
-            if (charFlags[chBufNum] & 0x01)
-            {
-                EGCSetFGColour(shadowColours[curcol]);
-                DrawCharMask(&animCharBuf[16 * chBufNum], charXs[chBufNum] + 1, charYs[chBufNum] + 1, bayer4x4masks + fadeStart, charFlags[chBufNum] & 0x02);
-            }
-            EGCSetFGColour(curcol);
-            DrawCharMask(&animCharBuf[16 * chBufNum], charXs[chBufNum], charYs[chBufNum], bayer4x4masks + fadeStart, charFlags[chBufNum] & 0x02);
-        }
-    }
-    chBufStartNum++;
-    chBufStartNum &= 0xF;
-    if (animLength <= 0) return 1;
-    else return 0;
-}
-
 void WriteStringInternal(const char* str, const short x, const short y, short format)
 {
-    unsigned char ch = 0xFF;
-    short twobytecode;
+    //unsigned char ch = 0xFF;
+    unsigned int ch = 0xFFFF;
+    const unsigned char* pstr = (const unsigned char*)str;
+    //short twobytecode;
     short curX = x;
     short curY = y;
     const short defFormat = format;
     /*
-        CCCC FFFF 000T SUIB
+        CCCC FFFF 0000 SUIB
         B -> bold flag
         I -> italic flag
         U -> underline flag
         S -> shadow flag
-        T -> halfwidth font (0 -> JIS-X-0201 default, 1 -> NEC specific)
         F -> fade value (0 -> no fade, F -> almost complete fade)
         C -> text colour (shadow colour is automatically picked)
     */
     while (1)
     {
-        ch = *str++;
+        //ch = *str++;
+        ch = UTF8CharacterDecode(&pstr);
         if (ch)
         {
-            if (ch <= 0x20) //control characters
+            if (ch <= 0x20) //Control characters
             {
                 switch (ch)
                 {
@@ -1005,8 +841,9 @@ void WriteStringInternal(const char* str, const short x, const short y, short fo
                     case 0x0D: //CR
                         curX = x;
                         break;
-                    case 0x1B: //ESC, used for formatting escape sequences
-                        ch = *str++;
+                    case 0x1B: //ESC, used for formatting escape sequences, this technically makes the text data non-compliant UTF-8
+                        //ch = *str++;
+                        ch = *pstr++;
                         switch ((ch & 0xF0) >> 4)
                         {
                             case 0x00: //intentional nop
@@ -1062,6 +899,32 @@ void WriteStringInternal(const char* str, const short x, const short y, short fo
                         break;
                 }
             }
+            /**/
+            else //Printable characters (at least, if they're stored in the font)
+            {
+                int charWidth = UnicodeGetCharacterData(ch, charbuf);
+                if (charWidth < 0) //Character has no glyph -> skip it
+                {
+                    continue;
+                }
+                char drawWidth = charWidth;
+                if (format & FORMAT_ITALIC) { ItaliciseChar(charbuf, (drawWidth + 7) > 16); drawWidth += 7; }
+                if (format & FORMAT_BOLD) { BoldenCharRight(charbuf, (drawWidth + 1) > 16); drawWidth += 1; }
+                if (format & FORMAT_UNDERLINE) UnderlineChar(charbuf, charWidth);
+                char is32Pixels = drawWidth > 16;
+                if (format & FORMAT_PART_FADE) MaskChar(charbuf, &bayer4x4masks[60 - (FORMAT_FADE_GET(format) << 2)], is32Pixels);
+                SwapCharDataFormats(charbuf, is32Pixels);
+                if (format & FORMAT_SHADOW)
+                {
+                    EGCSetFGColour(shadowColours[FORMAT_COLOUR_GET(format)]);
+                    DrawChar(charbuf, curX + 1, curY + 1, is32Pixels);
+                }
+                EGCSetFGColour(FORMAT_COLOUR_GET(format));
+                DrawChar(charbuf, curX, curY, is32Pixels);
+                curX += charWidth;
+            }
+            //*/
+            /*/
             else if (ch <= 0x7F || (ch > 0x9F && ch < 0xE0)) //Single byte
             {
                 twobytecode = ch << 8;
@@ -1106,9 +969,251 @@ void WriteStringInternal(const char* str, const short x, const short y, short fo
                 DrawChar(charbuf, curX, curY, is32Pixels);
                 curX += actualWidth;
             }
+            //*/
         }
         else break; //Standard null termination
     }
+}
+
+int StringWriteAnimationFrame(unsigned char skip)
+{
+    if (skip) //If a skip is requested, just write the entire string out with its intended formatting, and return the end of animation signal
+    {
+        animReachedEndOfString = 1;
+        animLength = 0;
+        WriteStringInternal(stringToAnimWrite, currentAnimWriteX, currentAnimWriteY, currentAnimDefaultFormat);
+        return 1;
+    }
+    //unsigned char ch;
+    unsigned int ch;
+    //unsigned short twobytecode;
+    //const char* str = curAnimStringPos;
+    const unsigned char* str = (const unsigned char*)curAnimStringPos;
+    short defFormat = currentAnimDefaultFormat;
+    short format = currentAnimFormat;
+    short x = currentAnimWriteX;
+    short y = currentAnimWriteY;
+    short curX = currentAnimNextWriteX;
+    short curY = currentAnimNextWriteY;
+    char nullTerm = animReachedEndOfString;
+    unsigned long* nextCharBuf = animCharBuf + 16 * chBufStartNum;
+    //Input new characters into the buffer
+    if (waitFrames <= 0)
+    {
+        while (!nullTerm)
+        {
+            //ch = *str++;
+            ch = UTF8CharacterDecode(&str);
+            if (ch)
+            {
+                if (ch <= 0x20) //Control characters
+                {
+                    switch (ch)
+                    {
+                        case 0x09: //Tab
+                        {
+                            short delX = curX - x + 32;
+                            delX &= 0xFFE0; //Tab stops every 4 halfwidth characters
+                            curX = x + delX;
+                            waitFrames = waitPerChar;
+                            break;
+                        }
+                        case 0x0A: //LF
+                            curY += 16;
+                            break;
+                        case 0x0D: //CR
+                            curX = x;
+                            waitFrames = waitPerChar;
+                            break;
+                        case 0x1B: //ESC, used for formatting escape sequences, this technically makes the text data non-compliant UTF-8
+                            ch = *str++;
+                            switch ((ch & 0xF0) >> 4)
+                            {
+                                case 0x00: //intentional nop
+                                    if (ch & 0x0F) break;
+                                    else
+                                    {
+                                        nullTerm = 1; //null terminate
+                                        break;
+                                    }
+                                case 0x01: //set formatting flags, section 0
+                                    format = (format & (~FORMAT_PART_MAIN)) | (ch & 0x0F);
+                                    break;
+                                case 0x02: //set formatting flags, section 1
+                                    format = (format & (~FORMAT_PART_UNUSED)) | ((ch & 0x0F) << 4);
+                                    break;
+                                case 0x03: //set formatting flags, section 2
+                                    format = (format & (~FORMAT_PART_FADE)) | ((ch & 0x0F) << 8);
+                                    break;
+                                case 0x04: //set formatting flags, text colour
+                                    format = (format & (~FORMAT_PART_COLOUR)) | ((ch & 0x0F) << 12);
+                                    break;
+                                case 0x05: //custom protagonist information inject (this is handled by a preprocessor, so do nothing here)
+                                    break;
+                                case 0x06: //wait for some time before continuing
+                                    waitFrames += 10 * ((ch & 0x0F) + 1);
+                                    goto LdrawT;
+                                case 0x07: //set wait between characters
+                                    waitPerChar = ch & 0x0F;
+                                    break;
+                                case 0x08: //unassigned
+                                case 0x09: //unassigned
+                                case 0x0A: //unassigned
+                                case 0x0B: //unassigned
+                                case 0x0C: //unassigned
+                                case 0x0D: //unassigned
+                                case 0x0E: //unassigned
+                                    break;
+                                case 0x0F: //reset sections
+                                    format = (format & (~FORMAT_PART_MAIN)) | ((ch & 0x1 ? defFormat : format) & FORMAT_PART_MAIN);
+                                    format = (format & (~FORMAT_PART_UNUSED)) | ((ch & 0x2 ? defFormat : format) & FORMAT_PART_UNUSED);
+                                    format = (format & (~FORMAT_PART_FADE)) | ((ch & 0x4 ? defFormat : format) & FORMAT_PART_FADE);
+                                    format = (format & (~FORMAT_PART_COLOUR)) | ((ch & 0x8 ? defFormat : format) & FORMAT_PART_COLOUR);
+                                    break;
+                            }
+                            break;
+                        case 0x20: //space
+                            Memset16Near(0, nextCharBuf, 32);
+                            if (format & FORMAT_UNDERLINE)
+                            {
+                                if (format & FORMAT_SHADOW) charFlags[chBufStartNum] = 1;
+                                UnderlineChar(nextCharBuf, 8);
+                                if (format & FORMAT_PART_FADE) MaskChar(nextCharBuf, &bayer4x4masks[60 - (FORMAT_FADE_GET(format) << 2)], 0);
+                                SwapCharDataFormats(nextCharBuf, 0);
+                            }
+                            charColours[chBufStartNum] = FORMAT_COLOUR_GET(format);
+                            charXs[chBufStartNum] = curX;
+                            charYs[chBufStartNum] = curY;
+                            charFade[chBufStartNum] = 0;
+                            curX += 8;
+                            waitFrames = waitPerChar;
+                            goto LdrawT;
+                    }
+                }
+                /**/
+                else //Printable characters (at least, if they're stored in the font)
+                {
+                    int charWidth = UnicodeGetCharacterData(ch, nextCharBuf);
+                    if (charWidth < 0) //Character has no glyph -> skip it
+                    {
+                        continue;
+                    }
+                    if (format & FORMAT_SHADOW) charFlags[chBufStartNum] = 1;
+                    char drawWidth = charWidth;
+                    if (format & FORMAT_ITALIC) { ItaliciseChar(nextCharBuf, (drawWidth + 7) > 16); drawWidth += 7; }
+                    if (format & FORMAT_BOLD) { BoldenCharRight(nextCharBuf, (drawWidth + 1) > 16); drawWidth += 1; }
+                    if (format & FORMAT_UNDERLINE) UnderlineChar(nextCharBuf, charWidth);
+                    char is32Pixels = (drawWidth > 16) << 1;
+                    if (format & FORMAT_PART_FADE) MaskChar(nextCharBuf, &bayer4x4masks[60 - (FORMAT_FADE_GET(format) << 2)], is32Pixels);
+                    SwapCharDataFormats(nextCharBuf, is32Pixels);
+                    charFlags[chBufStartNum] |= is32Pixels;
+                    charColours[chBufStartNum] = FORMAT_COLOUR_GET(format);
+                    charXs[chBufStartNum] = curX;
+                    charYs[chBufStartNum] = curY;
+                    charFade[chBufStartNum] = 0;
+                    curX += charWidth;
+                    waitFrames = waitPerChar;
+                    break;
+                }
+                //*/
+                /*/
+                else if (ch <= 0x7F || (ch > 0x9F && ch < 0xE0)) //Single byte
+                {
+                    twobytecode = ch << 8;
+                    if (format & FORMAT_SHADOW) charFlags[chBufStartNum] = 1;
+                    else charFlags[chBufStartNum] = 0;
+                    GetCharacterDataEditFriendly(twobytecode, nextCharBuf);
+                    BoldenCharLeft(nextCharBuf, 0);
+                    if (format & FORMAT_ITALIC) ItaliciseChar(nextCharBuf, 0);
+                    if (format & FORMAT_BOLD) BoldenCharRight(nextCharBuf, 0);
+                    if (format & FORMAT_UNDERLINE) UnderlineChar(nextCharBuf, 8);
+                    if (format & FORMAT_PART_FADE) MaskChar(nextCharBuf, &bayer4x4masks[60 - (FORMAT_FADE_GET(format) << 2)], 0);
+                    SwapCharDataFormats(nextCharBuf, 0);
+                    charColours[chBufStartNum] = FORMAT_COLOUR_GET(format);
+                    charXs[chBufStartNum] = curX;
+                    charYs[chBufStartNum] = curY;
+                    charFade[chBufStartNum] = 0;
+                    curX += 8;
+                    waitFrames = waitPerChar;
+                    break;
+                }
+                else //double byte
+                {
+                    twobytecode = ch << 8;
+                    ch = *str++;
+                    if (!ch)
+                    {
+                        nullTerm = 1;
+                        break; //Standard null termination
+                    }
+                    twobytecode |= ch;
+                    twobytecode = SjisToInternalCode(twobytecode);
+                    short actualWidth = (twobytecode >= 0x0900 && twobytecode < 0x0C00) ? 8 : 16; //The characters in this range are logically halfwidth
+                    if (format & FORMAT_SHADOW) charFlags[chBufStartNum] = 1;
+                    else charFlags[chBufStartNum] = 0;
+                    GetCharacterDataEditFriendly(twobytecode, nextCharBuf);
+                    BoldenCharLeft(nextCharBuf, 0);
+                    char is32Pixels = 0;
+                    if (format & FORMAT_ITALIC) { ItaliciseChar(nextCharBuf, 1); is32Pixels = 0x02; }
+                    if (format & FORMAT_BOLD) { BoldenCharRight(nextCharBuf, 1); is32Pixels = 0x02; }
+                    if (format & FORMAT_UNDERLINE) UnderlineChar(nextCharBuf, actualWidth);
+                    if (format & FORMAT_PART_FADE) MaskChar(nextCharBuf, &bayer4x4masks[60 - (FORMAT_FADE_GET(format) << 2)], is32Pixels);
+                    SwapCharDataFormats(nextCharBuf, is32Pixels);
+                    charFlags[chBufStartNum] |= is32Pixels;
+                    charColours[chBufStartNum] = FORMAT_COLOUR_GET(format);
+                    charXs[chBufStartNum] = curX;
+                    charYs[chBufStartNum] = curY;
+                    charFade[chBufStartNum] = 0;
+                    curX += actualWidth;
+                    waitFrames = waitPerChar;
+                    break;
+                }
+                //*/
+            }
+            else
+            {
+                nullTerm = 1;
+                break;
+            }
+        }
+    }
+    else
+    {
+        waitFrames--;
+    }
+    LdrawT:
+    curAnimStringPos = str;
+    currentAnimFormat = format;
+    currentAnimNextWriteX = curX;
+    currentAnimNextWriteY = curY;
+    animReachedEndOfString = nullTerm;
+    if (nullTerm)
+    {
+        chBufStartNum--;
+        chBufStartNum &= 0xF;
+        animLength--;
+    }
+    for (unsigned short i = 0; i < animLength; i++)
+    {
+        unsigned short chBufNum = (chBufStartNum - i) & 0xF;
+        unsigned short fadeStart = charFade[chBufNum] * 4;
+        if (fadeStart < 64)
+        {
+            charFade[chBufNum]++;
+            const unsigned short curcol = charColours[chBufNum];
+            if (charFlags[chBufNum] & 0x01)
+            {
+                EGCSetFGColour(shadowColours[curcol]);
+                DrawCharMask(&animCharBuf[16 * chBufNum], charXs[chBufNum] + 1, charYs[chBufNum] + 1, bayer4x4masks + fadeStart, charFlags[chBufNum] & 0x02);
+            }
+            EGCSetFGColour(curcol);
+            DrawCharMask(&animCharBuf[16 * chBufNum], charXs[chBufNum], charYs[chBufNum], bayer4x4masks + fadeStart, charFlags[chBufNum] & 0x02);
+        }
+    }
+    chBufStartNum++;
+    chBufStartNum &= 0xF;
+    if (animLength <= 0) return 1;
+    else return 0;
 }
 
 void WriteString(const __far char* str, const short x, const short y, short format, unsigned char autolb)

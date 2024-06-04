@@ -28,6 +28,7 @@
 #include "platform/pc98_egc.h"
 #include "platform/pc98_keyboard.h"
 #include "platform/pc98_interrupt.h"
+#include "unicode.h"
 #include "isr.h"
 #include "textengine.h"
 #include "rootinfo.h"

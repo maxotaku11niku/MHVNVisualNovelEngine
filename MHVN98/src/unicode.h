@@ -19,18 +19,22 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  *
- * Some buffers that I couldn't really put anywhere else
+ * Unicode handling
  */
 
 #pragma once
 
-extern unsigned char smallFileBuffer[1024];
+//Temporary function used in lieu of loading fonts from files
+void LoadASCIICharactersFromFontROM();
 
-//0x0000 - 0x7FFF maps to [0 - 2pi), so x is a 1.15 fixed point number representing the number of full turns
-//These return 2.14 signed fixed point numbers
-short Sin(unsigned int x);
-short Cos(unsigned int x);
-//Returns a 1.15 fixed point number, arguments must be the same type of fixed point number for the answer to make sense
-unsigned int Atan2(short y, short x);
-//Doesn't matter if it's fixed point or whatever
-unsigned short Sqrt(unsigned long x);
+//Returns a single Unicode codepoint from a UTF-8 string, advancing the string pointer to the next character
+unsigned int UTF8CharacterDecode(const unsigned char** pstr);
+
+//Returns the width of a character. Width will be -1 if the character is not in the font
+int UnicodeGetCharacterWidth(unsigned int code);
+
+//Returns the width of a character, and puts the glyph data into buffer assuming the edit-friendly format. Width will be -1 if the character is not in the font
+int UnicodeGetCharacterData(unsigned int code, unsigned long* buffer);
+
+//Swap glyph data format from edit-friendly to VRAM-compatible, one-way operation, can pack into 16 bits per character row if necessary
+void SwapCharDataFormats(unsigned long* buffer, int bits32);

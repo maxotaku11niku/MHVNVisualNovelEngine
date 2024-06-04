@@ -35,8 +35,7 @@ void DisplayHelp(void)
          "mhvntxar -o [output filename] <options> [list of filenames, space separated]\n\n"
          "Options:\n\n"
          "-h             Displays this help.\n"
-         "-o [filename]  Defines the filename of the output file, with extension.\n"
-         "-s             Convert input format text to Shift-JIS, which is currently necessary for valid text on MHVN98.");
+         "-o [filename]  Defines the filename of the output file, with extension.");
 }
 
 int main(int argc, char** argv)
@@ -51,7 +50,6 @@ int main(int argc, char** argv)
     }
 
     char* outputFilename = NULL;
-    bool isShiftJIS = false;
     char** inputFilenames;
     int numInputFiles = 0;
 
@@ -71,7 +69,6 @@ int main(int argc, char** argv)
             }
             outputFilename = argv[i];
         }
-        else if (!strcmp(argv[i], "-s")) isShiftJIS = true;
         else if (!strcmp(argv[i], "-h"))
         {
             DisplayHelp();
@@ -101,7 +98,7 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    int result = ArchiveText(outputFilename, (const char**)inputFilenames, numInputFiles, isShiftJIS);
+    int result = ArchiveText(outputFilename, (const char**)inputFilenames, numInputFiles);
 
     free(inputFilenames);
     if (!result)

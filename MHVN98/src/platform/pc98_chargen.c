@@ -91,6 +91,7 @@ void SetCharacterData(unsigned short code, const unsigned long* buffer)
     }
 }
 
+/* Part of unicode.c now
 void SwapCharDataFormats(unsigned long* buffer, int bits32)
 {
     if (!bits32) //Also pack to 16 bits per character row, one way operation
@@ -114,6 +115,7 @@ void SwapCharDataFormats(unsigned long* buffer, int bits32)
         }
     }
 }
+*/
 
 unsigned short SjisToInternalCode(const unsigned short code)
 {

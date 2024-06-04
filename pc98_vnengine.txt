@@ -122,6 +122,15 @@ What follows are some details on the data formats for this engine
 
 For the purposes of playing music, the executable expects to be able to call PMD, so some PMD instance should already be loaded. This instance must be unloaded when the user quits. Handle this through a batch file or something. PMDWin or something similar should be used for a 'modern system' executable (i.e. emulating the YM2608 and interpreting .M and .M2 files as PMD would do)
 
+* Compression *
+
+All compressed data blocks, wherever they occur, use LZ4 compression. LZ4-compressed blocks always use the following format:
+
+0x00    uint32                  compressed_size  Compressed size of the block
+0x04    uint8[compressed_size]  compressed_data  LZ4-compressed data
+
+Compression uses liblz4's implementation (see https://github.com/lz4/lz4 for more information), use LZ4_HC for better ratios. I have decided that it would be much better to use a well-tested compression algorithm instead of devising my own.
+
 * Master VN descriptor (ROOTINFO.DAT) *
 
 This file contains references to all other data files needed and some info on global VN details. It is the only file path for read-only data hardcoded into the executable, so the engine *needs* to find a ROOTINFO.DAT.
@@ -257,7 +266,7 @@ Adding support for multiple languages is therefore a case of adding to this list
 
 * Text data archive (textdat_file) *
 
-This file contains all the text for a single language.
+This file contains all the text for a single language. All the text in this file must be UTF-8.
 
 0x00000000	uint32	systext_ptr	Pointer to the system text strings
 0x00000004	uint32	credits_ptr	Pointer to credits text strings

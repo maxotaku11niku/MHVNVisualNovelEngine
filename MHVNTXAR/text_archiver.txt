@@ -3,13 +3,12 @@
 mhvntxar -h
 mhvntxar -o [output filename] <options> [list of files, space separated]
 
-Takes the contents of each of the input files, parses them as text description files, then archives their contents into the output which will be read for linking with MHVNLINK.
+Takes the contents of each of the input files, parses them as text description files, then archives their contents into the output which will be read for linking with MHVNLINK. Input files must be valid UTF-8 text.
 
 Options:
 
 -h             Displays this help.
 -o [filename]  Defines the filename of the output file, with extension.
--s             Convert input format text to Shift-JIS, which is currently necessary for valid text on MHVN98.
 
 -- * .otxa object file format * --
 

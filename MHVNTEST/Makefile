@@ -22,4 +22,4 @@ $(BUILD)/EN_GB.otxa : $(GBENGLISHFILES)
 	tools/mhvntxar -o $@ $^
 
 $(BUILD)/JA_JP.otxa : $(JAPANESEFILES)
-	tools/mhvntxar -o $@ -s $^
+	tools/mhvntxar -o $@ $^
