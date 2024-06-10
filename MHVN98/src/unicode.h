@@ -24,11 +24,21 @@
 
 #pragma once
 
-//Temporary function used in lieu of loading fonts from files
-void LoadASCIICharactersFromFontROM();
+//width - 1
+#define GLYPHCACHEINFO_WIDTHMASK 0x0F
+#define GLYPHCACHEINFO_INVALID   0xFF
+
+//Loads character ranges from the font file, and glyphs into the ASCII character cache
+void InitFontFile();
 
 //Returns a single Unicode codepoint from a UTF-8 string, advancing the string pointer to the next character
 unsigned int UTF8CharacterDecode(const unsigned char** pstr);
+
+//Loads a glyph directly from the current font file, returns some info. The glyph buffer must be 16 bits per row and 16 rows high. (TODO)
+unsigned char LoadGlyphFromFile(unsigned int code, unsigned char* buffer);
+
+//Tries to load a glyph into the glyph cache, returns the index of the requested glyph data, or -1 if the character can never be found in the glyph cache.
+int LoadGlyphCacheWithCharacter(unsigned int code);
 
 //Returns the width of a character. Width will be -1 if the character is not in the font
 int UnicodeGetCharacterWidth(unsigned int code);

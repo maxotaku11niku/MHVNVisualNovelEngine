@@ -247,7 +247,7 @@ int LinkTextData(const char* tDataFilename, char* outputFilename)
     return 0;
 }
 
-int LinkVN(const char* dir, const char* masterDesc, const char* sceneData, const char** textData, int numTextDatas, const char* bgData, const char* spriteData, const char* musicData, const char* sfxData, const char* sysData)
+int LinkVN(const char* dir, const char* masterDesc, const char* fontData, const char* sceneData, const char** textData, int numTextDatas, const char* bgData, const char* spriteData, const char* musicData, const char* sfxData, const char* sysData)
 {
     //Read in master descriptor
     FILE* masterDescFilePtr = fopen(masterDesc, "rb");
@@ -559,7 +559,7 @@ int LinkVN(const char* dir, const char* masterDesc, const char* sceneData, const
     char rootinfoFilename[512];
     strcpy(rootinfoFilename, fullDir);
     strcat(rootinfoFilename, "ROOTINFO.DAT");
-    unsigned char* rootinfo = (unsigned char*)calloc(0x6A, 1);
+    unsigned char* rootinfo = (unsigned char*)calloc(0x76, 1);
     rootinfo[0] = 'M'; rootinfo[1] = 'H'; rootinfo[2] = 'V'; rootinfo[3] = 'N'; //Magic number
     *((uint16_t*)(&rootinfo[0x04])) = VNFlags; //VNflags
     *((uint16_t*)(&rootinfo[0x06])) = (uint16_t)numGlobVars; //numstvar_glob
@@ -571,7 +571,34 @@ int LinkVN(const char* dir, const char* masterDesc, const char* sceneData, const
     *((uint16_t*)(&rootinfo[0x12])) = menuNotSelFormat; //format_menu_n
     *((uint16_t*)(&rootinfo[0x14])) = menuSelFormat; //format_menu_S
 
+    char fontDataFilename[512];
+    char fontDataFilenameNoDir[16];
+    memset(fontDataFilename, 0, 512);
+    strcpy(fontDataFilename, fullDir);
+    const char* fontFilenameNoDirPtr = GetFilenameNoDir(fontData);
+    const char* fontFilenameNoDirExtPtr = fontFilenameNoDirPtr;
+    const char* fontFilenameNoDirExt = NULL;
+    char dch = *fontFilenameNoDirExtPtr++;
+    while (dch)
+    {
+        if (dch == '.')
+        {
+            fontFilenameNoDirExt = fontFilenameNoDirExtPtr;
+        }
+        dch = *fontFilenameNoDirExtPtr++;
+    }
+    MakeOutputFilename(fontFilenameNoDirPtr, fontDataFilenameNoDir, fontFilenameNoDirExt);
+    strcat(fontDataFilename, fontDataFilenameNoDir);
     char* filenameptr = (char*)(&rootinfo[0x16]);
+    pch = fontDataFilenameNoDir;
+    ch = *pch++;
+    while(ch)
+    {
+        *filenameptr++ = ch;
+        ch = *pch++;
+    }
+
+    filenameptr = (char*)(&rootinfo[0x22]);
     pch = sceneDataFilenameNoDir;
     ch = *pch++;
     while(ch)
@@ -580,7 +607,7 @@ int LinkVN(const char* dir, const char* masterDesc, const char* sceneData, const
         ch = *pch++;
     }
 
-    strcpy((char*)(&rootinfo[0x22]), "LANGUAGE.DAT"); //fixed by design
+    strcpy((char*)(&rootinfo[0x2E]), "LANGUAGE.DAT"); //fixed by design
 
     char bgDataFilename[512];
     char bgDataFilenameNoDir[16];
@@ -589,7 +616,7 @@ int LinkVN(const char* dir, const char* masterDesc, const char* sceneData, const
     const char* bgFilenameNoDirPtr = GetFilenameNoDir(bgData);
     MakeOutputFilename(bgFilenameNoDirPtr, bgDataFilenameNoDir, "DAT");
     strcat(bgDataFilename, bgDataFilenameNoDir);
-    filenameptr = (char*)(&rootinfo[0x2E]);
+    filenameptr = (char*)(&rootinfo[0x3A]);
     pch = bgDataFilenameNoDir;
     ch = *pch++;
     while(ch)
@@ -605,7 +632,7 @@ int LinkVN(const char* dir, const char* masterDesc, const char* sceneData, const
     const char* spriteFilenameNoDirPtr = GetFilenameNoDir(spriteData);
     MakeOutputFilename(spriteFilenameNoDirPtr, spriteDataFilenameNoDir, "DAT");
     strcat(spriteDataFilename, spriteDataFilenameNoDir);
-    filenameptr = (char*)(&rootinfo[0x3A]);
+    filenameptr = (char*)(&rootinfo[0x46]);
     pch = spriteDataFilenameNoDir;
     ch = *pch++;
     while(ch)
@@ -621,7 +648,7 @@ int LinkVN(const char* dir, const char* masterDesc, const char* sceneData, const
     const char* musicFilenameNoDirPtr = GetFilenameNoDir(musicData);
     MakeOutputFilename(musicFilenameNoDirPtr, musicDataFilenameNoDir, "DAT");
     strcat(musicDataFilename, musicDataFilenameNoDir);
-    filenameptr = (char*)(&rootinfo[0x46]);
+    filenameptr = (char*)(&rootinfo[0x52]);
     pch = musicDataFilenameNoDir;
     ch = *pch++;
     while(ch)
@@ -637,7 +664,7 @@ int LinkVN(const char* dir, const char* masterDesc, const char* sceneData, const
     const char* sfxFilenameNoDirPtr = GetFilenameNoDir(sfxData);
     MakeOutputFilename(sfxFilenameNoDirPtr, sfxDataFilenameNoDir, "DAT");
     strcat(sfxDataFilename, sfxDataFilenameNoDir);
-    filenameptr = (char*)(&rootinfo[0x52]);
+    filenameptr = (char*)(&rootinfo[0x5E]);
     pch = sfxDataFilenameNoDir;
     ch = *pch++;
     while(ch)
@@ -653,7 +680,7 @@ int LinkVN(const char* dir, const char* masterDesc, const char* sceneData, const
     const char* sysFilenameNoDirPtr = GetFilenameNoDir(sysData);
     MakeOutputFilename(sysFilenameNoDirPtr, sysDataFilenameNoDir, "DAT");
     strcat(sysDataFilename, sysDataFilenameNoDir);
-    filenameptr = (char*)(&rootinfo[0x5E]);
+    filenameptr = (char*)(&rootinfo[0x6A]);
     pch = sysDataFilenameNoDir;
     ch = *pch++;
     while(ch)
@@ -669,7 +696,7 @@ int LinkVN(const char* dir, const char* masterDesc, const char* sceneData, const
         free(rootinfo);
         return 1;
     }
-    fwrite(rootinfo, 1, 0x6A, rootinfofile);
+    fwrite(rootinfo, 1, 0x76, rootinfofile);
     fclose(rootinfofile);
 
     free(rootinfo);

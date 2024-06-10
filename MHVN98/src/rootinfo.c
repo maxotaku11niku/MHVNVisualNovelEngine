@@ -44,7 +44,7 @@ int ReadInRootInfo()
         return result;
     }
     __far unsigned char* fb = smallFileBuffer;
-    ReadFile(handle, 0x7C, fb, &realReadLen);
+    ReadFile(handle, 0x80, fb, &realReadLen);
     for (int i = 0; i < 4; i++)
     {
         if (smallFileBuffer[i] != magicNumber[i])
@@ -65,13 +65,14 @@ int ReadInRootInfo()
     rootInfo.defFormatMenuItemSelected = *((unsigned short*)(smallFileBuffer + 0x14));
     for (int i = 0; i < 12; i++)
     {
-        rootInfo.sceneDataPath[i] = smallFileBuffer[0x16 + i];
-        rootInfo.langDataPath[i] = smallFileBuffer[0x22 + i];
-        rootInfo.BGDataPath[i] = smallFileBuffer[0x2E + i];
-        rootInfo.spriteDataPath[i] = smallFileBuffer[0x3A + i];
-        rootInfo.musicDataPath[i] = smallFileBuffer[0x46 + i];
-        rootInfo.sfxDataPath[i] = smallFileBuffer[0x52 + i];
-        rootInfo.systemDataPath[i] = smallFileBuffer[0x5E + i];
+        rootInfo.fontDataPath[i] = smallFileBuffer[0x16 + i];
+        rootInfo.sceneDataPath[i] = smallFileBuffer[0x22 + i];
+        rootInfo.langDataPath[i] = smallFileBuffer[0x2E + i];
+        rootInfo.BGDataPath[i] = smallFileBuffer[0x3A + i];
+        rootInfo.spriteDataPath[i] = smallFileBuffer[0x46 + i];
+        rootInfo.musicDataPath[i] = smallFileBuffer[0x52 + i];
+        rootInfo.sfxDataPath[i] = smallFileBuffer[0x5E + i];
+        rootInfo.systemDataPath[i] = smallFileBuffer[0x6A + i];
     }
     return CloseFile(handle);
 }

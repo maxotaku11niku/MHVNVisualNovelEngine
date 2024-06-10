@@ -133,6 +133,7 @@ int main(void)
     
     result = ReadInRootInfo();
     if (result) goto errorquit;
+    InitFontFile(); //If it fails, it fails. Not a fatal error, and if it happens it would be very obvious.
     result = InitLanguage(0);
     if (result) goto errorquit;
     result = SetupTextInfo();

@@ -11,6 +11,7 @@ Options:
 ALL OF THESE FLAGS MUST BE USED!:
 -o [directory]    Defines the directory into which ROOTINFO.DAT and every required data archive is put into.
 -d [filename]     Defines the filename of the master descriptor file.
+-f [filename]     Defines the filename of the font file.
 -s [filename]     Defines the filename of the scene data object file.
 -t [filename]     Defines the filename of a text data object file to include. This option can be specified as many times as necessary.
 -bg [filename]    Defines the filename of the background image data object file.

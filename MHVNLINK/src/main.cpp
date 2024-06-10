@@ -37,6 +37,7 @@ void DisplayHelp(void)
          "ALL OF THESE FLAGS MUST BE USED!:\n"
          "-o [directory]    Defines the directory into which ROOTINFO.DAT and every required data archive is put into.\n"
          "-d [filename]     Defines the filename of the master descriptor file.\n"
+         "-f [filename]     Defines the filename of the font file.\n"
          "-s [filename]     Defines the filename of the scene data object file.\n"
          "-t [filename]     Defines the filename of a text data object file to include. This option can be specified as many times as necessary.\n"
          "-bg [filename]    Defines the filename of the background image data object file.\n"
@@ -59,6 +60,7 @@ int main(int argc, char** argv)
 
     const char* outputDirectory;
     const char* masterDescriptorFilename;
+    const char* fontDataFilename;
     const char* sceneDataFilename;
     const char* bgDataFilename;
     const char* spriteDataFilename;
@@ -89,6 +91,15 @@ int main(int argc, char** argv)
                 break;
             }
             masterDescriptorFilename = argv[i];
+        }
+        else if (!strcmp(argv[i], "-f"))
+        {
+            i++;
+            if (i >= argc)
+            {
+                break;
+            }
+            fontDataFilename = argv[i];
         }
         else if (!strcmp(argv[i], "-s"))
         {
@@ -170,6 +181,7 @@ int main(int argc, char** argv)
 
     bool outputDirectoryNull = outputDirectory == NULL;
     bool masterDescriptorFilenameNull = masterDescriptorFilename == NULL;
+    bool fontDataFilenameNull = fontDataFilename == NULL;
     bool sceneDataFilenameNull = sceneDataFilename == NULL;
     bool bgDataFilenameNull = bgDataFilename == NULL;
     bool spriteDataFilenameNull = spriteDataFilename == NULL;
@@ -231,8 +243,13 @@ int main(int argc, char** argv)
         }
         puts("You'll need to include these in the future, so make sure your build files have placeholders!");
     }
+    if (fontDataFilenameNull)
+    {
+        puts("WARNING - Missing font file, required for proper Unicode support. Only plain ASCII text can be shown!");
+        fontDataFilename = "";
+    }
 
-    int result = LinkVN(outputDirectory, masterDescriptorFilename, sceneDataFilename, textDataFilenames, numTextDataFiles, bgDataFilename, spriteDataFilename, musicDataFilename, soundEffectDataFilename, systemDataFilename);
+    int result = LinkVN(outputDirectory, masterDescriptorFilename, fontDataFilename, sceneDataFilename, textDataFilenames, numTextDataFiles, bgDataFilename, spriteDataFilename, musicDataFilename, soundEffectDataFilename, systemDataFilename);
     if (!result)
     {
         puts("Success! All data files linked up!");

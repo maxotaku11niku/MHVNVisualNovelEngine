@@ -26,7 +26,7 @@ What won't be hosted here are tools that are NOT specific to this project (image
 
 At minimum, I'm looking to put the following things into this engine:
 
-* Rich text rendering (mostly done, just need to handle drawing to a proper graphical box)
+* Rich text rendering (mostly done, adding Unicode support)
 * Changeable character sprites and CG images (I'm planning out a better format than the attempt I made earlier)
 * Music provided through PMD (I haven't programmed anything like this so this is the best way forward)
 * Sound effects (I made an ADPCM format to keep file sizes down)
@@ -126,8 +126,8 @@ For the purposes of playing music, the executable expects to be able to call PMD
 
 All compressed data blocks, wherever they occur, use LZ4 compression. LZ4-compressed blocks always use the following format:
 
-0x00    uint32                  compressed_size  Compressed size of the block
-0x04    uint8[compressed_size]  compressed_data  LZ4-compressed data
+0x00  uint32                  compressed_size  Compressed size of the block
+0x04  uint8[compressed_size]  compressed_data  LZ4-compressed data
 
 Compression uses liblz4's implementation (see https://github.com/lz4/lz4 for more information), use LZ4_HC for better ratios. I have decided that it would be much better to use a well-tested compression algorithm instead of devising my own.
 
@@ -135,23 +135,24 @@ Compression uses liblz4's implementation (see https://github.com/lz4/lz4 for mor
 
 This file contains references to all other data files needed and some info on global VN details. It is the only file path for read-only data hardcoded into the executable, so the engine *needs* to find a ROOTINFO.DAT.
 
-0x00	char[4]		magic_num	"MHVN" in ASCII. This magic number is here just as a sanity check to make sure that this ROOTINFO.DAT is actually valid before finding out the hard way.
-0x04	uint16		VNflags		Some flags to control high-level behaviour
-0x06	uint16		numstvar_glob	Number of global (save independent) variables to reserve
-0x08	uint16		numflags_glob	Number of global (save independent) bitflags to reserve
-0x0A	uint16		numstvar_loc	Number of save-local state variables to reserve
-0x0C	uint16		numflags_loc	Number of save-local bitflags to reserve
-0x0E	uint16		format_norm	Default format number for normal text
-0x10	uint16		format_char	Format number for character name text
-0x12	uint16		format_menu_notsel	Format number for menu text that is not selected
-0x14	uint16		format_menu_sel	Format number for menu text that is selected
-0x16	char[12]	scenedat_file	The filename of the scene data archive, where all scene data is stored. Null terminated
-0x22	char[12]	langdat_file	The filename of the language metadata archive, where every language supported is listed and all corresponding text files given. Null terminated
-0x2E	char[12]	bgdat_file	The filename of the background image data archive, where all BGs and CGs are stored. Null terminated
-0x3A	char[12]	sprdat_file	The filename of the sprite data archive, where all sprite data is stored. Null terminated
-0x46	char[12]	musdat_file	The filename of the music data archive, where all music data is stored. Null terminated
-0x52	char[12]	sedat_file	The filename of the sound effect data archive, where all sound effect data is stored. Null terminated
-0x5E	char[12]	systemdat_file	The filename of the system data archive, where the menu image, intro sequence and text box images are stored, for example. Null terminated
+0x00  char[4]   magic_num           "MHVN" in ASCII. This magic number is here just as a sanity check to make sure that this ROOTINFO.DAT is actually valid before finding out the hard way.
+0x04  uint16    VNflags             Some flags to control high-level behaviour
+0x06  uint16    numstvar_glob       Number of global (save independent) variables to reserve
+0x08  uint16    numflags_glob       Number of global (save independent) bitflags to reserve
+0x0A  uint16    numstvar_loc        Number of save-local state variables to reserve
+0x0C  uint16    numflags_loc        Number of save-local bitflags to reserve
+0x0E  uint16    format_norm         Default format number for normal text
+0x10  uint16    format_char         Format number for character name text
+0x12  uint16    format_menu_notsel  Format number for menu text that is not selected
+0x14  uint16    format_menu_sel     Format number for menu text that is selected
+0x16  char[12]  font_file           The filename of the font data file, where to current Unicode-supporting font is stored. Null terminated
+0x22  char[12]  scenedat_file       The filename of the scene data archive, where all scene data is stored. Null terminated
+0x2E  char[12]  langdat_file        The filename of the language metadata archive, where every language supported is listed and all corresponding text files given. Null terminated
+0x3A  char[12]  bgdat_file          The filename of the background image data archive, where all BGs and CGs are stored. Null terminated
+0x46  char[12]  sprdat_file         The filename of the sprite data archive, where all sprite data is stored. Null terminated
+0x52  char[12]  musdat_file         The filename of the music data archive, where all music data is stored. Null terminated
+0x5E  char[12]  sedat_file          The filename of the sound effect data archive, where all sound effect data is stored. Null terminated
+0x6A  char[12]  systemdat_file      The filename of the system data archive, where the menu image, intro sequence and text box images are stored, for example. Null terminated
 
 VNflags has the following definition:
 
@@ -159,6 +160,22 @@ VNflags has the following definition:
 C - Present CG gallery? Option is hidden from the menu if 0
 M - Present music room? Option is hidden from the menu if 0
 P - Custom protagonist support?
+
+* Font data file (font_file) *
+
+This file contains all the glyphs necessary to display text. This is necessary as MHVN supports Unicode and only Unicode. Shift-JIS support has been discontinued early on in development to eliminate reliance on the PC-98's font ROM, to support languages other than English and Japanese and ease porting to modern systems.
+
+0x00000000  uint32[]  char_ranges  Determines the characters that are stored in this file. For each entry, the lower 16 bits store the first codepoint of the range and the upper 16 bits store the last codepoint of the range. Ranges must continually increase in codepoint, must not overlap, and the last codepoint must be greater than or equal to the first codepoint. This list ends when the entry 0x00000000 is found.
+var         uint32[]  char_infos   Provides information about the glyphs stored in this file, one for every character stored in this file.
+            HHHH YYYY  W00A AAAA  AAAA AAAA  AAAA AAAA
+            A - address of start of glyph data, in bytes, relative to the start of the glyph data block
+            W - width of glyph data (0 -> 8 pixels (1 byte), 1 -> 16 pixels (2 bytes))
+            Y - y-offset of glyph data (rows)
+            H - height of glyph data (rows) - 1
+            The reserved bits may be used to extend the address (to support beyond the BMP) or the width (to support some form of variable-width characters) in the future, but they have no use at the moment.
+var         uint8[]   glyph_data   Actual glyph data. All glyphs are stored as 1-bit bitmaps, where the bits are ordered in big-endian order. The only compression applied is simply not storing blatantly redundant information, such as empty rows or columns. For characters wider than 8 pixels, for each row the left half is stored before the right half (big-endian order).
+
+This file is built to be read from constantly. Some form of caching is necessary to avoid painfully slow font rendering.
 
 * Scene data archive (scenedat_file) *
 

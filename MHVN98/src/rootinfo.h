@@ -37,6 +37,7 @@ typedef struct
     unsigned short defFormatMenuItemSelected;
     unsigned short numLang;
     unsigned short curLang;
+    char fontDataPath[13];
     char sceneDataPath[13];
     char langDataPath[13];
     char curTextDataPath[13];

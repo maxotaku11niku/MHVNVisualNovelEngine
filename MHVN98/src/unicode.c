@@ -22,6 +22,15 @@
  * Unicode handling
  */
 
+#include "platform/filehandling.h"
+#include "rootinfo.h"
+#include "unicode.h"
+
+#define RANGELIST_SIZE      128
+#define GLYPHCACHE_ADDRBITS 9
+#define GLYPHCACHE_ADDRMASK 0x01FF
+#define GLYPHCACHE_SIZE     256
+
 //Cache all the printable ASCII characters so that they are always fast to retrieve. Intialised with a basic font.
 unsigned char asciiCharacterCache[94 * 16] =
 {
@@ -221,6 +230,103 @@ unsigned char asciiCharacterCache[94 * 16] =
     0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b01110000,0b11011011,0b00001110,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000
 };
 
+typedef struct
+{
+    unsigned short first;
+    unsigned short last;
+} RangeEntryFile;
+
+typedef struct
+{
+    unsigned short firstCode;
+    unsigned short firstEntry;
+    unsigned short length;
+} RangeEntry;
+
+static RangeEntry rangeList[RANGELIST_SIZE];
+static unsigned int realRangeSize;
+static unsigned long fontInfoListFilePtr;
+static unsigned long fontGlyphDataFilePtr;
+static unsigned char glyphCache[32 * GLYPHCACHE_SIZE];
+static unsigned char glyphInfoCache[GLYPHCACHE_SIZE];
+static unsigned int nextGlyphIndex;
+
+typedef struct
+{
+    unsigned short codepoint;
+    unsigned short cacheIndex;
+} IndexBufferEntry;
+
+static IndexBufferEntry glyphIndexBuffer[GLYPHCACHE_SIZE];
+static unsigned int nextBufferIndex;
+
+typedef struct
+{
+    unsigned short codepoint;
+    unsigned short indexBufferPos;
+} PresenceMapEntry;
+
+static PresenceMapEntry glyphPresenceMap[GLYPHCACHE_ADDRMASK + 1];
+
+//This hash function may work well with Unicode codepoints (especially if only one small non-ASCII range is used)
+static inline unsigned int HashInt16ToPresenceMap(unsigned short x)
+{
+    return (x & GLYPHCACHE_ADDRMASK);
+}
+
+void InitFontFile()
+{
+    realRangeSize = 0;
+    nextGlyphIndex = 0;
+    nextBufferIndex = 0;
+    unsigned int realReadLen;
+    fileptr handle;
+    int result = OpenFile(rootInfo.fontDataPath, DOSFILE_OPEN_READ, &handle);
+    if (result) return;
+    __far unsigned char* fb = rangeList;
+    ReadFile(handle, sizeof(rangeList), fb, &realReadLen);
+    CloseFile(handle);
+
+    unsigned int totalNumChars = 0;
+    RangeEntryFile* fRangeList = (RangeEntryFile*)rangeList;
+    for (int i = 0; i < RANGELIST_SIZE; i++) //Find number of characters and true number of range entries
+    {
+        RangeEntryFile range = fRangeList[i];
+        if (range.last == 0x0000 && range.first == 0x0000) break;
+        totalNumChars += range.last - range.first + 1;
+        realRangeSize++;
+    }
+    fontInfoListFilePtr = realRangeSize * 4;
+    fontGlyphDataFilePtr = fontInfoListFilePtr + totalNumChars * 4;
+    unsigned short listPtr = 0;
+    for (int i = realRangeSize - 1; i >= 0; i--) //In place modify range entries to be easier to work with
+    {
+        RangeEntryFile rangeInFile = fRangeList[i];
+        RangeEntry range;
+        range.firstCode = rangeInFile.first;
+        range.length = rangeInFile.last - rangeInFile.first + 1;
+        range.firstEntry = listPtr;
+        rangeList[i] = range;
+        listPtr += range.length;
+    }
+
+    //Load all ASCII glyphs. Not necessarily the fastest way to do so but it's small due to code reuse.
+    unsigned char glyphBuffer[32];
+    for (int i = 0x21; i < 0x7F; i++)
+    {
+        unsigned char glyphInfo = LoadGlyphFromFile(i, glyphBuffer);
+        if (glyphInfo != GLYPHCACHEINFO_INVALID)
+        {
+            unsigned char* asciiCharPtr = asciiCharacterCache + 16 * (i - 0x21);
+            for (int i = 0; i < 16; i++)
+            {
+                asciiCharPtr[i] = glyphBuffer[2 * i];
+            }
+        }
+    }
+}
+
+
 unsigned int UTF8CharacterDecode(const unsigned char** pstr)
 {
     const unsigned char* str = *pstr;
@@ -271,27 +377,199 @@ unsigned int UTF8CharacterDecode(const unsigned char** pstr)
     return outchar;
 }
 
-//Function is currently a stub that only works properly on printable ASCII characters
-int UnicodeGetCharacterWidth(unsigned int code)
+unsigned char LoadGlyphFromFile(unsigned int code, unsigned char* buffer)
 {
-    if (code >= 0x21 && code < 0x7F) return 8;
-    else return -1;
+    //Binary search for appropriate range
+    unsigned int checkRangeEntry = realRangeSize >> 1;
+    unsigned int checkLower = 0;
+    unsigned int checkUpper = realRangeSize - 1;
+    while (1)
+    {
+        if (checkUpper < checkLower) return GLYPHCACHEINFO_INVALID; //Not in file
+        RangeEntry range = rangeList[checkRangeEntry];
+        if (code < range.firstCode)
+        {
+            checkUpper = checkRangeEntry - 1;
+        }
+        else
+        {
+            unsigned short lastCode = range.firstCode + range.length - 1;
+            if (code > lastCode)
+            {
+                checkLower = checkRangeEntry + 1;
+            }
+            else
+            {
+                break;
+            }
+        }
+        checkRangeEntry = ((checkUpper - checkLower) >> 2) + checkLower;
+    }
+
+    //Read in glyph data
+    RangeEntry range = rangeList[checkRangeEntry];
+    unsigned short codeInRange = code - range.firstCode;
+    unsigned short infoInd = range.firstEntry + codeInRange;
+    unsigned int realReadLen;
+    fileptr handle;
+    int result = OpenFile(rootInfo.fontDataPath, DOSFILE_OPEN_READ, &handle);
+    if (result) return GLYPHCACHEINFO_INVALID;
+    unsigned char glyphBuffer[32];
+    unsigned long newpos;
+    SeekFile(handle, DOSFILE_SEEK_ABSOLUTE, fontInfoListFilePtr + infoInd * 4, &newpos);
+    unsigned long charEntry;
+    ReadFile(handle, 4, (__far unsigned char*)(&charEntry), &realReadLen);
+    unsigned long charAddress =   charEntry & 0x001FFFFF;
+    unsigned int charWidth    = ((charEntry & 0x00800000) >> 23) + 1;
+    unsigned int charHeight   = ((charEntry & 0xF0000000) >> 28) + 1;
+    unsigned int charYoffset  =  (charEntry & 0x0F000000) >> 24;
+    SeekFile(handle, DOSFILE_SEEK_ABSOLUTE, fontGlyphDataFilePtr + charAddress, &newpos);
+    ReadFile(handle, 32, (__far unsigned char*)(glyphBuffer), &realReadLen);
+    CloseFile(handle);
+
+    //Transform to appropriate form
+    Memset16Near(0x0000, buffer, 16);
+    if (charWidth == 1)
+    {
+        for (int i = 0; i < charHeight; i++)
+        {
+            buffer[2 * (i + charYoffset)] = glyphBuffer[i];
+        }
+    }
+    else if (charWidth == 2)
+    {
+        Memcpy16Near(glyphBuffer, buffer + (charYoffset * 2), charHeight);
+    }
+    return ((charWidth * 8) - 1) & GLYPHCACHEINFO_WIDTHMASK;
 }
 
-//Function is currently a stub that only works properly on printable ASCII characters
+int LoadGlyphCacheWithCharacter(unsigned int code)
+{
+    if (code < 0x80) return -1; //Permanent cache or unprintable ASCII -> already loaded
+
+    //Check for cache hit/miss
+    unsigned int mapInd = HashInt16ToPresenceMap(code);
+    PresenceMapEntry* mapPtr = glyphPresenceMap + mapInd;
+    while (mapPtr->codepoint != 0xFFFF)
+    {
+        if (mapPtr->codepoint == code) break; //Cache hit
+        else //Hash collision
+        {
+            mapInd++;
+            mapInd &= GLYPHCACHE_ADDRMASK;
+            mapPtr = glyphPresenceMap + mapInd;
+        }
+    }
+    IndexBufferEntry* nextIndPtr = glyphIndexBuffer + nextBufferIndex;
+    if (mapPtr->codepoint == 0xFFFF) //Cache miss
+    {
+        unsigned char glyphInfo = LoadGlyphFromFile(code, glyphCache + (nextGlyphIndex * 32));
+        if (glyphInfo == GLYPHCACHEINFO_INVALID) return -1; //Not found in file
+        mapPtr->codepoint = code;
+        glyphInfoCache[nextGlyphIndex] = glyphInfo;
+        if (nextIndPtr->codepoint != 0xFFFF) //Cache eviction
+        {
+            unsigned int evictCode = nextIndPtr->codepoint;
+            unsigned int evictInd = HashInt16ToPresenceMap(evictCode);
+            PresenceMapEntry* evictPtr = glyphPresenceMap + evictInd;
+            while (evictPtr->codepoint != evictCode) //Check for hash collisions
+            {
+                evictInd++;
+                evictInd &= GLYPHCACHE_ADDRMASK;
+                evictPtr = glyphPresenceMap + evictInd;
+            }
+            evictPtr->codepoint = 0xFFFF;
+
+            //Clean up resolved collisions
+            PresenceMapEntry* fixPtr = evictPtr;
+            evictInd++;
+            evictInd &= GLYPHCACHE_ADDRMASK;
+            evictPtr = glyphPresenceMap + (evictInd & GLYPHCACHE_ADDRMASK);
+            while (evictPtr->codepoint != 0xFFFF)
+            {
+                unsigned int fixInd = HashInt16ToPresenceMap(evictPtr->codepoint);
+                if (fixInd != evictInd) //Resolved collision
+                {
+                    *fixPtr = *evictPtr;
+                    evictPtr->codepoint = 0xFFFF;
+                    fixPtr = evictPtr;
+                }
+                evictInd++;
+                evictInd &= GLYPHCACHE_ADDRMASK;
+                evictPtr = glyphPresenceMap + evictInd;
+            }
+        }
+        nextIndPtr->codepoint = code;
+        nextIndPtr->cacheIndex = nextGlyphIndex;
+        nextGlyphIndex++;
+        nextGlyphIndex %= GLYPHCACHE_SIZE;
+    }
+    else //Cache hit, no load needed
+    {
+        unsigned int bufInd = mapPtr->indexBufferPos;
+        IndexBufferEntry* indPtr = glyphIndexBuffer + bufInd;
+        *nextIndPtr = *indPtr;
+        indPtr->codepoint = 0xFFFF;
+    }
+    mapPtr->indexBufferPos = nextBufferIndex;
+    nextBufferIndex++;
+    nextBufferIndex %= GLYPHCACHE_SIZE;
+    return nextIndPtr->cacheIndex;
+}
+
+int UnicodeGetCharacterWidth(unsigned int code)
+{
+    if (code < 0x80) //Permanent cache or unprintable ASCII
+    {
+        if (code >= 0x21 && code < 0x7F) return 8;
+        else return -1;
+    }
+    else
+    {
+        int gCacheInd = LoadGlyphCacheWithCharacter(code);
+        if (gCacheInd < 0) return -1;
+        unsigned char gInfo = glyphInfoCache[gCacheInd];
+        if (gInfo == GLYPHCACHEINFO_INVALID) return -1;
+        else
+        {
+            return (gInfo & GLYPHCACHEINFO_WIDTHMASK) + 1;
+        }
+    }
+}
+
 int UnicodeGetCharacterData(unsigned int code, unsigned long* buffer)
 {
-    if (code >= 0x21 && code < 0x7F)
+    if (code < 0x80) //Permanent cache or unprintable ASCII
     {
-        unsigned char* curChar = asciiCharacterCache + (code - 0x21) * 16;
+        if (code >= 0x21 && code < 0x7F)
+        {
+            unsigned char* curChar = asciiCharacterCache + (code - 0x21) * 16;
+            for (unsigned char i = 0; i < 16; i++)
+            {
+                unsigned long row = curChar[i];
+                buffer[i] = (row << 24);
+            }
+            return 8;
+        }
+        else return -1;
+    }
+    else
+    {
+        int gCacheInd = LoadGlyphCacheWithCharacter(code);
+        if (gCacheInd < 0) return -1;
+        unsigned char* curChar = glyphCache + gCacheInd * 32;
+        unsigned char gInfo = glyphInfoCache[gCacheInd];
+        if (gInfo == GLYPHCACHEINFO_INVALID) return -1;
         for (unsigned char i = 0; i < 16; i++)
         {
-            unsigned long row = curChar[i];
-            buffer[i] = (row << 24);
+            unsigned short row = curChar[2*i + 1]; //Read in right half
+            unsigned short rowhalf = curChar[2*i];
+            row |= (rowhalf << 8); //Read in left half
+            ((unsigned short*)(&buffer[i]))[0] = 0;
+            ((unsigned short*)(&buffer[i]))[1] = row;
         }
-        return 8;
+        return (gInfo & GLYPHCACHEINFO_WIDTHMASK) + 1;
     }
-    else return -1;
 }
 
 void SwapCharDataFormats(unsigned long* buffer, int bits32)

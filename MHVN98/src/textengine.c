@@ -780,9 +780,21 @@ static const char* PreprocessString(const __far char* str, unsigned char autolb,
     return stringBuffer2;
 }
 
+static void PreloadGlyphs(const char* str)
+{
+    const unsigned char* pstr = (const unsigned char*)str;
+    while (1)
+    {
+        unsigned int ch = UTF8CharacterDecode(&pstr);
+        if (ch) LoadGlyphCacheWithCharacter(ch);
+        else break;
+    }
+}
+
 void StartAnimatedStringToWrite(const __far char* str, const short x, const short y, short format)
 {
     const char* pstr = PreprocessString(str, 1, x, x + textBoxInnerBounds.size.x, y, y + textBoxInnerBounds.size.y);
+    PreloadGlyphs(pstr);
     stringToAnimWrite = pstr;
     curAnimStringPos = pstr;
     currentAnimWriteX = x;
@@ -1219,5 +1231,6 @@ int StringWriteAnimationFrame(unsigned char skip)
 void WriteString(const __far char* str, const short x, const short y, short format, unsigned char autolb)
 {
     const char* pstr = PreprocessString(str, autolb, x, x + textBoxInnerBounds.size.x, y, y + textBoxInnerBounds.size.y);
+    PreloadGlyphs(pstr);
     WriteStringInternal(pstr, x, y, format);
 }
