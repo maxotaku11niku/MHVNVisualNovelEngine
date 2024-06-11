@@ -276,9 +276,20 @@ static inline unsigned int HashInt16ToPresenceMap(unsigned short x)
 
 void InitFontFile()
 {
+    //Initialise cache
     realRangeSize = 0;
     nextGlyphIndex = 0;
     nextBufferIndex = 0;
+    for (int i = 0; i < GLYPHCACHE_SIZE; i++)
+    {
+        glyphIndexBuffer[i].codepoint = 0xFFFF;
+    }
+    for (int i = 0; i < GLYPHCACHE_ADDRMASK + 1; i++)
+    {
+        glyphPresenceMap[i].codepoint = 0xFFFF;
+    }
+
+    //Read in font file
     unsigned int realReadLen;
     fileptr handle;
     int result = OpenFile(rootInfo.fontDataPath, DOSFILE_OPEN_READ, &handle);

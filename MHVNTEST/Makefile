@@ -8,12 +8,12 @@ JAJPTEXT	:= ja_JP
 export SCENEFILES	:= $(foreach dir,$(SCENESRC),$(wildcard $(dir)/*.sca))
 export GBENGLISHFILES	:= $(foreach dir,$(ENGBTEXT),$(wildcard $(dir)/*.txt))
 export JAPANESEFILES	:= $(foreach dir,$(JAJPTEXT),$(wildcard $(dir)/*.txt))
-export OBJFILESTXA	:= EN_GB.otxa
+export OBJFILESTXA	:= EN_GB.otxa JA_JP.otxa
 export OBJFILESSCX	:= SCENE.odat
 export OBJFILES	:= $(addprefix $(BUILD)/, $(OBJFILESTXA) $(OBJFILESSCX))
 
 all : $(OBJFILES)
-	tools/mhvnlink -o $(TARGET) -d masterdesc.txt -s $(BUILD)/SCENE.odat -t $(BUILD)/EN_GB.otxa -bg $(BUILD)/BGIMAGE.odat -spr $(BUILD)/SPRITE.odat -m $(BUILD)/MUSIC.odat -sfx $(BUILD)/SOUNDFX.odat -sys $(BUILD)/SYSTEM.odat
+	tools/mhvnlink -o $(TARGET) -d masterdesc.txt -s $(BUILD)/SCENE.odat -t $(BUILD)/EN_GB.otxa -t $(BUILD)/JA_JP.otxa -bg $(BUILD)/BGIMAGE.odat -spr $(BUILD)/SPRITE.odat -m $(BUILD)/MUSIC.odat -sfx $(BUILD)/SOUNDFX.odat -sys $(BUILD)/SYSTEM.odat
 
 $(BUILD)/SCENE.odat : $(SCENEFILES)
 	tools/mhvnscas -o $@ $^

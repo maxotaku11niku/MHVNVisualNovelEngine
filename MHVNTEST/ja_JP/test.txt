@@ -23,50 +23,198 @@ Opening scene
 
 @s(SCENE_TEST)
 
+Narrator
 @[SCENE_TEST_0000
-見て見て、僕たちの前に大量の文があるよ。@]
+さあ見て見て、私たちの前に文字が多いですよ。@]
 
+Narrator
 @[SCENE_TEST_0001
-信じようも信じまいと、文の@c6色@r(c)を変更できる！@]
+これは@f(sb)@cbMHVNビジュアルノベルエンジン@r(fc)の可能を見せるテストです。@]
 
+Narrator
 @[SCENE_TEST_0002
-でも、ちょっと@f(sb)太字@r(f)を人生に入れるのが好きだろう？@]
+ちょっと@f(sb)太字@r(f)を人生に入れられたいでしょう。@]
 
+Narrator
 @[SCENE_TEST_0003
-多分君はよかったらf(si)斜体@r(f)も入れる。@]
+多分あなたはよかったら@f(si)斜体@r(f)も入れられます。@]
 
+Narrator
 @[SCENE_TEST_0004
-僕はこの文に@f(su)下線@r(f)も付けられる！@]
+この文字に@f(su)下線@r(f)も付けられます！@]
 
+Narrator
 @[SCENE_TEST_0005
-@w3@m8でも、マスクした文が好きだろう？@]
+@w3@m8でも、マスクした文字はいかがですか？@]
 
+Narrator
 @[SCENE_TEST_0006
-@t1この文の違いがわかるかしら？@]
+@c0全て@c1の@c2美@c3しい@c4虹@c5の@c6素晴@c7ら@c8しい@c9色@caは@cb使用@ccに@cd準備@ceし@cfました！@]
 
+Narrator
 @[SCENE_TEST_0007
-さて、完了だ、@p0。@f(sbi)@ca@d5さようなら！@]
+さて、完了です、@p0。
+@f(sbi)@ca@d5さようなら！@]
 
+(none)
 @[SCENE_TEST_0008
-新しい人が突然現れる。@]
+新しい人が突然現れます。@]
 
+Confused Person
 @[SCENE_TEST_0009
 待っててててて、ＰＣ－９８で実行している？@]
 
+Narrator
 @[SCENE_TEST_000A
 そうですね、確かに実行しているようです。@]
 
+Confused Person
 @[SCENE_TEST_000B
 まあ、@f(si)全く驚くべきことじゃない！@]
 
+Narrator
 @[SCENE_TEST_000C
-@f(sb)当然驚かなかった！@]
+@f(sb)当然驚かなかったです！@]
 
+Narrator
 @[SCENE_TEST_000D
-まったく、絶対何もないの代わりに本当のグラフィックがあったら私は戻る。@]
+@p0、どう思いますか？驚きましたか？@]
 
+Narrator
 @[SCENE_TEST_000E
-そうだ、開発者が作りに待たなきゃよね。@]
+とにかく、今あなたの混乱が消えましたらいいです。@]
 
+Confused Person
 @[SCENE_TEST_000F
+おい@p0！だれの方がいい？@]
+
+@[SCENE_TEST_CHOICE_0001_0
+あなた@]
+
+@[SCENE_TEST_CHOICE_0001_1
+ナレーター@]
+
+Narrator
+@[SCENE_TEST_0010
+続かなければなりません。二っの答えだけの質問で進められません。@p0にもっとあげて。九足す十は何ですか？@]
+
+@[SCENE_TEST_CHOICE_0002_0
+当然十九@]
+
+@[SCENE_TEST_CHOICE_0002_1
+ツエニ・ワン！@]
+
+@[SCENE_TEST_CHOICE_0002_2
+え、何っ？@]
+
+Confused Person
+@[SCENE_TEST_0011
+さあ、もっと質問するぞ！どっちのゲームコンソールが客観的に一番だ？@]
+
+@[SCENE_TEST_CHOICE_0003_0
+ニンテンドースイッチ@]
+
+@[SCENE_TEST_CHOICE_0003_1
+プレーステーション@]
+
+@[SCENE_TEST_CHOICE_0003_2
+エックスボックス@]
+
+@[SCENE_TEST_CHOICE_0003_3
+何も一番じゃない、パソコンが一番@]
+
+Confused Person
+@[SCENE_TEST_0012
+まったく、ボケなテキストボックスだけの代わりに本当のグラフィックがあったら私は戻る。@]
+
+Narrator
+@[SCENE_TEST_0013
+そうです、開発者が作りに待たなければなりませんよね。@]
+
+Narrator
+@[SCENE_TEST_0014
 さあ、開発者！もっと開発してくれる？まったくよ。@]
+
+
+
+I've put these ones out of order to test the linker
+
+
+
+Narrator
+@[SCENE_TEST_000D_YES_0
+まあ、もちろん、@p0は驚くこと@f(si)だ@r(f)と思います。@]
+
+Confused Person
+@[SCENE_TEST_000D_YES_1
+だから@c5違う！@]
+
+Narrator
+@[SCENE_TEST_000D_NO_0
+まあ、まあ、まあ、@p0は同じそうです。@]
+
+Confused Person
+@[SCENE_TEST_000D_NO_1
+はっ！二人対一人だからお前は@c5無勢！@]
+
+
+
+Confused Person
+@[SCENE_TEST_000F_CONPER_0
+すごいぞぉ！@f(si)これをくらえ@r(f)、ボケのナレーター！@]
+
+Narrator
+@[SCENE_TEST_000F_CONPER_1
+私はナレーターだけですから、何も言えません。@]
+
+Confused Person
+@[SCENE_TEST_000F_NARR_0
+@f(sbi)何っ？！@r(f)なぜナレーターを選んだ？@]
+
+Narrator
+@[SCENE_TEST_000F_NARR_1
+そう、私を追従しました。@c3ｕｗｕ。@]
+
+Confused Person
+@[SCENE_TEST_000F_NARR_2
+「@c3ｕｗｕ@r(c)」って何の意味？@]
+
+
+
+Narrator
+@[SCENE_TEST_0010_CORRECT
+正しいです。それは簡単はずでした。@]
+
+Confused Person
+@[SCENE_TEST_0010_MEME
+そのミームは@f(si)すごおおおおおく@r(f)死んでる。@]
+。
+Narrator
+@[SCENE_TEST_0010_CONFUSED
+＊はぁ＊　@m8これは簡単はず@r(m)@d5　とにかく、リピートします。九足す十は何ですか？@]
+
+Narrator
+@[SCENE_TEST_0010_FYOU
+はい、協力したくないから、このテストをここ終了する。このく◯◯つ。まったく。@] Bowdlerised since this is a public test
+
+
+
+Confused Person
+@[SCENE_TEST_0011_NINTENDO
+@c5お、楽しい。@r(c)エクスクルーシブが好きはずだ。@]
+
+Confused Person
+@[SCENE_TEST_0011_PLAYSTATION
+@cdお、いい。@r(c)簡単な命名法があるね？@]
+
+Confused Person
+@[SCENE_TEST_0011_XBOX
+@c9お、かっこいい。@r(c)DirectXとXboxのXは繋がると思う、ね？@]
+
+Confused Person
+@[SCENE_TEST_0011_PC_0
+@cb@f(sbiu)すごいぞぉ！！！！パソコン主っ@]
+
+Narrator
+@[SCENE_TEST_0011_PC_1
+ちょっと、気に障りすぎなことを言わないでください。@]
