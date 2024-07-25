@@ -22,6 +22,7 @@
  * Main parser and archiver code
  */
 
+#include <lz4hc.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -679,6 +680,7 @@ int ArchiveText(const char* outputFilename, const char** inputFilenames, const i
     uint32_t* tempPtr2 = (uint32_t*)txaFileOutputBufPtr;
     txaFileOutputBufPtr += 4 * numScenes;
     uint32_t curRealPtr2 = 0;
+    char* tempTextBuf = (char*)malloc(65536);
     for (int i = 0; i < numScenes; i++)
     {
         tempPtr2[i] = curRealPtr2;
@@ -688,6 +690,7 @@ int ArchiveText(const char* outputFilename, const char** inputFilenames, const i
         txaFileOutputBufPtr += 2 * curNumEntries + 2;
         curRealPtr1 = 0;
         curRealPtr2 += 2 * curNumEntries + 2;
+        char* ttextPtr = tempTextBuf;
         for (int j = 0; j < curNumEntries; j++)
         {
             tempPtr1[j] = curRealPtr1;
@@ -696,12 +699,16 @@ int ArchiveText(const char* outputFilename, const char** inputFilenames, const i
             while (curChar)
             {
                 curChar = *textPtr++;
-                *txaFileOutputBufPtr++ = curChar;
+                *ttextPtr++ = curChar;
                 curRealPtr1++;
-                curRealPtr2++;
             }
         }
+        uint32_t compressedSizeText = LZ4_compress_HC(tempTextBuf, txaFileOutputBufPtr + 4, curRealPtr1, 65536, LZ4HC_CLEVEL_MAX);
+        *((uint32_t*)txaFileOutputBufPtr) = compressedSizeText;
+        curRealPtr2 += 4 + compressedSizeText;
+        txaFileOutputBufPtr += 4 + compressedSizeText;
     }
+    free(tempTextBuf);
 
     size_t sizeOfTXA = (intptr_t)txaFileOutputBufPtr - (intptr_t)txaFileOutputBuffer;
     uint64_t linkInfoPtr = 0x00000008 + sizeOfTXA + 0x00000018;

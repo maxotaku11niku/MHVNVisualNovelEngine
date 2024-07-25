@@ -26,6 +26,7 @@
 #include "platform/memalloc.h"
 #include "platform/filehandling.h"
 #include "platform/pc98_egc.h"
+#include "lz4.h"
 #include "stdbuffer.h"
 #include "rootinfo.h"
 #include "sceneengine.h"
@@ -55,8 +56,8 @@
 #define ASCR_SHAKE 1
 
 #define SVAR_BASE    0x0000
-#define SFLG_BASE    0x0020
-#define GVAR_BASE    0x0080
+#define SFLG_BASE    0x0008
+#define GVAR_BASE    0x0020
 #define GFLG_BASE    0x0100
 #define LVAR_BASE    0x0400
 #define LFLG_BASE    0x0600
@@ -68,7 +69,7 @@
 #define STYPE_CHOICE4  3
 
 SceneInfo sceneInfo;
-unsigned char curSceneData[1024];
+unsigned char curSceneData[4096];
 unsigned short curSceneDataPC;
 unsigned char vmFlags;
 
@@ -103,11 +104,11 @@ char curCharName[64];
 unsigned int curTextArray[256];
 __far char* sceneTextBuffer = 0;
 
-short scratchVars[32];
-short globalVars[128];
+short scratchVars[8];
+short globalVars[224];
 short localVars[512];
 //Flags are bitpacked for space-efficiency reasons
-unsigned char scratchFlags[12];
+unsigned char scratchFlags[3];
 unsigned char globalFlags[96];
 unsigned char localFlags[320];
 
@@ -129,8 +130,15 @@ int LoadNewScene(unsigned short sceneNum)
     ReadFile(handle, 4, sdp, &realReadLen);
     SeekFile(handle, DOSFILE_SEEK_ABSOLUTE, 4 + 4 * sceneInfo.numScenes + scenedatpos, &curfilepos);
     __far unsigned char* csd = curSceneData;
-    ReadFile(handle, sizeof(curSceneData), csd, &realReadLen);
+    unsigned long compSize;
+    __far unsigned char* compSizeP = &compSize;
+    ReadFile(handle, 4, compSizeP, &realReadLen);
+    __far unsigned char* decompbuf = (__far unsigned char*)MemAlloc(compSize + 4);
+    ReadFile(handle, compSize, decompbuf + 4, &realReadLen);
     CloseFile(handle);
+    *((__far unsigned long*)decompbuf) = compSize;
+    LZ4Decompress(csd, decompbuf);
+    MemFree(decompbuf);
     result = LoadSceneText(sceneNum, sceneTextBuffer, curTextArray);
     if (result) return result;
     curSceneDataPC = 0;

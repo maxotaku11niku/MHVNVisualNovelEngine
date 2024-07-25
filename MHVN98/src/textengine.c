@@ -34,6 +34,7 @@
 #include "platform/pc98_chargen.h"
 #include "platform/pc98_keyboard.h"
 #include "platform/pc98_egc.h"
+#include "lz4.h"
 #include "unicode.h"
 #include "stdbuffer.h"
 #include "rootinfo.h"
@@ -171,8 +172,14 @@ int LoadSceneText(unsigned short sceneNumber, __far char* textDataBuffer, unsign
         textPtrsBuffer[i] = *((unsigned short*)(smallFileBuffer) + i) + (unsigned int)(((unsigned long)textDataBuffer) & 0x0000FFFF);
     }
     SeekFile(handle, DOSFILE_SEEK_ABSOLUTE, textInfo.sceneTextFilePtr + 4 * sceneInfo.numScenes + 2 * (numTexts + 1), &curfilepos);
-    ReadFile(handle, 0x8000, textDataBuffer, &realReadLen);
-    if (realReadLen == 0x8000) ReadFile(handle, 0x8000, textDataBuffer + 0x8000, &realReadLen);
+    unsigned long compSize;
+    __far unsigned char* compSizeP = &compSize;
+    ReadFile(handle, 4, compSizeP, &realReadLen);
+    __far unsigned char* decompbuf = (__far unsigned char*)MemAlloc(compSize + 4);
+    ReadFile(handle, compSize, decompbuf + 4, &realReadLen);
+    *((__far unsigned long*)decompbuf) = compSize;
+    LZ4Decompress(textDataBuffer, decompbuf);
+    MemFree(decompbuf);
     return CloseFile(handle);
 }
 

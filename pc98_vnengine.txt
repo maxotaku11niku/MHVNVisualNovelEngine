@@ -181,61 +181,61 @@ This file is built to be read from constantly. Some form of caching is necessary
 
 This file contains all the necessary scene data used to control the story. It only refers indirectly to the text, which is all stored in another file.
 
-0x00000000	uint16			num_scenes	Total number of scenes
-0x00000002	uint16			num_chars	Total number of characters
-0x00000004	uint32[num_scenes]	sceneptrs	Pointers to each of the starts of scene data
-var		scene_data[num_scenes]	scenedats	A list of compressed scene datas. The uncompressed size of each scene data must not exceed a certain threshold
+0x00000000  uint16                  num_scenes  Total number of scenes
+0x00000002  uint16                  num_chars   Total number of characters
+0x00000004  uint32[num_scenes]      sceneptrs   Pointers to each of the starts of scene data, relative to the start of the scene data block (0x4 + 4 * num_scenes)
+var         scene_data[num_scenes]  scenedats   A list of compressed scene datas. The uncompressed size of each scene data must not exceed a certain threshold
 
 For each scene, when the data is uncompressed, it takes the form of a bytecode, where we have the following opcodes:
 
-0x00	gotoscene [uint16 scene_num]       Ends the current scene and goes to another scene. Scene number 0xFFFF is reserved for the end of the story (vnend pseudoinstruction).
-0x01	jmp [int16 relative_offset]        Jumps by some relative offset unconditionally. The offset is relative to the end of this instruction.
-0x02	jz, je [int16 relative_offset]     Jumps by some relative offset if the Z flag is set. The offset is relative to the end of this instruction.
-0x03	jnz, jne [int16 relative_offset]   Jumps by some relative offset if the Z flag is not set. The offset is relative to the end of this instruction.
-0x04	jn, jl [int16 relative_offset]     Jumps by some relative offset if the N flag is set. The offset is relative to the end of this instruction.
-0x05	jp, jge [int16 relative_offset]    Jumps by some relative offset if the N flag is not set. The offset is relative to the end of this instruction.
-0x06	jle [int16 relative_offset]        Jumps by some relative offset if the N flag is set or the Z flag is set. The offset is relative to the end of this instruction.
-0x07	jg [int16 relative_offset]         Jumps by some relative offset if the N flag is not set and the Z flag is not set. The offset is relative to the end of this instruction.
-0x08	palsetcol [uint5 red], [uint5 green], [uint5 blue]    Sets the mix palette to a single colour. These values are bitpacked into 2 bytes.
-0x09	paladdcol [int5 red], [int5 green], [int5 blue]       Sets the mix palette to the main palette plus a fixed colour. These values are bitpacked into 2 bytes.
-0x0A	palsetlum [int8 luminositymod]                        Sets the mix palette to the main palette but with the luminosity modified. +127 means white, -128 means black, 0 means no change.
-0x0B	palsetsat [uint8 saturationmod]                       Sets the mix palette to the main palette but with the saturation modified. Saturation is multiplied by saturationmod/128.
-0x0C	palsethue [int8 huemod]                               Sets the mix palette to the main palette but with the hue modified. Hue is rotated by (huemod/128) * 180 degrees.
-0x0D	palcolourise [uint5 red], [uint5 green], [uint5 blue] Sets the mix palette to the main palette but each colour's chrominance is made the same as the given colour. These values are bitpacked into 2 bytes.
-0x0E	palinvert                                             Sets the mix palette to the main palette but inverted.
-0x0F	nowait                                                Instead of waiting for a certain condition before continuing, continues until the next instruction that requires waiting. Actions started by the previous instruction will still be carried out unless another instruction overrides them. Not effective for instructions that wait for user input before continuing.
-0x10	nexttext                           Displays the next text and waits for user input before continuing. Cannot actually be used in scene assembly, generated automatically by the assembler from sequential 'text' commands.
-0x11	text [uint16 textnum]              Displays the text given in the following local string reference and waits for user input before continuing.
-0x12	charname [uint16 charnum]          Sets the current character name to the string pointed to by charnum. Character number 0xFFFF is reserved for wiping the character name entirely (nocharname pseudoinstruction).
-0x13	deltext                            Wipes the text from the text box. Implied by a 'text' instruction if not called beforehand.
-0x14	ynchoice                           Displays a yes/no choice to the user. Sets the Z flag to 0 if no, or to 1 in if yes.
-0x15	choice2 [uint16 statevar], [label opt1], [label opt2]  Displays two freeform choices to the user and puts the number chosen into the state variable pointed to by statevar. Waits for user input before continuing. Converted by the assembler into the more space efficient encoding which is what is actually parsed by the scene processor: choice2 [uint16 statevar], [uint16 firstchoicetext].
-0x16	choice3 [uint16 statevar], [label opt1], [label opt2], [label opt3]  Displays three freeform choices to the user and puts the number chosen into the state variable pointed to by statevar. Waits for user input before continuing. Converted by the assembler into the more space efficient encoding which is what is actually parsed by the scene processor: choice3 [uint16 statevar], [uint16 firstchoicetext].
-0x17	choice4 [uint16 statevar], [label opt1], [label opt2], [label opt3], [label opt4]  Displays four freeform choices to the user and puts the number chosen into the state variable pointed to by statevar. Waits for user input before continuing. Converted by the assembler into the more space efficient encoding which is what is actually parsed by the scene processor: choice4 [uint16 statevar], [uint16 firstchoicetext].
-0x18	bfadein [uint3 amount], [uint5 speed]  Fades in from black, by a proportion of (amount+1)/8 at a rate of (speed+1)/2 steps (out of 255 total for a full fade) every 1/56.4th of a second. Waits for the effect to finish before continuing. These values are bitpacked into one byte.
-0x19	bfadeout [uint3 amount], [uint5 speed] Fades out towards black, by a proportion of (amount+1)/8 at a rate of (speed+1)/2 steps (out of 255 total for a full fade) every 1/56.4th of a second. Waits for the effect to finish before continuing. These values are bitpacked into one byte.
-0x1A	wfadein [uint3 amount], [uint5 speed]  Fades in from white, by a proportion of (amount+1)/8 at a rate of (speed+1)/2 steps (out of 255 total for a full fade) every 1/56.4th of a second. Waits for the effect to finish before continuing. These values are bitpacked into one byte.
-0x1B	wfadeout [uint3 amount], [uint5 speed] Fades out towards white, by a proportion of (amount+1)/8 at a rate of (speed+1)/2 steps (out of 255 total for a full fade) every 1/56.4th of a second. Waits for the effect to finish before continuing. These values are bitpacked into one byte.
-0x1C	pfadein [uint3 amount], [uint5 speed]  Fades towards the mix palette, by a proportion of (amount+1)/8 at a rate of (speed+1)/2 steps (out of 255 total for a full fade) every 1/56.4th of a second. Waits for the effect to finish before continuing. These values are bitpacked into one byte.
-0x1D	pfadeout [uint3 amount], [uint5 speed] Fades towards the main palette, by a proportion of (amount+1)/8 at a rate of (speed+1)/2 steps (out of 255 total for a full fade) every 1/56.4th of a second. Waits for the effect to finish before continuing. These values are bitpacked into one byte.
-0x1E	phuerotate [uint8 speed]               Rotates the hue of the display palette at a rate of (speed/2048) * 360 degrees per 1/56.4th of a second. If speed is 0, resets display palette to main palette and stops the effect. Therefore, script execution won't be stopped by this instruction. This effect can also be stopped by bfadein, bfadeout, wfadein and wfadeout.
-0x1F	shake [uint6 amplitude], [uint5 period], [uint5 damping] Starts a vertical screen shake effect, where the maximum displacement from zero is amplitude pixels, the period of the shaking is (period+1)/28.2 seconds, and the amplitude is damped through a multiplier of ~1-(damping/256) every frame. Waits for the amplitude to reach zero before continuing. Note that if damping is 0, the shaking will continue forever, which could softlock if you don't use a nowait instruction.
-0x20	lut2 [uint16 statevar], [int16 lut1], [int16 lut2]  2-element lookup table using statevar as an index and putting the result into statevar.
-0x21	lut3 [uint16 statevar], [int16 lut1], [int16 lut2], [int16 lut3]  3-element lookup table using statevar as an index and putting the result into statevar.
-0x22	lut4 [uint16 statevar], [int16 lut1], [int16 lut2], [int16 lut3], [int16 lut4]  4-element lookup table using statevar as an index and putting the result into statevar.
-0x23	swapzn                                        Swaps the Z and N flags.
-0x24	setvi [uint16 statevar], [int16 imm]          Sets *statevar to equal imm.
-0x25	setvv [uint16 statevar1], [uint16 statevar2]  Sets *statevar1 to equal *statevar2.
-0x26	csetvi [uint16 statevar], [int16 imm]         Sets *statevar to equal imm if the Z flag is set, otherwise don't do anything.
-0x27	csetvv [uint16 statevar1], [uint16 statevar2] Sets *statevar1 to equal *statevar2 if the Z flag is set, otherwise don't do anything.
-0x28	cmpvi [uint16 statevar], [int16 imm]          Sets flags according to the result of *statevar - imm.
-0x29	cmpvv [uint16 statevar1], [uint16 statevar2]  Sets flags according to the result of *statevar1 - *statevar2.
-0x2A	addvi [uint16 statevar], [int16 imm]          Performs *statevar += imm, and sets the flags according to the result.
-0x2B	addvv [uint16 statevar1], [uint16 statevar2]  Performs *statevar1 += *statevar2, and sets the flags according to the result.
-0x2C	subvi [uint16 statevar], [int16 imm]          Performs *statevar -= imm, and sets the flags according to the result.
-0x2D	subvv [uint16 statevar1], [uint16 statevar2]  Performs *statevar1 -= *statevar2, and sets the flags according to the result.
-0x2E	ldflg [uint16 flag]                           Loads flag into the Z flag. If 'flag' actually refers to a variable, then Z is set only if the variable is nonzero, otherwise Z is unset.
-0x2F	stflg [uint16 flag]                           Puts the Z flag into the given flag. If 'flag' actually refers to a variable, then the operation is forbidden (for safety reasons).
+0x00    gotoscene [uint16 scene_num]       Ends the current scene and goes to another scene. Scene number 0xFFFF is reserved for the end of the story (vnend pseudoinstruction).
+0x01    jmp [int16 relative_offset]        Jumps by some relative offset unconditionally. The offset is relative to the end of this instruction.
+0x02    jz, je [int16 relative_offset]     Jumps by some relative offset if the Z flag is set. The offset is relative to the end of this instruction.
+0x03    jnz, jne [int16 relative_offset]   Jumps by some relative offset if the Z flag is not set. The offset is relative to the end of this instruction.
+0x04    jn, jl [int16 relative_offset]     Jumps by some relative offset if the N flag is set. The offset is relative to the end of this instruction.
+0x05    jp, jge [int16 relative_offset]    Jumps by some relative offset if the N flag is not set. The offset is relative to the end of this instruction.
+0x06    jle [int16 relative_offset]        Jumps by some relative offset if the N flag is set or the Z flag is set. The offset is relative to the end of this instruction.
+0x07    jg [int16 relative_offset]         Jumps by some relative offset if the N flag is not set and the Z flag is not set. The offset is relative to the end of this instruction.
+0x08    palsetcol [uint5 red], [uint5 green], [uint5 blue]    Sets the mix palette to a single colour. These values are bitpacked into 2 bytes.
+0x09    paladdcol [int5 red], [int5 green], [int5 blue]       Sets the mix palette to the main palette plus a fixed colour. These values are bitpacked into 2 bytes.
+0x0A    palsetlum [int8 luminositymod]                        Sets the mix palette to the main palette but with the luminosity modified. +127 means white, -128 means black, 0 means no change.
+0x0B    palsetsat [uint8 saturationmod]                       Sets the mix palette to the main palette but with the saturation modified. Saturation is multiplied by saturationmod/128.
+0x0C    palsethue [int8 huemod]                               Sets the mix palette to the main palette but with the hue modified. Hue is rotated by (huemod/128) * 180 degrees.
+0x0D    palcolourise [uint5 red], [uint5 green], [uint5 blue] Sets the mix palette to the main palette but each colour's chrominance is made the same as the given colour. These values are bitpacked into 2 bytes.
+0x0E    palinvert                                             Sets the mix palette to the main palette but inverted.
+0x0F    nowait                                                Instead of waiting for a certain condition before continuing, continues until the next instruction that requires waiting. Actions started by the previous instruction will still be carried out unless another instruction overrides them. Not effective for instructions that wait for user input before continuing.
+0x10    nexttext                           Displays the next text and waits for user input before continuing. Cannot actually be used in scene assembly, generated automatically by the assembler from sequential 'text' commands.
+0x11    text [uint16 textnum]              Displays the text given in the following local string reference and waits for user input before continuing.
+0x12    charname [uint16 charnum]          Sets the current character name to the string pointed to by charnum. Character number 0xFFFF is reserved for wiping the character name entirely (nocharname pseudoinstruction).
+0x13    deltext                            Wipes the text from the text box. Implied by a 'text' instruction if not called beforehand.
+0x14    ynchoice                           Displays a yes/no choice to the user. Sets the Z flag to 0 if no, or to 1 in if yes.
+0x15    choice2 [uint16 statevar], [label opt1], [label opt2]  Displays two freeform choices to the user and puts the number chosen into the state variable pointed to by statevar. Waits for user input before continuing. Converted by the assembler into the more space efficient encoding which is what is actually parsed by the scene processor: choice2 [uint16 statevar], [uint16 firstchoicetext].
+0x16    choice3 [uint16 statevar], [label opt1], [label opt2], [label opt3]  Displays three freeform choices to the user and puts the number chosen into the state variable pointed to by statevar. Waits for user input before continuing. Converted by the assembler into the more space efficient encoding which is what is actually parsed by the scene processor: choice3 [uint16 statevar], [uint16 firstchoicetext].
+0x17    choice4 [uint16 statevar], [label opt1], [label opt2], [label opt3], [label opt4]  Displays four freeform choices to the user and puts the number chosen into the state variable pointed to by statevar. Waits for user input before continuing. Converted by the assembler into the more space efficient encoding which is what is actually parsed by the scene processor: choice4 [uint16 statevar], [uint16 firstchoicetext].
+0x18    bfadein [uint3 amount], [uint5 speed]  Fades in from black, by a proportion of (amount+1)/8 at a rate of (speed+1)/2 steps (out of 255 total for a full fade) every 1/56.4th of a second. Waits for the effect to finish before continuing. These values are bitpacked into one byte.
+0x19    bfadeout [uint3 amount], [uint5 speed] Fades out towards black, by a proportion of (amount+1)/8 at a rate of (speed+1)/2 steps (out of 255 total for a full fade) every 1/56.4th of a second. Waits for the effect to finish before continuing. These values are bitpacked into one byte.
+0x1A    wfadein [uint3 amount], [uint5 speed]  Fades in from white, by a proportion of (amount+1)/8 at a rate of (speed+1)/2 steps (out of 255 total for a full fade) every 1/56.4th of a second. Waits for the effect to finish before continuing. These values are bitpacked into one byte.
+0x1B    wfadeout [uint3 amount], [uint5 speed] Fades out towards white, by a proportion of (amount+1)/8 at a rate of (speed+1)/2 steps (out of 255 total for a full fade) every 1/56.4th of a second. Waits for the effect to finish before continuing. These values are bitpacked into one byte.
+0x1C    pfadein [uint3 amount], [uint5 speed]  Fades towards the mix palette, by a proportion of (amount+1)/8 at a rate of (speed+1)/2 steps (out of 255 total for a full fade) every 1/56.4th of a second. Waits for the effect to finish before continuing. These values are bitpacked into one byte.
+0x1D    pfadeout [uint3 amount], [uint5 speed] Fades towards the main palette, by a proportion of (amount+1)/8 at a rate of (speed+1)/2 steps (out of 255 total for a full fade) every 1/56.4th of a second. Waits for the effect to finish before continuing. These values are bitpacked into one byte.
+0x1E    phuerotate [uint8 speed]               Rotates the hue of the display palette at a rate of (speed/2048) * 360 degrees per 1/56.4th of a second. If speed is 0, resets display palette to main palette and stops the effect. Therefore, script execution won't be stopped by this instruction. This effect can also be stopped by bfadein, bfadeout, wfadein and wfadeout.
+0x1F    shake [uint6 amplitude], [uint5 period], [uint5 damping] Starts a vertical screen shake effect, where the maximum displacement from zero is amplitude pixels, the period of the shaking is (period+1)/28.2 seconds, and the amplitude is damped through a multiplier of ~1-(damping/256) every frame. Waits for the amplitude to reach zero before continuing. Note that if damping is 0, the shaking will continue forever, which could softlock if you don't use a nowait instruction.
+0x20    lut2 [uint16 statevar], [int16 lut1], [int16 lut2]  2-element lookup table using statevar as an index and putting the result into statevar.
+0x21    lut3 [uint16 statevar], [int16 lut1], [int16 lut2], [int16 lut3]  3-element lookup table using statevar as an index and putting the result into statevar.
+0x22    lut4 [uint16 statevar], [int16 lut1], [int16 lut2], [int16 lut3], [int16 lut4]  4-element lookup table using statevar as an index and putting the result into statevar.
+0x23    swapzn                                        Swaps the Z and N flags.
+0x24    setvi [uint16 statevar], [int16 imm]          Sets *statevar to equal imm.
+0x25    setvv [uint16 statevar1], [uint16 statevar2]  Sets *statevar1 to equal *statevar2.
+0x26    csetvi [uint16 statevar], [int16 imm]         Sets *statevar to equal imm if the Z flag is set, otherwise don't do anything.
+0x27    csetvv [uint16 statevar1], [uint16 statevar2] Sets *statevar1 to equal *statevar2 if the Z flag is set, otherwise don't do anything.
+0x28    cmpvi [uint16 statevar], [int16 imm]          Sets flags according to the result of *statevar - imm.
+0x29    cmpvv [uint16 statevar1], [uint16 statevar2]  Sets flags according to the result of *statevar1 - *statevar2.
+0x2A    addvi [uint16 statevar], [int16 imm]          Performs *statevar += imm, and sets the flags according to the result.
+0x2B    addvv [uint16 statevar1], [uint16 statevar2]  Performs *statevar1 += *statevar2, and sets the flags according to the result.
+0x2C    subvi [uint16 statevar], [int16 imm]          Performs *statevar -= imm, and sets the flags according to the result.
+0x2D    subvv [uint16 statevar1], [uint16 statevar2]  Performs *statevar1 -= *statevar2, and sets the flags according to the result.
+0x2E    ldflg [uint16 flag]                           Loads flag into the Z flag. If 'flag' actually refers to a variable, then Z is set only if the variable is nonzero, otherwise Z is unset.
+0x2F    stflg [uint16 flag]                           Puts the Z flag into the given flag. If 'flag' actually refers to a variable, then the operation is forbidden (for safety reasons).
 0x30-0x3F Reserved, priority for new allocations
 0x40-0xFF Reserved, will only be used for new instructions if absolutely necessary
 
@@ -255,9 +255,9 @@ However, the address space is heterogenous, and the following table lays out the
 
  Address range | Assignment
 ---------------|----------------------------
- 0x0000-0x001F | Scratch variables (therefore there are 32)
- 0x0020-0x007F | Scratch flags (therefore there are 96)
- 0x0080-0x00FF | Global variables (therefore limit is 128)
+ 0x0000-0x0007 | Scratch variables (therefore there are 8)
+ 0x0008-0x001F | Scratch flags (therefore there are 24)
+ 0x0020-0x00FF | Global variables (therefore limit is 224)
  0x0100-0x03FF | Global flags (therefore limit is 768)
  0x0400-0x05FF | Local variables (therefore limit is 512)
  0x0600-0x0FFF | Local flags (therefore limit is 2560)
@@ -275,9 +275,9 @@ The upper 4 bits are unused for compatibilty with text escape codes 0x8x and 0xA
 
 This file contains a list of filenames of associated text data archives. 
 
-0x00000000	uint16			num_lang		Number of languages supported
-0x00000002	uint32[num_lang]	textdat_file_ptrs	Pointers to a language's text data file
-var		char[][num_lang]	textdat_files		A list of filenames of text data files, one for each language supported
+0x00000000  uint16            num_lang           Number of languages supported
+0x00000002  uint32[num_lang]  textdat_file_ptrs  Absolute file pointers to a language's text data file
+var         char[][num_lang]  textdat_files      A list of filenames of text data files, one for each language supported
 
 Adding support for multiple languages is therefore a case of adding to this list, and adding the necessary text data file. One must make sure that the text metadata is consistent between languages.
 
@@ -285,69 +285,69 @@ Adding support for multiple languages is therefore a case of adding to this list
 
 This file contains all the text for a single language. All the text in this file must be UTF-8.
 
-0x00000000	uint32	systext_ptr	Pointer to the system text strings
-0x00000004	uint32	credits_ptr	Pointer to credits text strings
-0x00000008	uint32	charnames_ptr	Pointer to character names
-0x0000000C	uint32	scenetext_ptr	Pointer to the scene texts structure
-0x00000010	uint32	cgtext_ptr	Pointer to the CG names structure (can be 0 if there is no CG gallery)
-0x00000014	uint32	musictext_ptr	Pointer to the music names and comments structure (can be 0 if there is no music room)
+0x00000000  uint32  systext_ptr    Absolute file pointer to the system text strings
+0x00000004  uint32  credits_ptr    Absolute file pointer to credits text strings
+0x00000008  uint32  charnames_ptr  Absolute file pointer to character names
+0x0000000C  uint32  scenetext_ptr  Absolute file pointer to the scene texts structure
+0x00000010  uint32  cgtext_ptr     Absolute file pointer to the CG names structure (can be 0 if there is no CG gallery)
+0x00000014  uint32  musictext_ptr  Absolute file pointer to the music names and comments structure (can be 0 if there is no music room)
 
 What immediately follows this header is all the system text strings (usually). Each section of this file contains text in different formats.
 
 System text:
-	char[]	system_text	Every system-relevant text string, in the prescribed order, given below:
+        char[]  system_text     Every system-relevant text string, in the prescribed order, given below:
 
-	LANGNAME		The native name of the language (e.g. for ja_JP this should be 日本語)
-	SYS_MENU_NEWSTORY	"Start New", in the main menu
-	SYS_MENU_CONTINUE	"Continue", in the main menu
-	SYS_MENU_CONFIG		"Options", in the main menu
-	SYS_MENU_QUIT		"Quit", in the main menu
-	SYS_MENU_GALLERY	"CG Gallery", in the main menu
-	SYS_MENU_MUSICROOM	"Music Room", in the main menu
+        LANGNAME                The native name of the language (e.g. for ja_JP this should be 日本語)
+        SYS_MENU_NEWSTORY       "Start New", in the main menu
+        SYS_MENU_CONTINUE       "Continue", in the main menu
+        SYS_MENU_CONFIG         "Options", in the main menu
+        SYS_MENU_QUIT           "Quit", in the main menu
+        SYS_MENU_GALLERY        "CG Gallery", in the main menu
+        SYS_MENU_MUSICROOM      "Music Room", in the main menu
 
-	Note that this only the order the strings must appear in the final text archive, they can be specified in any order in the source files (though I recommend putting all of them into one file) MHVNTXAR will substitute the appropriate English strings if these strings aren't found in the source files. So don't forget them if you're writing for non-English speakers, or if you want to add some *flair* to your menus.
+        Note that this only the order the strings must appear in the final text archive, they can be specified in any order in the source files (though I recommend putting all of them into one file) MHVNTXAR will substitute the appropriate English strings if these strings aren't found in the source files. So don't forget them if you're writing for non-English speakers, or if you want to add some *flair* to your menus.
 
 Credits text:
-	char[]	credits_text	The entire text of the original creator's credits. Note that at the end will be a hardcoded small note that I created the engine :)
+        char[]  credits_text    The entire text of the original creator's credits. Note that at the end will be a hardcoded small note that I created the engine :)
 
 Character names:
-	uint16[num_chars]	charnames_ptrs	Pointers to each character's name
-	char[]			charnames_text	Array of character names
+        uint16[num_chars]       charnames_ptrs  Pointers to each character's name, relative to the start of the character names block (charnames_ptr + 2 * num_chars)
+        char[]                  charnames_text  Array of character names
 
 CG text:
-	uint16[num_cg]	cgnames_ptrs	Pointers to all the CG names
-	char[numCGs][]	cgnames_text	The CG names
+        uint16[num_cg]  cgnames_ptrs    Pointers to all the CG names
+        char[numCGs][]  cgnames_text    The CG names
 
 Music names and comments:
-	uint16[num_songs]	musicinfo_ptrs	Pointers to all the music names and comments
-	char[num_songs][]	musicinfo_text	The name of each song followed by the comment for it (the pattern goes NCNCNCNC... and the pointer points to the name first)
+        uint16[num_songs]       musicinfo_ptrs  Pointers to all the music names and comments
+        char[num_songs][]       musicinfo_text  The name of each song followed by the comment for it (the pattern goes NCNCNCNC... and the pointer points to the name first)
 
 Scene text:
-	uint32[num_scenes]	scenetext_ptrs	Pointers to each scene's full text
-	For each scene:
-	uint16			num_strings	Total number of strings
-	uint16[num_strings]	text_ptrs	Pointers to each string in the scene
-	char[num_strings][]	text_array	Array of all text in the scene (compressed)
-	
+        uint32[num_scenes]      scenetext_ptrs  Pointers to each scene's full text, relative to the start of the scene text block (scenetext_ptr + 4 * num_scenes)
+        For each scene:
+        uint16                  num_strings     Total number of strings
+        uint16[num_strings]     text_ptrs       Pointers to each string in the scene, relative to the start of this scene's text block (references are valid for the uncompressed text)
+        char[num_strings][]     text_array      Array of all text in the scene (compressed)
+        
 
 Text may be given formatting information through 0x1B (the escape character). What the byte after 0x1B does depends:
 
-0x0x	Doesn't do anything, acts as null terminate if x is 0
-0x1x	Main formatting flags (x -> SUIB: B - bold, I - italic, U - underline, S - shadow)
-0x2x	Reserved
-0x3x	Final fade value selector (x -> level of fade, 0 - no fade -> F - very nearly invisible)
-0x4x	Colour selector (x -> palette value)
-0x5x	Custom protagonist information inject, out of 16 slots (not all of which have to be filled) (x -> information ID)
-0x6x	Wait for 10*(x+1) frames before continuing
-0x7x	Set wait between characters to (x+1) frames
-0x8x	Insert variable value as signed integer (x indicates bits 8-11 of the address, byte following this one indicates bits 0-7)
-0x9x	Reserved (may be used to double the variable address space)
-0xAx	Use flag to switch between texts (x indicates bits 8-11 of the address, byte following this one indicates bits 0-7)
-0xBx	Reserved (may be used to double the variable address space)
-0xCx	Reserved
-0xDx	Reserved
-0xEx	Reserved
-0xFx	Reset formatting to default for some parameter (x -> CFTM: M - main, T - font, F - fade, C - colour)
+0x0x  Doesn't do anything, acts as null terminate if x is 0
+0x1x  Main formatting flags (x -> SUIB: B - bold, I - italic, U - underline, S - shadow)
+0x2x  Reserved
+0x3x  Final fade value selector (x -> level of fade, 0 - no fade -> F - very nearly invisible)
+0x4x  Colour selector (x -> palette value)
+0x5x  Custom protagonist information inject, out of 16 slots (not all of which have to be filled) (x -> information ID)
+0x6x  Wait for 10*(x+1) frames before continuing
+0x7x  Set wait between characters to (x+1) frames
+0x8x  Insert variable value as signed integer (x indicates bits 8-11 of the address, byte following this one indicates bits 0-7)
+0x9x  Reserved (may be used to double the variable address space)
+0xAx  Use flag to switch between texts (x indicates bits 8-11 of the address, byte following this one indicates bits 0-7)
+0xBx  Reserved (may be used to double the variable address space)
+0xCx  Reserved
+0xDx  Reserved
+0xEx  Reserved
+0xFx  Reset formatting to default for some parameter (x -> CFTM: M - main, T - font, F - fade, C - colour)
 
 The operation of the 0xAx escape code is quite different to other escape codes.
 The two texts to switch between are separated by a 0x1A (SUB control) and a 0x03 (ETX control) ends the escape block.
@@ -370,28 +370,70 @@ The format implies that you can use other escape codes just fine, and yes you ca
 
 Most of this will be literal text, though of course there are control sequences in the input files to do formatting etc. All control sequences start with an '@', and numerical inputs are currently hex only (sorry):
 
-@@	Becomes a single @.
-@[	Opens a normal text entry. The text between this and the next newline is the entry's label, and after the newline until the end of the entry is the text of the entry. If a reserved label is used, then it corresponds to system text. Otherwise, a scene has to be declared beforehand.
-@]	Ends a normal text entry. @[ and EOF can be taken as the end of an entry if @] is not found first.
-@s(l)	Declares a scene with label 'l' and makes the text in every following normal entry associated with that scene.
-@n(l)	Declares a character with label 'l' and all the immediately following text until the next newline is that character's display name.
-@f(f)	Sets the text formatting, where 'f' is a formatting flag (b -> bold, i -> italic, u -> underline, s -> shadow). Combine multiple letters to set multiple formatting flags at once.
-@mn	Sets the fade level to 'n'.
-@cn	Sets the colour to index 'n'.
-@pn	Insert custom protagonist information unit 'n'.
-@dn	Wait for 10*(n+1) frames before continuing.
-@wn	Set the wait between characters to (n+1) frames.
-@v(l)	Insert the value of the variable named 'l' as a signed 16-bit integer.
-@b(f)n@yy	Switch between the text 'n' and 'y' depending on the state of flag 'f': 'n' if 'f' is unset, 'y' if 'f' is set.
-@r(f)	Reset formatting to default for some parameter (f -> format, m -> fade, c -> colour). Combine multiple letters to reset multiple format parameters at once.
+@@         Becomes a single @.
+@[         Opens a normal text entry. The text between this and the next newline is the entry's label, and after the newline until the end of the entry is the text of the entry. If a reserved label is used, then it corresponds to system text. Otherwise, a scene has to be declared beforehand.
+@]         Ends a normal text entry. @[ and EOF can be taken as the end of an entry if @] is not found first.
+@s(l)      Declares a scene with label 'l' and makes the text in every following normal entry associated with that scene.
+@n(l)      Declares a character with label 'l' and all the immediately following text until the next newline is that character's display name.
+@f(f)      Sets the text formatting, where 'f' is a formatting flag (b -> bold, i -> italic, u -> underline, s -> shadow). Combine multiple letters to set multiple formatting flags at once.
+@mn        Sets the fade level to 'n'.
+@cn        Sets the colour to index 'n'.
+@pn        Insert custom protagonist information unit 'n'.
+@dn        Wait for 10*(n+1) frames before continuing.
+@wn        Set the wait between characters to (n+1) frames.
+@v(l)      Insert the value of the variable named 'l' as a signed 16-bit integer.
+@b(f)n@yy  Switch between the text 'n' and 'y' depending on the state of flag 'f': 'n' if 'f' is unset, 'y' if 'f' is set.
+@r(f)      Reset formatting to default for some parameter (f -> format, m -> fade, c -> colour). Combine multiple letters to reset multiple format parameters at once.
 
 * BG data archive (bgdat_file) *
 
 This file contains all 'background' images. A 'CG' image is just another kind of background image, but by convention no sprites are shown in front of one. The corresponding variant patches are also stored here.
 
+0x00000000  uint32                 bgmain_ptr     Absolute file pointer to table of pointers to background image information
+0x00000004  uint16                 num_bg         Number of background images
+0x00000006  uint16                 num_pal        Number of unique base palettes
+0x00000008  uint4[3][16][num_pal]  palette_table  Palette data table, each is a packed 4-bit-per-channel RGB colour array of 16 colours, like so: GGGG RRRR  RRRR BBBB  BBBB GGGG  ...
+var         uint32[num_bg]         bg_table       Pointers to background image information, relative to the start of the background image data block (bgmain_ptr + 4 * num_bg)
+
+Each background image is described by the following structure:
+
+0x00000000  uint32               mainbg_ptr     Absolute file pointer to the main background image data (must be a 640x400 image).
+0x00000004  uint16               num_variant    Number of 'variant patches', sub-images drawn over the main background selectively in order to create a small variant of a background.
+0x00000006  uint16               palette_index  Index of the main palette to be used with this background.
+0x00000008  uint64[num_variant]  variant_data   Array of variant patch datas.
+
+Each variant patch is described by the follwing structure:
+
+0x00000000  uint32  variant_ptr  Absolute file pointer to the variant patch image data.
+0x00000004  int16   xpos         X position to place this variant patch (top-left pixel).
+0x00000006  int16   ypos         Y position to place this variant patch (top-left pixel).
+
+All images are GPI files. To save a little space, however, they use a modified header that excludes the palette since this information is stored out-of-line. Variant patch positions are relative to the top-left pixel of the main background and thus the screen. Do not put transparency on either the main background or any of the variant patches.
+
+See the specification on GPI for more info on the actual content of the image files.
+
 * Sprite data archive (sprdat_file) *
 
 This file contains all sprite images, as well as their corresponding variant patches.
+
+0x00000000  uint16           num_spr       Number of sprites
+0x00000002  uint32[num_spr]  spr_table     Pointers to sprite image information, relative to the start of the sprite image data block (0x2 + 4 * num_spr)
+
+Each sprite image is described by the following structure:
+
+0x00000000  uint32               mainspr_ptr    Absolute file pointer to the main sprite image data.
+0x00000004  uint16               num_variant    Number of 'variant patches', sub-images drawn over the main sprite selectively in order to create a small variant of a sprite (useful for changing expressions on characters, for example).
+0x00000006  uint64[num_variant]  variant_data   Array of variant patch datas.
+
+Each variant patch is described by the follwing structure:
+
+0x00000000  uint32  variant_ptr  Absolute file pointer to the variant patch image data.
+0x00000004  int16   xpos         X position to place this variant patch (top-left pixel).
+0x00000006  int16   ypos         Y position to place this variant patch (top-left pixel).
+
+All images are GPI files. To save a little space, however, they use a modified header that excludes the palette since this information is stored in the background data archive (because the main palette is set to the same as the current background, all sprites must be made for the palette of the background(s) they will appear in front of). Variant patch positions are relative to the top-left pixel of the main sprite and thus can be negative. Sprites should have some transparency, but this is not strictly required.
+
+See the specification on GPI for more info on the actual content of the image files.
 
 * Music data archive (musdat_file) *
 
@@ -401,16 +443,15 @@ This file contains all music data for PMD.
 
 This file contains all sound effect data.
 
-0x00000000	uint32                     globaleffect_ptr   Pointer to table of pointers to global sound effects
-0x00000004	uint32                     scenespecific_ptr  Pointer to table of pointers to scene-specific sound effect tables
-0x00000008	uint16                     num_globeleffects  Number of global sound effects
-0x0000000A	uint32[num_globaleffects]  globaleffect_table Pointers to global sound effect data
-var         uint32[num_scenes]         sceneptrs_table    Pointers to tables of pointers to scene-specific sound effects
+0x00000000  uint32                     scenespecific_ptr  Absolute file pointer to table of pointers to scene-specific sound effect tables
+0x00000004  uint16                     num_globeleffects  Number of global sound effects
+0x00000006  uint32[num_globaleffects]  globaleffect_table Absolute file pointers to global sound effect data
+var         uint32[num_scenes]         sceneptrs_table    Absolute file pointers to tables of pointers to scene-specific sound effects
 
 And then for every scene:
 
 0x00000000  uint16                     num_effectsinscene Number of sound effects associated with this scene
-0x00000002  uint32[num_effectsinscene] sceneeffect_table  Pointers to sound effects associated with this scene
+0x00000002  uint32[num_effectsinscene] sceneeffect_table  Absolute file pointers to sound effects associated with this scene
 
 All sound effects are 534ADPCM files. Global sound effects can be triggered from anywhere, scene-specific sound effects can only be triggered from the scene they are associated with.
 'Scene-specific' sound effects were mostly invented to provide voice acting support, should one choose to use it. For the sake of saving space, please use a low sample rate and encode voice files to mono. Human voices can still sound recognisable even down to 5000 Hz sample rate and maybe lower. 11025 Hz feels fine enough. Of course, because of the abstraction (this specification doesn't care one bit what the actual audio in the file is) you could put whatever you want.
@@ -431,9 +472,9 @@ This file contains settings and global save data. The latter allows previous pla
 
 These files contain individual data for playthroughs, sufficient to restore the state of the VN to how it was before the save.
 
-0x00000000	uint32		checksum	Checksum of all the data in this file (from 0x00000004 onwards) to check data integrity
-0x00000004	uint16		scenenum	The scene number at the time of saving
-0x00000006	uint16		scenepc		The scene bytecode program counter to return to upon loading
-0x00000008	int64		timestamp	Unix-style timestamp recording the time this file was written to
-0x00000010	int16[numstvar]	statevar	Stores the current value of all state variables
-var		char[]		bootstrap_code	Bytecode required to restore the state as it was when this file was saved. Null terminated
+0x00000000      uint32           checksum        Checksum of all the data in this file (from 0x00000004 onwards) to check data integrity
+0x00000004      uint16           scenenum        The scene number at the time of saving
+0x00000006      uint16           scenepc         The scene bytecode program counter to return to upon loading
+0x00000008      int64            timestamp       Unix-style timestamp recording the time this file was written to
+0x00000010      int16[numstvar]  statevar        Stores the current value of all state variables
+var             char[]           bootstrap_code  Bytecode required to restore the state as it was when this file was saved. Null terminated

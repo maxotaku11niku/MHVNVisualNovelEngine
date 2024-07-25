@@ -26,7 +26,7 @@ This repository will contain project files for MHVN-specific tools in the future
 
 ## What's NOT in this repository?
 
-- Any future tools I make that obviously have applicability beyond this project.
+- Tools I made that obviously have applicability beyond this project ([GPI](https://github.com/maxotaku11niku/GeneralPlanarImage)).
 
 - PMD (as I did not develop it, go check Masahiro Kajihara's page).
 

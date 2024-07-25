@@ -188,7 +188,7 @@ Narrator
 Confused Person
 @[SCENE_TEST_0010_MEME
 そのミームは@f(si)すごおおおおおく@r(f)死んでる。@]
-。
+
 Narrator
 @[SCENE_TEST_0010_CONFUSED
 ＊はぁ＊　@m8これは簡単はず@r(m)@d5　とにかく、リピートします。九足す十は何ですか？@]

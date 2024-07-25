@@ -22,6 +22,11 @@
  * Main assembler code
  */
 
+extern "C"
+{
+    #include <lz4hc.h>
+}
+
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -104,11 +109,11 @@ const std::unordered_map<std::string, int> mnemonicsToOpcodes =
     {std::string("ldflg"),        0x2E},
     {std::string("stflg"),        0x2F},
     //Directives included as well for ease of programming
-    {std::string(".scene"),   0x10000},
-    {std::string(".vnentry"), 0x10001},
-    {std::string(".globvar"), 0x10002},
-    {std::string(".globflag"), 0x10003},
-    {std::string(".localvar"), 0x10004},
+    {std::string(".scene"),     0x10000},
+    {std::string(".vnentry"),   0x10001},
+    {std::string(".globvar"),   0x10002},
+    {std::string(".globflag"),  0x10003},
+    {std::string(".localvar"),  0x10004},
     {std::string(".localflag"), 0x10005},
 };
 
@@ -122,126 +127,30 @@ const std::unordered_map<std::string, int> defaultVarNames =
     {std::string("r5"),  0x0005},
     {std::string("r6"),  0x0006},
     {std::string("r7"),  0x0007},
-    {std::string("r8"),  0x0008},
-    {std::string("r9"),  0x0009},
-    {std::string("r10"), 0x000A},
-    {std::string("r11"), 0x000B},
-    {std::string("r12"), 0x000C},
-    {std::string("r13"), 0x000D},
-    {std::string("r14"), 0x000E},
-    {std::string("r15"), 0x000F},
-    {std::string("r16"), 0x0010},
-    {std::string("r17"), 0x0011},
-    {std::string("r18"), 0x0012},
-    {std::string("r19"), 0x0013},
-    {std::string("r20"), 0x0014},
-    {std::string("r21"), 0x0015},
-    {std::string("r22"), 0x0016},
-    {std::string("r23"), 0x0017},
-    {std::string("r24"), 0x0018},
-    {std::string("r25"), 0x0019},
-    {std::string("r26"), 0x001A},
-    {std::string("r27"), 0x001B},
-    {std::string("r28"), 0x001C},
-    {std::string("r29"), 0x001D},
-    {std::string("r30"), 0x001E},
-    {std::string("r31"), 0x001F},
-    {std::string("f0"),  0x0020},
-    {std::string("f1"),  0x0021},
-    {std::string("f2"),  0x0022},
-    {std::string("f3"),  0x0023},
-    {std::string("f4"),  0x0024},
-    {std::string("f5"),  0x0025},
-    {std::string("f6"),  0x0026},
-    {std::string("f7"),  0x0027},
-    {std::string("f8"),  0x0028},
-    {std::string("f9"),  0x0029},
-    {std::string("f10"), 0x002A},
-    {std::string("f11"), 0x002B},
-    {std::string("f12"), 0x002C},
-    {std::string("f13"), 0x002D},
-    {std::string("f14"), 0x002E},
-    {std::string("f15"), 0x002F},
-    {std::string("f16"), 0x0030},
-    {std::string("f17"), 0x0031},
-    {std::string("f18"), 0x0032},
-    {std::string("f19"), 0x0033},
-    {std::string("f20"), 0x0034},
-    {std::string("f21"), 0x0035},
-    {std::string("f22"), 0x0036},
-    {std::string("f23"), 0x0037},
-    {std::string("f24"), 0x0038},
-    {std::string("f25"), 0x0039},
-    {std::string("f26"), 0x003A},
-    {std::string("f27"), 0x003B},
-    {std::string("f28"), 0x003C},
-    {std::string("f29"), 0x003D},
-    {std::string("f30"), 0x003E},
-    {std::string("f31"), 0x003F},
-    {std::string("f32"), 0x0040},
-    {std::string("f33"), 0x0041},
-    {std::string("f34"), 0x0042},
-    {std::string("f35"), 0x0043},
-    {std::string("f36"), 0x0044},
-    {std::string("f37"), 0x0045},
-    {std::string("f38"), 0x0046},
-    {std::string("f39"), 0x0047},
-    {std::string("f40"), 0x0048},
-    {std::string("f41"), 0x0049},
-    {std::string("f42"), 0x004A},
-    {std::string("f43"), 0x004B},
-    {std::string("f44"), 0x004C},
-    {std::string("f45"), 0x004D},
-    {std::string("f46"), 0x004E},
-    {std::string("f47"), 0x004F},
-    {std::string("f48"), 0x0050},
-    {std::string("f49"), 0x0051},
-    {std::string("f50"), 0x0052},
-    {std::string("f51"), 0x0053},
-    {std::string("f52"), 0x0054},
-    {std::string("f53"), 0x0055},
-    {std::string("f54"), 0x0056},
-    {std::string("f55"), 0x0057},
-    {std::string("f56"), 0x0058},
-    {std::string("f57"), 0x0059},
-    {std::string("f58"), 0x005A},
-    {std::string("f59"), 0x005B},
-    {std::string("f60"), 0x005C},
-    {std::string("f61"), 0x005D},
-    {std::string("f62"), 0x005E},
-    {std::string("f63"), 0x005F},
-    {std::string("f64"), 0x0060},
-    {std::string("f65"), 0x0061},
-    {std::string("f66"), 0x0062},
-    {std::string("f67"), 0x0063},
-    {std::string("f68"), 0x0064},
-    {std::string("f69"), 0x0065},
-    {std::string("f70"), 0x0066},
-    {std::string("f71"), 0x0067},
-    {std::string("f72"), 0x0068},
-    {std::string("f73"), 0x0069},
-    {std::string("f74"), 0x006A},
-    {std::string("f75"), 0x006B},
-    {std::string("f76"), 0x006C},
-    {std::string("f77"), 0x006D},
-    {std::string("f78"), 0x006E},
-    {std::string("f79"), 0x006F},
-    {std::string("f80"), 0x0070},
-    {std::string("f81"), 0x0071},
-    {std::string("f82"), 0x0072},
-    {std::string("f83"), 0x0073},
-    {std::string("f84"), 0x0074},
-    {std::string("f85"), 0x0075},
-    {std::string("f86"), 0x0076},
-    {std::string("f87"), 0x0077},
-    {std::string("f88"), 0x0078},
-    {std::string("f89"), 0x0079},
-    {std::string("f90"), 0x007A},
-    {std::string("f91"), 0x007B},
-    {std::string("f92"), 0x007C},
-    {std::string("f93"), 0x007D},
-    {std::string("f94"), 0x007E},
-    {std::string("f95"), 0x007F}
+    {std::string("f0"),  0x0008},
+    {std::string("f1"),  0x0009},
+    {std::string("f2"),  0x000A},
+    {std::string("f3"),  0x000B},
+    {std::string("f4"),  0x000C},
+    {std::string("f5"),  0x000D},
+    {std::string("f6"),  0x000E},
+    {std::string("f7"),  0x000F},
+    {std::string("f8"),  0x0010},
+    {std::string("f9"),  0x0011},
+    {std::string("f10"), 0x0012},
+    {std::string("f11"), 0x0013},
+    {std::string("f12"), 0x0014},
+    {std::string("f13"), 0x0015},
+    {std::string("f14"), 0x0016},
+    {std::string("f15"), 0x0017},
+    {std::string("f16"), 0x0018},
+    {std::string("f17"), 0x0019},
+    {std::string("f18"), 0x001A},
+    {std::string("f19"), 0x001B},
+    {std::string("f20"), 0x001C},
+    {std::string("f21"), 0x001D},
+    {std::string("f22"), 0x001E},
+    {std::string("f23"), 0x001F}
 };
 
 typedef struct
@@ -1216,12 +1125,17 @@ int AssembleScenes(const char* outputFilename, const char** inputFilenames, cons
     size_t sizeOfSceneDat = 4 + 4 * numScenes;
     uint32_t* scenePtrs = (uint32_t*)malloc(numScenes * sizeof(uint32_t));
     uint64_t curScenePtr = 0;
+    uint32_t* compLens = (uint32_t*)malloc(numScenes * sizeof(uint32_t));
+    char** compData = (char**)malloc(numScenes * sizeof(char*));
     for (int i = 0; i < numScenes; i++)
     {
-        const int curSceneLen = scenes[i].dataLen;
-        sizeOfSceneDat += curSceneLen;
+        compData[i] = (char*)malloc(16384);
+        uint32_t compressedSizeScene = LZ4_compress_HC((char*)(scenes[i].data), compData[i] + 4, scenes[i].dataLen, 16384, LZ4HC_CLEVEL_MAX);
+        *((uint32_t*)compData[i]) = compressedSizeScene;
+        compLens[i] = compressedSizeScene + 4;
+        sizeOfSceneDat += compressedSizeScene + 4;
         scenePtrs[i] = (uint32_t)curScenePtr;
-        curScenePtr += curSceneLen;
+        curScenePtr += compressedSizeScene + 4;
     }
     uint64_t linkInfoPtr = 0x00000008 + sizeOfSceneDat;
     fwrite(&linkInfoPtr, sizeof(uint64_t), 1, outputFileHandle);
@@ -1230,7 +1144,7 @@ int AssembleScenes(const char* outputFilename, const char** inputFilenames, cons
     fwrite(scenePtrs, sizeof(uint32_t), numScenes, outputFileHandle);
     for (int i = 0; i < numScenes; i++)
     {
-        fwrite(scenes[i].data, 1, scenes[i].dataLen, outputFileHandle);
+        fwrite(compData[i], 1, compLens[i], outputFileHandle);
     }
     //Write link info (may need some cleanup)
     fwrite(&numChars, sizeof(uint16_t), 1, outputFileHandle);

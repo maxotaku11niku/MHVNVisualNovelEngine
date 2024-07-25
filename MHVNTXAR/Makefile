@@ -28,7 +28,7 @@ export LINKFLAGSBASE    :=
 export LINKFLAGSDEBUG   := $(LINKFLAGSBASE)
 export LINKFLAGSRELEASE := $(LINKFLAGSBASE) -Wl,-s
 export LINKFLAGS        := $(LINKFLAGSBASE)
-export LINKLIBS         :=
+export LINKLIBS         := -llz4
 
 # Define some variable overrides
 default : CFLAGS = $(CFLAGSRELEASE)

@@ -8,6 +8,7 @@
 #include "src/platform/pc98_gdc.c"
 #include "src/platform/pc98_keyboard.c"
 #include "src/main.c"
+#include "src/lz4.c"
 #include "src/unicode.c"
 #include "src/palette.c"
 #include "src/stdbuffer.c"
