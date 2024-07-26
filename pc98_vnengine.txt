@@ -236,8 +236,23 @@ For each scene, when the data is uncompressed, it takes the form of a bytecode, 
 0x2D    subvv [uint16 statevar1], [uint16 statevar2]  Performs *statevar1 -= *statevar2, and sets the flags according to the result.
 0x2E    ldflg [uint16 flag]                           Loads flag into the Z flag. If 'flag' actually refers to a variable, then Z is set only if the variable is nonzero, otherwise Z is unset.
 0x2F    stflg [uint16 flag]                           Puts the Z flag into the given flag. If 'flag' actually refers to a variable, then the operation is forbidden (for safety reasons).
-0x30-0x3F Reserved, priority for new allocations
-0x40-0xFF Reserved, will only be used for new instructions if absolutely necessary
+0x30    setbg [uint16 bg]                    Sets the background to the given bg. Also sets the main palette to be the same as that used for the background.
+0x31    addbgvar [uint16 var], [label bg]    Adds a variant patch to the current background. The bg label is used by the assembler as a hint for which background's variants should be searched, the actual code has no corresponding value.
+0x32    subbgvar [uint16 var], [label bg]    Removes a previously applied variant patch from the current background. Patch number 0xFFFF is reserved for removing all currently applied patches (subbgvarall pseudoinstruction). The bg label is used by the assembler as a hint for which background's variants should be searched, the actual code has no corresponding value.
+0x33    Reserved (preferably for additional background functions)
+0x34    setspr0 [uint16 spr]                 Sets the sprite to be put into sprite location 0. Sprite number 0xFFFF is reserved for removing the sprite at location 0 (unsetspr0 pseudoinstruction).
+0x35    addspr0var [uint16 var], [label spr] Adds a variant patch to the current sprite at location 0. The spr label is used by the assembler as a hint for which sprite's variants should be searched, the actual code has no corresponding value.
+0x36    subspr0var [uint16 var], [label spr] Removes a previously applied variant patch from the current sprite at location 0. Patch number 0xFFFF is reserved for removing all currently applied patches (subspr0varall pseudoinstruction).  The spr label is used by the assembler as a hint for which sprite's variants should be searched, the actual code has no corresponding value.
+0x37    Reserved (preferably for additional sprite functions)
+0x38    setspr1 [uint16 spr]                 Sets the sprite to be put into sprite location 1. Sprite number 0xFFFF is reserved for removing the sprite at location 1 (unsetspr1 pseudoinstruction).
+0x39    addspr1var [uint16 var], [label spr] Adds a variant patch to the current sprite at location 1.  The spr label is used by the assembler as a hint for which sprite's variants should be searched, the actual code has no corresponding value.
+0x3A    subspr1var [uint16 var], [label spr] Removes a previously applied variant patch from the current sprite at location 1. Patch number 0xFFFF is reserved for removing all currently applied patches (subspr1varall pseudoinstruction).  The spr label is used by the assembler as a hint for which sprite's variants should be searched, the actual code has no corresponding value.
+0x3B    Reserved (preferably for additional sprite functions)
+0x3C    setspr2 [uint16 spr]                 Sets the sprite to be put into sprite location 2. Sprite number 0xFFFF is reserved for removing the sprite at location 2 (unsetspr2 pseudoinstruction).
+0x3D    addspr2var [uint16 var], [label spr] Adds a variant patch to the current sprite at location 2.  The spr label is used by the assembler as a hint for which sprite's variants should be searched, the actual code has no corresponding value.
+0x3E    subspr2var [uint16 var], [label spr] Removes a previously applied variant patch from the current sprite at location 2. Patch number 0xFFFF is reserved for removing all currently applied patches (subspr2varall pseudoinstruction). The spr label is used by the assembler as a hint for which sprite's variants should be searched, the actual code has no corresponding value.
+0x3F    Reserved (preferably for additional sprite functions)
+0x40-0xFF Reserved
 
 The scene assembler also has the following directives:
 .scene [scene_name]     Declares a scene with the following name. Make sure that scene has the appropriate text entries for all supported languages. Every line until the next .scene directive or the end of the file is assumed to be part of the declared scene.
@@ -412,6 +427,18 @@ All images are GPI files. To save a little space, however, they use a modified h
 
 See the specification on GPI for more info on the actual content of the image files.
 
+* MHVNIMGP input *
+
+For background images, a single file listing out which image files to input for main backgrounds and their variants is the input. For example:
+
+clouds, bg/clouds.gpi
+room, bg/room.gpi
+grass_field, bg/grass_field.gpi [ { explosion, bg/grass_field_explosion.gpi, 128, 256 },
+{ plane, bg/grass_field_plane.gpi, 440, 32 } ]
+store, bg/store.gpi [ { juiceonfloor, bg/store_juiceonfloor.gpi, 320, 200 } ]
+
+Each background image is on its own line, every blank line is ignored. The first string before a comma is the name of the background, then what comes after the comma is its file path. All file paths are relative to the input list file, please use forward slashes to separate directories. Variants are declared in square brackets after this basic information, as a list of structures which each are declared in curly brackets. In each variant declaration first comes the name of the variant, then its file path, then its x and then its y position on the background. The variant list is allowed to span multiple lines, but each variant cannot be split across lines.
+
 * Sprite data archive (sprdat_file) *
 
 This file contains all sprite images, as well as their corresponding variant patches.
@@ -434,6 +461,15 @@ Each variant patch is described by the follwing structure:
 All images are GPI files. To save a little space, however, they use a modified header that excludes the palette since this information is stored in the background data archive (because the main palette is set to the same as the current background, all sprites must be made for the palette of the background(s) they will appear in front of). Variant patch positions are relative to the top-left pixel of the main sprite and thus can be negative. Sprites should have some transparency, but this is not strictly required.
 
 See the specification on GPI for more info on the actual content of the image files.
+
+* MHVNIMGP input *
+
+Works pretty much similarly to how background images are archived together, see the example:
+
+guy, spr/guy.gpi [ { mouth_happy, spr/guy_mouth_happy.gpi, 32, 44 },
+{ decoration_angry, spr/guy_decoration_angry.gpi, 44, -16 } ]
+gal, spr/gal.gpi [ { eyes_circle, spr/gal_eyes_circle.gpi, 28, 30 } ]
+book, spr/book.gpi
 
 * Music data archive (musdat_file) *
 

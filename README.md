@@ -22,6 +22,8 @@ This repository contains project files for:
 
 - MHVNTXAR, text archiver
 
+- MHVNIMGP, image archiver
+
 This repository will contain project files for MHVN-specific tools in the future. Basic documentation on usage is in each directory.
 
 ## What's NOT in this repository?

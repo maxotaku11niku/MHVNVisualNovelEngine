@@ -1161,6 +1161,30 @@ int SceneDataProcess()
             curSceneDataPC += 2;
             SetFlag(result, vmFlags & VMFLAG_Z);
             break;
+        case 0x30: //setbg
+            curSceneDataPC += 2; //stub
+            break;
+        case 0x31: //addbgvar
+            curSceneDataPC += 2; //stub
+            break;
+        case 0x32: //subbgvar
+            curSceneDataPC += 2; //stub
+            break;
+        case 0x34: //setspr0
+        case 0x38: //setspr1
+        case 0x3C: //setspr2
+            curSceneDataPC += 2; //stub
+            break;
+        case 0x35: //addspr0var
+        case 0x39: //addspr1var
+        case 0x3D: //addspr2var
+            curSceneDataPC += 2; //stub
+            break;
+        case 0x36: //subspr0var
+        case 0x3A: //subspr1var
+        case 0x3E: //subspr2var
+            curSceneDataPC += 2; //stub
+            break;
         default: //illegal/unimplemented opcode
             break;
         }

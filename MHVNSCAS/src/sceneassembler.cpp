@@ -54,60 +54,79 @@ extern "C"
 //This opcode map also accounts for pseudoinstructions by going beyond a byte
 const std::unordered_map<std::string, int> mnemonicsToOpcodes =
 {
-    {std::string("gotoscene"),    0x00},
-    {std::string("vnend"),       0x100},
-    {std::string("jmp"),          0x01},
-    {std::string("jz"),           0x02},
-    {std::string("je"),           0x02},
-    {std::string("jnz"),          0x03},
-    {std::string("jne"),          0x03},
-    {std::string("jn"),           0x04},
-    {std::string("jl"),           0x04},
-    {std::string("jp"),           0x05},
-    {std::string("jge"),          0x05},
-    {std::string("jle"),          0x06},
-    {std::string("jg"),           0x07},
-    {std::string("palsetcol"),    0x08},
-    {std::string("paladdcol"),    0x09},
-    {std::string("palsetlum"),    0x0A},
-    {std::string("palsetsat"),    0x0B},
-    {std::string("palsethue"),    0x0C},
-    {std::string("palcolourise"), 0x0D},
-    {std::string("palinvert"),    0x0E},
-    {std::string("nowait"),       0x0F},
-    {std::string("nexttext"),     0x10},
-    {std::string("text"),         0x11},
-    {std::string("charname"),     0x12},
-    {std::string("nocharname"),  0x112},
-    {std::string("deltext"),      0x13},
-    {std::string("ynchoice"),     0x14},
-    {std::string("choice2"),      0x15},
-    {std::string("choice3"),      0x16},
-    {std::string("choice4"),      0x17},
-    {std::string("bfadein"),      0x18},
-    {std::string("bfadeout"),     0x19},
-    {std::string("wfadein"),      0x1A},
-    {std::string("wfadeout"),     0x1B},
-    {std::string("pfadein"),      0x1C},
-    {std::string("pfadeout"),     0x1D},
-    {std::string("phuerotate"),   0x1E},
-    {std::string("shake"),        0x1F},
-    {std::string("lut2"),         0x20},
-    {std::string("lut3"),         0x21},
-    {std::string("lut4"),         0x22},
-    {std::string("swapzn"),       0x23},
-    {std::string("setvi"),        0x24},
-    {std::string("setvv"),        0x25},
-    {std::string("csetvi"),       0x26},
-    {std::string("csetvv"),       0x27},
-    {std::string("cmpvi"),        0x28},
-    {std::string("cmpvv"),        0x29},
-    {std::string("addvi"),        0x2A},
-    {std::string("addvv"),        0x2B},
-    {std::string("subvi"),        0x2C},
-    {std::string("subvv"),        0x2D},
-    {std::string("ldflg"),        0x2E},
-    {std::string("stflg"),        0x2F},
+    {std::string("gotoscene"),      0x00},
+    {std::string("vnend"),         0x100},
+    {std::string("jmp"),            0x01},
+    {std::string("jz"),             0x02},
+    {std::string("je"),             0x02},
+    {std::string("jnz"),            0x03},
+    {std::string("jne"),            0x03},
+    {std::string("jn"),             0x04},
+    {std::string("jl"),             0x04},
+    {std::string("jp"),             0x05},
+    {std::string("jge"),            0x05},
+    {std::string("jle"),            0x06},
+    {std::string("jg"),             0x07},
+    {std::string("palsetcol"),      0x08},
+    {std::string("paladdcol"),      0x09},
+    {std::string("palsetlum"),      0x0A},
+    {std::string("palsetsat"),      0x0B},
+    {std::string("palsethue"),      0x0C},
+    {std::string("palcolourise"),   0x0D},
+    {std::string("palinvert"),      0x0E},
+    {std::string("nowait"),         0x0F},
+    {std::string("nexttext"),       0x10},
+    {std::string("text"),           0x11},
+    {std::string("charname"),       0x12},
+    {std::string("nocharname"),    0x112},
+    {std::string("deltext"),        0x13},
+    {std::string("ynchoice"),       0x14},
+    {std::string("choice2"),        0x15},
+    {std::string("choice3"),        0x16},
+    {std::string("choice4"),        0x17},
+    {std::string("bfadein"),        0x18},
+    {std::string("bfadeout"),       0x19},
+    {std::string("wfadein"),        0x1A},
+    {std::string("wfadeout"),       0x1B},
+    {std::string("pfadein"),        0x1C},
+    {std::string("pfadeout"),       0x1D},
+    {std::string("phuerotate"),     0x1E},
+    {std::string("shake"),          0x1F},
+    {std::string("lut2"),           0x20},
+    {std::string("lut3"),           0x21},
+    {std::string("lut4"),           0x22},
+    {std::string("swapzn"),         0x23},
+    {std::string("setvi"),          0x24},
+    {std::string("setvv"),          0x25},
+    {std::string("csetvi"),         0x26},
+    {std::string("csetvv"),         0x27},
+    {std::string("cmpvi"),          0x28},
+    {std::string("cmpvv"),          0x29},
+    {std::string("addvi"),          0x2A},
+    {std::string("addvv"),          0x2B},
+    {std::string("subvi"),          0x2C},
+    {std::string("subvv"),          0x2D},
+    {std::string("ldflg"),          0x2E},
+    {std::string("stflg"),          0x2F},
+    {std::string("setbg"),          0x30},
+    {std::string("addbgvar"),       0x31},
+    {std::string("subbgvar"),       0x32},
+    {std::string("subbgvarall"),   0x132},
+    {std::string("setspr0"),        0x34},
+    {std::string("unsetspr0"),     0x134},
+    {std::string("addspr0var"),     0x35},
+    {std::string("subspr0var"),     0x36},
+    {std::string("subspr0varall"), 0x136},
+    {std::string("setspr1"),        0x38},
+    {std::string("unsetspr1"),     0x138},
+    {std::string("addspr1var"),     0x39},
+    {std::string("subspr1var"),     0x3A},
+    {std::string("subspr1varall"), 0x13A},
+    {std::string("setspr2"),        0x3C},
+    {std::string("unsetspr2"),     0x13C},
+    {std::string("addspr2var"),     0x3D},
+    {std::string("subspr2var"),     0x3E},
+    {std::string("subspr2varall"), 0x13E},
     //Directives included as well for ease of programming
     {std::string(".scene"),     0x10000},
     {std::string(".vnentry"),   0x10001},
@@ -320,6 +339,10 @@ typedef enum
 {
     NOOPERANDS, //Operation takes no operands
     SCENEREF, //Operation takes a single scene reference
+    BGREF, //Operation takes a single background reference
+    BGVARREF, //Operation takes a single background variant reference
+    SPRREF, //Operation takes a single sprite reference
+    SPRVARREF, //Operation takes a single sprite variant reference
     TEXTREF, //Operation takes a single text reference
     CHARACTERREF, //Operation takes a single character reference
     JUMP, //Operation takes a single jump label
@@ -531,6 +554,52 @@ int ParseLine(char* line, int* curScene)
             numArg = 1;
             type = OperandType::STATEVAR_SINGLE;
             break;
+        case 0x30: //setbg
+            numArg = 1;
+            type = OperandType::BGREF;
+            break;
+        case 0x31: //addbgvar
+        case 0x32: //subbgvar
+            numArg = 2;
+            type = OperandType::BGVARREF;
+            break;
+        case 0x132: //subbgvarall
+            instructionBytes[1] = 0xFF;
+            instructionBytes[2] = 0xFF;
+            numBytesInInstruction += 2;
+            numArg = 0;
+            break;
+        case 0x34: //setspr0
+        case 0x38: //setspr1
+        case 0x3C: //setspr2
+            numArg = 1;
+            type = OperandType::SPRREF;
+            break;
+        case 0x134: //unsetspr0
+        case 0x138: //unsetspr1
+        case 0x13C: //unsetspr2
+            instructionBytes[1] = 0xFF;
+            instructionBytes[2] = 0xFF;
+            numBytesInInstruction += 2;
+            numArg = 0;
+            break;
+        case 0x35: //addspr0var
+        case 0x36: //subspr0var
+        case 0x39: //addspr1var
+        case 0x3A: //subspr1var
+        case 0x3D: //addspr2var
+        case 0x3E: //subspr2var
+            numArg = 2;
+            type = OperandType::SPRVARREF;
+            break;
+        case 0x136: //subspr0varall
+        case 0x13A: //subspr1varall
+        case 0x13E: //subspr2varall
+            instructionBytes[1] = 0xFF;
+            instructionBytes[2] = 0xFF;
+            numBytesInInstruction += 2;
+            numArg = 0;
+            break;
         
         case 0x10000: //.scene
             numArg = 1;
@@ -610,6 +679,26 @@ int ParseLine(char* line, int* curScene)
                     numBytesInInstruction += 2;
                     instructionBytes[1] = (unsigned char)(scene & 0x00FF);
                     instructionBytes[2] = (unsigned char)((scene & 0xFF00) >> 8);
+                    break;
+                case OperandType::BGREF: //BG references are assigned here (put a stub for now, TODO)
+                    numBytesInInstruction += 2;
+                    instructionBytes[1] = 0x00;
+                    instructionBytes[2] = 0x00;
+                    break;
+                case OperandType::BGVARREF: //BG variant references are assigned here (put a stub for now, TODO)
+                    numBytesInInstruction += 2;
+                    instructionBytes[1] = 0x00;
+                    instructionBytes[2] = 0x00;
+                    break;
+                case OperandType::SPRREF: //Sprite references are assigned here (put a stub for now, TODO)
+                    numBytesInInstruction += 2;
+                    instructionBytes[1] = 0x00;
+                    instructionBytes[2] = 0x00;
+                    break;
+                case OperandType::SPRVARREF: //Sprite variant references are assigned here (put a stub for now, TODO)
+                    numBytesInInstruction += 2;
+                    instructionBytes[1] = 0x00;
+                    instructionBytes[2] = 0x00;
                     break;
                 case OperandType::TEXTREF: //Text references are assigned here
                     scanStat = ScanForWord((const char**)&wordptr, (const char**)&wordEndPtr);

@@ -102,7 +102,7 @@ lz4_decompress:
         push    ds              ;#preserve compiler assumptions
 ;#        les     di,[outb]       ;#load target buffer, MH - es:di is being passed to the function
         push    di              ;#save original starting offset (in case != 0)
-;#        lds     si,[inb]        ;#load source buffer, MH - ds:dl is being passed to the function
+;#        lds     si,[inb]        ;#load source buffer, MH - ds:di is being passed to the function
 ;#        add     si,4            ;#skip magic number, MH - No longer including this in output files
         cld                     ;#make strings copy forward
         mov     bx,offset SHR4table     ;#prepare BX for XLAT later on

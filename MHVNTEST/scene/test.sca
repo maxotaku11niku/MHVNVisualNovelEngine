@@ -25,6 +25,7 @@
 .vnentry
 
 _start:
+setbg INITIAL
 charname NARRATOR
 text SCENE_TEST_0000
 text SCENE_TEST_0001 ;This and all the other 'text' commands should be converted to nexttext instructions

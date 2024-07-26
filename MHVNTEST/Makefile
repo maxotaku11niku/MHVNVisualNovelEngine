@@ -1,15 +1,17 @@
 # Directories
-TARGET	:= out
-BUILD	:= obj
-SCENESRC	:= scene
-ENGBTEXT	:= en_GB
-JAJPTEXT	:= ja_JP
+TARGET   := out
+BUILD    := obj
+SCENESRC := scene
+IMAGES   := images
+ENGBTEXT := en_GB
+JAJPTEXT := ja_JP
 # Handle filenames
 export SCENEFILES	:= $(foreach dir,$(SCENESRC),$(wildcard $(dir)/*.sca))
 export GBENGLISHFILES	:= $(foreach dir,$(ENGBTEXT),$(wildcard $(dir)/*.txt))
 export JAPANESEFILES	:= $(foreach dir,$(JAJPTEXT),$(wildcard $(dir)/*.txt))
 export OBJFILESTXA	:= EN_GB.otxa JA_JP.otxa
 export OBJFILESSCX	:= SCENE.odat
+export OBJFILESIMG	:= BGIMAGE.odat
 export OBJFILES	:= $(addprefix $(BUILD)/, $(OBJFILESTXA) $(OBJFILESSCX))
 
 all : $(OBJFILES)
@@ -17,6 +19,13 @@ all : $(OBJFILES)
 
 $(BUILD)/SCENE.odat : $(SCENEFILES)
 	tools/mhvnscas -o $@ $^
+
+$(BUILD)/BGIMAGE.odat : $(IMAGES)/bglist.txt
+	tools/mhvnimgp -o $@ -b $^
+
+# For later, haven't yet created a sprite image to use just yet so I'll do that first
+#$(BUILD)/SPRITE.odat : $(IMAGES)/sprlist.txt
+#	tools/mhvnimgp -o $@ -s $^
 
 $(BUILD)/EN_GB.otxa : $(GBENGLISHFILES)
 	tools/mhvntxar -o $@ $^
