@@ -125,7 +125,7 @@ None, PC beats them all@]
 
 Confused Person
 @[SCENE_TEST_0012
-Anyway, I'll come back when we have some actual graphics, instead of just this silly text box.@]
+Anyway, I'll come back when we have some actual sprites, instead of just this silly text box and cheesy background.@]
 
 Narrator
 @[SCENE_TEST_0013

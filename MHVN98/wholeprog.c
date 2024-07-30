@@ -13,6 +13,7 @@
 #include "src/palette.c"
 #include "src/stdbuffer.c"
 #include "src/rootinfo.c"
+#include "src/gpimage.c"
 #include "src/graphics.c"
 #include "src/sceneengine.c"
 #include "src/textengine.c"

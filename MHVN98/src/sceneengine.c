@@ -1161,8 +1161,14 @@ int SceneDataProcess()
             SetFlag(result, vmFlags & VMFLAG_Z);
             break;
         case 0x30: //setbg
-            curSceneDataPC += 2; //stub
+        {
+            unsigned short bgNum = *((unsigned short*)(curSceneData + curSceneDataPC));
+            ImageInfo* bginf = LoadBGImage(bgNum);
+            bginf->flags |= IMAGE_DRAWREQ;
+            RedrawEverything();
+            curSceneDataPC += 2;
             break;
+        }
         case 0x31: //addbgvar
             curSceneDataPC += 2; //stub
             break;

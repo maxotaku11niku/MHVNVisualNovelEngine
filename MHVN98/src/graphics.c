@@ -28,6 +28,7 @@
 #include "platform/x86strops.h"
 #include "platform/filehandling.h"
 #include "rootinfo.h"
+#include "gpimage.h"
 #include "graphics.h"
 #include "palette.h"
 
@@ -675,6 +676,9 @@ __far unsigned char* bgImageDataPlane1;
 __far unsigned char* bgImageDataPlane2;
 __far unsigned char* bgImageDataPlane3;
 
+unsigned int numBg;
+unsigned int numSpr;
+
 void UnloadImage(ImageInfo* img)
 {
     if (img == 0 || !(img->flags & IMAGE_LOADED)) return; //Don't bother if image is not loaded or if pointer to image data is null (i.e. known not to be valid)
@@ -701,11 +705,16 @@ ImageInfo* LoadBGImage(unsigned int num)
     unsigned long bgdatpos;
     __far unsigned char* bgp = (__far unsigned char*)&bgdatpos;
     ReadFile(handle, 4, bgp, &realReadLen);
-    SeekFile(handle, DOSFILE_SEEK_ABSOLUTE, bgp, &curfilepos);
+    SeekFile(handle, DOSFILE_SEEK_ABSOLUTE, bgdatpos, &curfilepos);
+    unsigned long thisBgDatPos;
+    __far unsigned char* tbgp = (__far unsigned char*)&thisBgDatPos;
+    ReadFile(handle, 4, tbgp, &realReadLen);
+    thisBgDatPos += bgdatpos + (numBg << 2);
+    SeekFile(handle, DOSFILE_SEEK_ABSOLUTE, thisBgDatPos, &curfilepos);
     unsigned long bgimgpos;
     __far unsigned char* bgip = (__far unsigned char*)&bgimgpos;
     ReadFile(handle, 4, bgip, &realReadLen);
-    SeekFile(handle, DOSFILE_SEEK_RELATIVE, 2, &curfilepos);
+    SeekFile(handle, DOSFILE_SEEK_ABSOLUTE, thisBgDatPos + 6, &curfilepos);
     unsigned short palInd;
     __far unsigned char* pip = (__far unsigned char*)&palInd;
     ReadFile(handle, 2, pip, &realReadLen);
@@ -713,25 +722,34 @@ ImageInfo* LoadBGImage(unsigned int num)
     unsigned char midPal[24];
     __far unsigned char* mpp = (__far unsigned char*)midPal;
     ReadFile(handle, 24, mpp, &realReadLen);
-    //TODO: read and decode actual image data
+    SeekFile(handle, DOSFILE_SEEK_ABSOLUTE, bgimgpos, &curfilepos);
+    GPIInfo gpiinf;
+    gpiinf.handle = handle;
+    gpiinf.planes[0] = bgImageDataPlane0;
+    gpiinf.planes[1] = bgImageDataPlane1;
+    gpiinf.planes[2] = bgImageDataPlane2;
+    gpiinf.planes[3] = bgImageDataPlane3;
+    result = OpenGPIFile(&gpiinf);
+    if (!result) DecompressGPIFile(&gpiinf);
     CloseFile(handle);
-    unsigned char outpal[48];
+    if (!result && gpiinf.hasMask) MemFree(gpiinf.maskPlane); //Don't need mask plane for backgrounds
+    ColourRGB outpal[16];
     int mpPtr = 0;
     for (int i = 0; i < 16; i++)
     {
         unsigned char cb = midPal[mpPtr];
         mpPtr++;
-        outpal[i * 3] = (cb & 0xF) * 0x11;
-        outpal[i * 3 + 1] = ((cb >> 4) & 0x0F) * 0x11;
+        outpal[i].r = (cb & 0xF) * 0x11;
+        outpal[i].g = ((cb >> 4) & 0x0F) * 0x11;
         cb = midPal[mpPtr];
         mpPtr++;
-        outpal[i * 3 + 2] = (cb & 0xF) * 0x11;
+        outpal[i].b = (cb & 0xF) * 0x11;
         i++;
-        outpal[i * 3] = ((cb >> 4) & 0x0F) * 0x11;
+        outpal[i].r = ((cb >> 4) & 0x0F) * 0x11;
         cb = midPal[mpPtr];
         mpPtr++;
-        outpal[i * 3 + 1] = (cb & 0xF) * 0x11;
-        outpal[i * 3 + 2] = ((cb >> 4) & 0x0F) * 0x11;
+        outpal[i].g = (cb & 0xF) * 0x11;
+        outpal[i].b = ((cb >> 4) & 0x0F) * 0x11;
     }
     SetMainPalette(outpal);
     CopyMainPaletteToOut();
@@ -750,6 +768,12 @@ ImageInfo* LoadBGImage(unsigned int num)
     bgInfo.id = num;
     bgInfo.layer = 0;
     bgInfo.flags = IMAGE_TYPE_NORMAL | IMAGE_MEM_NORMAL | IMAGE_ALIGN_FIXED | IMAGE_LOADED;
+
+    //probably temporary
+    if (textboxInfo.flags & IMAGE_DRAWN) textboxInfo.flags |= IMAGE_DRAWREQ;
+    if (charnameboxInfo.flags & IMAGE_DRAWN) charnameboxInfo.flags |= IMAGE_DRAWREQ;
+    if (choiceboxInfo.flags & IMAGE_DRAWN) choiceboxInfo.flags |= IMAGE_DRAWREQ;
+
     return &bgInfo;
 }
 
@@ -1369,8 +1393,50 @@ void DoDrawRequests()
     }
 }
 
-void InitialiseGraphicsSystem()
+void RedrawEverything()
 {
+    for (int i = 0; i < 23; i++)
+    {
+        ImageInfo* img = allInfos[i];
+        unsigned char fl = img->flags;
+        if (!(fl & IMAGE_LOADED)) continue; //Don't bother if image is not loaded
+        if (fl & IMAGE_DRAWREQ) img->flags |= IMAGE_DRAWN; //Pass through draw request
+        fl = img->flags & IMAGE_DRAWN;
+        if (fl)
+        {
+            img->flags &= ~(IMAGE_DRAWN); //Mark as not drawn so that DrawImage can do its magic
+            DrawImage(img);
+        }
+    }
+}
+
+
+int InitialiseGraphicsSystem()
+{
+    //Check if key files exist and get key numbers
+    unsigned int realReadLen;
+    unsigned long curfilepos;
+    fileptr handle;
+    int result = OpenFile(rootInfo.BGDataPath,  DOSFILE_OPEN_READ, &handle);
+    if (result)
+    {
+        WriteString("Error! Could not find BG data file!", 180, 184, FORMAT_SHADOW | FORMAT_COLOUR(0xF), 0);
+        return result;
+    }
+    __far unsigned char* bgnp = (__far unsigned char*)&numBg;
+    SeekFile(handle, DOSFILE_SEEK_ABSOLUTE, 4, &curfilepos);
+    ReadFile(handle, 2, bgnp, &realReadLen);
+    CloseFile(handle);
+    result = OpenFile(rootInfo.spriteDataPath,  DOSFILE_OPEN_READ, &handle);
+    if (result)
+    {
+        WriteString("Error! Could not find sprite data file!", 174, 184, FORMAT_SHADOW | FORMAT_COLOUR(0xF), 0);
+        return result;
+    }
+    __far unsigned char* spnp = (__far unsigned char*)&numSpr;
+    ReadFile(handle, 2, spnp, &realReadLen);
+    CloseFile(handle);
+
     LoadStd9SliceBoxIntoVRAM();
     bgImageDataPlane0 = (__far unsigned char*)MemAlloc(32000);
     bgImageDataPlane1 = (__far unsigned char*)MemAlloc(32000);
@@ -1379,60 +1445,29 @@ void InitialiseGraphicsSystem()
 
     //Flag all image infos as unloaded
     bgInfo.flags = 0;
+    bgInfo.id = 0xFFFF;
     textboxInfo.flags = 0;
     charnameboxInfo.flags = 0;
     choiceboxInfo.flags = 0;
     sprite1Info.flags = 0;
+    sprite1Info.id = 0xFFFF;
     sprite2Info.flags = 0;
+    sprite2Info.id = 0xFFFF;
     sprite3Info.flags = 0;
+    sprite3Info.id = 0xFFFF;
     for (int i = 0; i < 4; i++)
     {
         bgVariants[i].flags = 0;
+        bgVariants[i].id = 0xFFFF;
         sprite1Variants[i].flags = 0;
+        sprite1Variants[i].id = 0xFFFF;
         sprite2Variants[i].flags = 0;
+        sprite2Variants[i].id = 0xFFFF;
         sprite3Variants[i].flags = 0;
+        sprite3Variants[i].id = 0xFFFF;
     }
 
-    //Put a funky pattern in for now
-    unsigned short p0seg = ((unsigned long)bgImageDataPlane0) >> 16;
-    unsigned short p1seg = ((unsigned long)bgImageDataPlane1) >> 16;
-    unsigned short p2seg = ((unsigned long)bgImageDataPlane2) >> 16;
-    unsigned short p3seg = ((unsigned long)bgImageDataPlane3) >> 16;
-    __asm (
-        "movw %0, %%ax\n\t"
-        "movw %%ax, %%es\n\t"
-        "movw %1, %%di\n\t"
-        "movw $0x5555, %%ax\n\t"
-        "movw $16000, %%cx\n\t"
-        "rep stosw\n\t"
-
-        "movw %2, %%ax\n\t"
-        "movw %%ax, %%es\n\t"
-        "movw %3, %%di\n\t"
-        "movw $0x3333, %%ax\n\t"
-        "movw $16000, %%cx\n\t"
-        "rep stosw\n\t"
-
-        "movw %4, %%ax\n\t"
-        "movw %%ax, %%es\n\t"
-        "movw %5, %%di\n\t"
-        "movw $0x0F0F, %%ax\n\t"
-        "movw $16000, %%cx\n\t"
-        "rep stosw\n\t"
-
-        "movw %6, %%ax\n\t"
-        "movw %%ax, %%es\n\t"
-        "movw %7, %%di\n\t"
-        "xorw %%ax, %%ax\n\t"
-        "movw $16000, %%cx\n\t"
-        ".loop%=: stosw\n\t"
-        "incw %%ax\n\t"
-        "decw %%cx\n\t"
-        "jnz .loop%=\n\t"
-    : : "m" (p0seg), "m" (bgImageDataPlane0), "m" (p1seg), "m" (bgImageDataPlane1), "m" (p2seg), "m" (bgImageDataPlane2), "m" (p3seg), "m" (bgImageDataPlane3): "%ax", "%cx", "%di", "%es");
-    LoadBGImage(0);
-    bgInfo.flags |= IMAGE_DRAWREQ;
-    DrawImage(&bgInfo);
+    return 0;
 }
 
 void FreeGraphicsSystem()

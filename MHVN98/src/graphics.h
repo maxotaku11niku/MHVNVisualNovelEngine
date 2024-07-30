@@ -63,10 +63,11 @@ typedef struct imginf
 void UnloadImage(ImageInfo* img);
 ImageInfo* LoadBGImage(unsigned int num);
 void DoDrawRequests();
+void RedrawEverything();
 void LoadStd9SliceBoxIntoVRAM();
 ImageInfo* RegisterTextBox(const Rect2Int* rect);
 ImageInfo* RegisterCharNameBox(const Rect2Int* rect);
 ImageInfo* RegisterChoiceBox(const Rect2Int* rect);
 void Draw9SliceBoxInnerRegion(ImageInfo* img);
-void InitialiseGraphicsSystem();
+int InitialiseGraphicsSystem();
 void FreeGraphicsSystem();

@@ -140,6 +140,8 @@ int main(void)
     if (result) goto errorquit;
     result = SetupSceneEngine();
     if (result) goto errorquit;
+    result = InitialiseGraphicsSystem();
+    if (result) goto errorquit;
 
     SetCustomInfo(0, "Player"); //For testing
     
@@ -150,7 +152,6 @@ int main(void)
     PC98AddPrimaryInterrupts(INTERRUPT_MASK_VSYNC);
     intson();
 
-    InitialiseGraphicsSystem();
     textBoxInnerBounds.pos.x = 80;
     textBoxInnerBounds.pos.y = 288;
     textBoxInnerBounds.size.x = 480;
