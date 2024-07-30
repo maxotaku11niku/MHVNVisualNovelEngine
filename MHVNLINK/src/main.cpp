@@ -204,28 +204,20 @@ int main(int argc, char** argv)
         DisplayHelp();
         return 1;
     }
-    if (sceneDataFilenameNull || textDataFilenamesNull)
+    if (sceneDataFilenameNull || textDataFilenamesNull || bgDataFilenameNull || spriteDataFilenameNull)
     {
         puts("CRITICAL ERROR - Missing data files!:");
-        if (sceneDataFilenameNull) puts("  Scene data");
-        if (textDataFilenamesNull) puts("  Text data");
+        if (sceneDataFilenameNull)  puts("  Scene data");
+        if (textDataFilenamesNull)  puts("  Text data");
+        if (bgDataFilenameNull)     puts("  Background image data");
+        if (spriteDataFilenameNull) puts("  Sprite data");
         free(textDataFilenames);
         DisplayHelp();
         return 1;
     }
-    if (bgDataFilenameNull || spriteDataFilenameNull || musicDataFilenameNull || soundEffectDataFilenameNull || systemDataFilenameNull)
+    if (musicDataFilenameNull || soundEffectDataFilenameNull || systemDataFilenameNull)
     {
         puts("WARNING - Missing data files, however these data files have not yet been specified so they're not required at the moment:");
-        if (bgDataFilenameNull)
-        {
-            puts("  Background image data");
-            bgDataFilename = "BGIMAGE.odat";
-        }
-        if (spriteDataFilenameNull)
-        {
-            puts("  Sprite data");
-            spriteDataFilename = "SPRITE.odat";
-        }
         if (musicDataFilenameNull)
         {
             puts("  Music data");

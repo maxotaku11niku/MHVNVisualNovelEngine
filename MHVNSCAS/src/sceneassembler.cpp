@@ -45,11 +45,15 @@ extern "C"
 #define OP_SCENEUNDEFINED -2
 
 //Initial allocation sizes, and also how many more bytes/entries to add if more memory needs to be allocated for some reason
-#define DEFAULT_ALLOCBLOCK_SNB 65536
+#define DEFAULT_ALLOCBLOCK_SNB   65536
 #define DEFAULT_ALLOCBLOCK_STENB 65536
-#define DEFAULT_ALLOCBLOCK_SDB 65536
-#define DEFAULT_ALLOCBLOCK_CLB 65536
-#define DEFAULT_ALLOCBLOCK_SEP 256
+#define DEFAULT_ALLOCBLOCK_SDB   65536
+#define DEFAULT_ALLOCBLOCK_CLB   65536
+#define DEFAULT_ALLOCBLOCK_SEP   256
+#define DEFAULT_ALLOCBLOCK_BGLB  65536
+#define DEFAULT_ALLOCBLOCK_BGVLB 65536
+#define DEFAULT_ALLOCBLOCK_SPLB  65536
+#define DEFAULT_ALLOCBLOCK_SPVLB 65536
 
 //This opcode map also accounts for pseudoinstructions by going beyond a byte
 const std::unordered_map<std::string, int> mnemonicsToOpcodes =
@@ -184,13 +188,21 @@ typedef struct
     std::unordered_map<std::string, int>* foundTextLabels;
 } SceneData;
 
+typedef struct
+{
+    char* label;
+    char** variantNames;
+    int numVariants;
+    std::unordered_map<std::string, int>* foundVariantLabels;
+} ImageData;
+
 SceneData scenes[65536];
 int numScenes;
 int currentEntryScene;
 char* charLabels[65536];
 int numChars;
 bool textChain;
-char* globVarLabels[128];
+char* globVarLabels[224];
 char* globFlagLabels[768];
 char* localVarLabels[512];
 char* localFlagLabels[2560];
@@ -198,12 +210,18 @@ int numGlobVars;
 int numGlobFlags;
 int numLocalVars;
 int numLocalFlags;
+ImageData bg[65536];
+int numBg;
+ImageData spr[65536];
+int numSpr;
 
 std::unordered_map<std::string, int>* foundJumpLabels;
 std::vector<std::pair<int, std::string>>* refJumpLabels;
 std::unordered_map<std::string, int>* foundSceneLabels;
 std::unordered_map<std::string, int>* foundCharLabels;
 std::unordered_map<std::string, int>* foundVarLabels;
+std::unordered_map<std::string, int>* foundBgLabels;
+std::unordered_map<std::string, int>* foundSprLabels;
 
 char* sceneNamesBuffer;
 char* sceneNamesBufPtr;
@@ -217,6 +235,18 @@ size_t sceneDataBufferAllocSize;
 char* charLabelsBuffer;
 char* charLabelsBufPtr;
 size_t charLabelsBufferAllocSize;
+char* bgLabelsBuffer;
+char* bgLabelsBufPtr;
+size_t bgLabelsBufferAllocSize;
+char* bgVariantLabelsBuffer;
+char* bgVariantLabelsBufPtr;
+size_t bgVariantLabelsBufferAllocSize;
+char* sprLabelsBuffer;
+char* sprLabelsBufPtr;
+size_t sprLabelsBufferAllocSize;
+char* sprVariantLabelsBuffer;
+char* sprVariantLabelsBufPtr;
+size_t sprVariantLabelsBufferAllocSize;
 
 const char* invalidOpMessage = "ERROR - %s, line %u: invalid operation. Line ignored.";
 const char* autoOpMessage = "ERROR - %s, line %u: operation is not valid for use in assembly files. Remember that the assembler generates this instruction as part of optimisation. Line ignored";
@@ -680,20 +710,64 @@ int ParseLine(char* line, int* curScene)
                     instructionBytes[1] = (unsigned char)(scene & 0x00FF);
                     instructionBytes[2] = (unsigned char)((scene & 0xFF00) >> 8);
                     break;
-                case OperandType::BGREF: //BG references are assigned here (put a stub for now, TODO)
+                case OperandType::BGREF: //BG references are assigned here
+                    scanStat = ScanForWord((const char**)&wordptr, (const char**)&wordEndPtr);
+                    *wordEndPtr = '\0';
+                    if (foundBgLabels->count(std::string(wordptr))) //Background name already exists
+                    {
+                        arg0 = (*foundBgLabels)[std::string(wordptr)];
+                    }
+                    else //Background name doesn't already exist
+                    {
+                        arg0 = numBg;
+                        (*foundBgLabels)[std::string(wordptr)] = arg0;
+                        bg[numBg].label = bgLabelsBufPtr;
+                        bg[numBg].numVariants = 0;
+                        bg[numBg].foundVariantLabels = new std::unordered_map<std::string, int>();
+                        pcch = wordptr;
+                        cch = 0xFF;
+                        while (cch)
+                        {
+                            cch = *pcch++;
+                            *bgLabelsBufPtr++ = cch;
+                        }
+                        numBg++;
+                    }
                     numBytesInInstruction += 2;
-                    instructionBytes[1] = 0x00;
-                    instructionBytes[2] = 0x00;
+                    instructionBytes[1] = (unsigned char)(arg0 & 0x00FF);
+                    instructionBytes[2] = (unsigned char)((arg0 & 0xFF00) >> 8);
                     break;
                 case OperandType::BGVARREF: //BG variant references are assigned here (put a stub for now, TODO)
                     numBytesInInstruction += 2;
                     instructionBytes[1] = 0x00;
                     instructionBytes[2] = 0x00;
                     break;
-                case OperandType::SPRREF: //Sprite references are assigned here (put a stub for now, TODO)
+                case OperandType::SPRREF: //Sprite references are assigned here
+                    scanStat = ScanForWord((const char**)&wordptr, (const char**)&wordEndPtr);
+                    *wordEndPtr = '\0';
+                    if (foundSprLabels->count(std::string(wordptr))) //Sprite name already exists
+                    {
+                        arg0 = (*foundSprLabels)[std::string(wordptr)];
+                    }
+                    else //Sprite name doesn't already exist
+                    {
+                        arg0 = numSpr;
+                        (*foundSprLabels)[std::string(wordptr)] = arg0;
+                        spr[numSpr].label = sprLabelsBufPtr;
+                        spr[numSpr].numVariants = 0;
+                        spr[numSpr].foundVariantLabels = new std::unordered_map<std::string, int>();
+                        pcch = wordptr;
+                        cch = 0xFF;
+                        while (cch)
+                        {
+                            cch = *pcch++;
+                            *sprLabelsBufPtr++ = cch;
+                        }
+                        numSpr++;
+                    }
                     numBytesInInstruction += 2;
-                    instructionBytes[1] = 0x00;
-                    instructionBytes[2] = 0x00;
+                    instructionBytes[1] = (unsigned char)(arg0 & 0x00FF);
+                    instructionBytes[2] = (unsigned char)((arg0 & 0xFF00) >> 8);
                     break;
                 case OperandType::SPRVARREF: //Sprite variant references are assigned here (put a stub for now, TODO)
                     numBytesInInstruction += 2;
@@ -1146,13 +1220,29 @@ int AssembleScenes(const char* outputFilename, const char** inputFilenames, cons
     charLabelsBufferAllocSize = DEFAULT_ALLOCBLOCK_CLB;
     charLabelsBuffer = (char*)malloc(charLabelsBufferAllocSize);
     charLabelsBufPtr = charLabelsBuffer;
+    bgLabelsBufferAllocSize = DEFAULT_ALLOCBLOCK_BGLB;
+    bgLabelsBuffer = (char*)malloc(bgLabelsBufferAllocSize);
+    bgLabelsBufPtr = bgLabelsBuffer;
+    bgVariantLabelsBufferAllocSize = DEFAULT_ALLOCBLOCK_BGVLB;
+    bgVariantLabelsBuffer = (char*)malloc(bgVariantLabelsBufferAllocSize);
+    bgVariantLabelsBufPtr = bgVariantLabelsBuffer;
+    sprLabelsBufferAllocSize = DEFAULT_ALLOCBLOCK_SPLB;
+    sprLabelsBuffer = (char*)malloc(sprLabelsBufferAllocSize);
+    sprLabelsBufPtr = sprLabelsBuffer;
+    sprVariantLabelsBufferAllocSize = DEFAULT_ALLOCBLOCK_SPVLB;
+    sprVariantLabelsBuffer = (char*)malloc(sprVariantLabelsBufferAllocSize);
+    sprVariantLabelsBufPtr = sprVariantLabelsBuffer;
 
     numScenes = 0;
     numChars = 0;
+    numBg = 0;
+    numSpr = 0;
     currentEntryScene = 0;
     foundSceneLabels = new std::unordered_map<std::string, int>();
     foundCharLabels = new std::unordered_map<std::string, int>();
     foundVarLabels = new std::unordered_map<std::string, int>(defaultVarNames);
+    foundBgLabels = new std::unordered_map<std::string, int>();
+    foundSprLabels = new std::unordered_map<std::string, int>();
 
     for (int i = 0; i < numInputFiles; i++)
     {
@@ -1178,6 +1268,8 @@ int AssembleScenes(const char* outputFilename, const char** inputFilenames, cons
 
     delete foundSceneLabels; //These were only needed to quickly check if a certain label already existed
     delete foundCharLabels;
+    delete foundBgLabels;
+    delete foundSprLabels;
 
     if (numInvalidFiles >= numInputFiles)
     {
@@ -1188,6 +1280,10 @@ int AssembleScenes(const char* outputFilename, const char** inputFilenames, cons
         free(sceneTextEntryNamesBuffer);
         free(sceneDataBuffer);
         free(charLabelsBuffer);
+        free(bgLabelsBuffer);
+        free(bgVariantLabelsBuffer);
+        free(sprLabelsBuffer);
+        free(sprVariantLabelsBuffer);
         delete foundVarLabels;
         return 1;
     }
@@ -1208,6 +1304,14 @@ int AssembleScenes(const char* outputFilename, const char** inputFilenames, cons
         delete scenes[i].refSceneLabels;
         delete scenes[i].foundTextLabels;
         delete scenes[i].refVarLabels;
+    }
+    for (int i = 0; i < numBg; i++)
+    {
+        delete bg[i].foundVariantLabels;
+    }
+    for (int i = 0; i < numSpr; i++)
+    {
+        delete spr[i].foundVariantLabels;
     }
 
     //Write scene data to file
@@ -1242,6 +1346,8 @@ int AssembleScenes(const char* outputFilename, const char** inputFilenames, cons
     fwrite(&numGlobFlags, sizeof(uint16_t), 1, outputFileHandle);
     fwrite(&numLocalVars, sizeof(uint16_t), 1, outputFileHandle);
     fwrite(&numLocalFlags, sizeof(uint16_t), 1, outputFileHandle);
+    fwrite(&numBg, sizeof(uint16_t), 1, outputFileHandle);
+    fwrite(&numSpr, sizeof(uint16_t), 1, outputFileHandle);
     unsigned char zero = 0;
     for (int i = 0; i < numChars; i++)
     {
@@ -1268,31 +1374,31 @@ int AssembleScenes(const char* outputFilename, const char** inputFilenames, cons
         fputs(localFlagLabels[i], outputFileHandle);
         fwrite(&zero, 1, 1, outputFileHandle);
     }
-
-    std::vector<unsigned char>* linkInfoOutputBuffer = new std::vector<unsigned char>(sizeof(uint64_t) * numScenes);
-    linkInfoOutputBuffer->reserve(0x100000);
-    uint64_t* sceneLinkDatPtrs = (uint64_t*)linkInfoOutputBuffer->data();
-
     for (int i = 0; i < numScenes; i++)
     {
-        const char* chptr = scenes[i].label;
-        char ch = 0xFF;
-        while (ch)
-        {
-            ch = *chptr++;
-            linkInfoOutputBuffer->push_back(ch);
-        }
+        fputs(scenes[i].label, outputFileHandle);
+        fwrite(&zero, 1, 1, outputFileHandle);
+    }
+    for (int i = 0; i < numBg; i++)
+    {
+        fputs(bg[i].label, outputFileHandle);
+        fwrite(&zero, 1, 1, outputFileHandle);
+    }
+    for (int i = 0; i < numSpr; i++)
+    {
+        fputs(spr[i].label, outputFileHandle);
+        fwrite(&zero, 1, 1, outputFileHandle);
     }
 
-    uint64_t posCounter = 0;
+    std::vector<unsigned char>* linkInfoOutputBuffer = new std::vector<unsigned char>();
+    linkInfoOutputBuffer->reserve(0x100000);
+
     for (int i = 0; i < numScenes; i++)
     {
-        sceneLinkDatPtrs[i] = posCounter;
         uint16_t nT = scenes[i].numTexts;
         linkInfoOutputBuffer->push_back(nT & 0xFF);
         linkInfoOutputBuffer->push_back((nT >> 8) & 0xFF);
         const char* const* tlptr = scenes[i].textNames;
-        posCounter += 2;
         for (int j = 0; j < nT; j++)
         {
             const char* chptr = tlptr[j];
@@ -1301,7 +1407,40 @@ int AssembleScenes(const char* outputFilename, const char** inputFilenames, cons
             {
                 ch = *chptr++;
                 linkInfoOutputBuffer->push_back(ch);
-                posCounter++;
+            }
+        }
+    }
+    for (int i = 0; i < numBg; i++)
+    {
+        uint16_t nV = bg[i].numVariants;
+        linkInfoOutputBuffer->push_back(nV & 0xFF);
+        linkInfoOutputBuffer->push_back((nV >> 8) & 0xFF);
+        const char* const* bgvptr = bg[i].variantNames;
+        for (int j = 0; j < nV; j++)
+        {
+            const char* chptr = bgvptr[j];
+            char ch = 0xFF;
+            while (ch)
+            {
+                ch = *chptr++;
+                linkInfoOutputBuffer->push_back(ch);
+            }
+        }
+    }
+    for (int i = 0; i < numSpr; i++)
+    {
+        uint16_t nV = spr[i].numVariants;
+        linkInfoOutputBuffer->push_back(nV & 0xFF);
+        linkInfoOutputBuffer->push_back((nV >> 8) & 0xFF);
+        const char* const* sprvptr = spr[i].variantNames;
+        for (int j = 0; j < nV; j++)
+        {
+            const char* chptr = sprvptr[j];
+            char ch = 0xFF;
+            while (ch)
+            {
+                ch = *chptr++;
+                linkInfoOutputBuffer->push_back(ch);
             }
         }
     }
@@ -1316,6 +1455,10 @@ int AssembleScenes(const char* outputFilename, const char** inputFilenames, cons
     free(sceneTextEntryNamesBuffer);
     free(sceneDataBuffer);
     free(charLabelsBuffer);
+    free(bgLabelsBuffer);
+    free(bgVariantLabelsBuffer);
+    free(sprLabelsBuffer);
+    free(sprVariantLabelsBuffer);
     delete foundVarLabels;
     return 0;
 }

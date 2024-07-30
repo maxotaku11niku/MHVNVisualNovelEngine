@@ -20,8 +20,9 @@ ONE OF THESE FLAGS MUST BE USED, BUT NOT BOTH!:
 0x00000008  Literal contents of the generated .dat file, with placeholders for any links that couldn't be resolved at this stage
 
 The start of the link info block
-0x00000000  uint16              num_images    Number of images defined in THIS file
-0x00000002  char[num_images][]  image_labels  All of the defined image labels in order
+0x00000000  uint16              num_images         Number of images defined in THIS file
+0x00000002  uint64[num_images]  image_linkdatptrs  Array of pointers to the starts of each images's variant labels
+var         char[num_images][]  image_labels       All of the defined image labels in order
 For each image:
-0x00000000  uint16              num_variants    Number of variants defined
-0x00000002  char[num_variants]  variant_labels  All the variant labels for this image in order
+0x00000000  uint16                num_variants    Number of variants defined
+0x00000002  char[num_variants][]  variant_labels  All the defined variant labels for this image in order

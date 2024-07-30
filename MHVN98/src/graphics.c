@@ -26,7 +26,10 @@
 #include "platform/pc98_egc.h"
 #include "platform/x86segments.h"
 #include "platform/x86strops.h"
+#include "platform/filehandling.h"
+#include "rootinfo.h"
 #include "graphics.h"
+#include "palette.h"
 
 #define VRAM_HIDDEN_OFFSET 0x7D00
 
@@ -685,6 +688,54 @@ ImageInfo* LoadBGImage(unsigned int num)
         if (bgInfo.id == num) return &bgInfo; //Do not bother to reload the BG image if the same one is requested
         UnloadImage(&bgInfo);
     }
+
+    unsigned int realReadLen;
+    unsigned long curfilepos;
+    fileptr handle;
+    int result = OpenFile(rootInfo.BGDataPath,  DOSFILE_OPEN_READ, &handle);
+    if (result)
+    {
+        WriteString("Error! Could not find BG data file!", 180, 184, FORMAT_SHADOW | FORMAT_COLOUR(0xF), 0);
+        return result;
+    }
+    unsigned long bgdatpos;
+    __far unsigned char* bgp = (__far unsigned char*)&bgdatpos;
+    ReadFile(handle, 4, bgp, &realReadLen);
+    SeekFile(handle, DOSFILE_SEEK_ABSOLUTE, bgp, &curfilepos);
+    unsigned long bgimgpos;
+    __far unsigned char* bgip = (__far unsigned char*)&bgimgpos;
+    ReadFile(handle, 4, bgip, &realReadLen);
+    SeekFile(handle, DOSFILE_SEEK_RELATIVE, 2, &curfilepos);
+    unsigned short palInd;
+    __far unsigned char* pip = (__far unsigned char*)&palInd;
+    ReadFile(handle, 2, pip, &realReadLen);
+    SeekFile(handle, DOSFILE_SEEK_ABSOLUTE, 8 + 24 * ((unsigned long)palInd), &curfilepos);
+    unsigned char midPal[24];
+    __far unsigned char* mpp = (__far unsigned char*)midPal;
+    ReadFile(handle, 24, mpp, &realReadLen);
+    //TODO: read and decode actual image data
+    CloseFile(handle);
+    unsigned char outpal[48];
+    int mpPtr = 0;
+    for (int i = 0; i < 16; i++)
+    {
+        unsigned char cb = midPal[mpPtr];
+        mpPtr++;
+        outpal[i * 3] = (cb & 0xF) * 0x11;
+        outpal[i * 3 + 1] = ((cb >> 4) & 0x0F) * 0x11;
+        cb = midPal[mpPtr];
+        mpPtr++;
+        outpal[i * 3 + 2] = (cb & 0xF) * 0x11;
+        i++;
+        outpal[i * 3] = ((cb >> 4) & 0x0F) * 0x11;
+        cb = midPal[mpPtr];
+        mpPtr++;
+        outpal[i * 3 + 1] = (cb & 0xF) * 0x11;
+        outpal[i * 3 + 2] = ((cb >> 4) & 0x0F) * 0x11;
+    }
+    SetMainPalette(outpal);
+    CopyMainPaletteToOut();
+    SetDisplayPaletteToOut();
 
     bgInfo.boundRect.pos.x = 0;
     bgInfo.boundRect.pos.y = 0;

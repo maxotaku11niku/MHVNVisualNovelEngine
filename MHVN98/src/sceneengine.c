@@ -583,7 +583,6 @@ int SceneDataProcess()
                 ControlProcess(0);
                 break;
             }
-            curSceneDataPC += 2;
             break;
         }
         case 0x01: //jmp

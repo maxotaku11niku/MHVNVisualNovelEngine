@@ -23,13 +23,22 @@ The start of the link info block
 0x00000006  uint16                 numflags_glob      Number of global flags defined in THIS file
 0x00000008  uint16                 numstvar_loc       Number of local variables defined in THIS file
 0x0000000A  uint16                 numflags_loc       Number of local flags defined in THIS file
-0x0000000C  char[num_chars][]      charname_labels    All the defined character name labels in order
+0x0000000C  uint16                 num_bg             Number of backgrounds defined in THIS file
+0x0000000E  uint16                 num_spr            Number of sprites defined in THIS file
+0x00000010  char[num_chars][]      charname_labels    All the defined character name labels in order
 var         char[numstvar_glob][]  stvar_glob_labels  All the defined global variable labels in order
 var         char[numflags_glob][]  flags_glob_labels  All the defined global flag labels in order
 var         char[numstvar_loc][]   stvar_loc_labels   All the defined local variable labels in order
 var         char[numflags_loc][]   flags_loc_labels   All the defined local flag labels in order
-var         uint64[num_scenes]     scene_linkdatptrs  Array of pointers to the starts of each scene's text entry labels
 var         char[num_scenes][]     scene_labels       All the defined scene labels in order
+var         char[num_bg][]         bg_labels          All the defined background labels in order
+var         char[num_spr][]        spr_labels         All the defined sprite labels in order
 For each scene:
 0x00000000  uint16               num_entries        Number of text entries
 0x00000002  char[num_entries][]  entry_labels       All the defined text entry labels in this scene in order
+For each background:
+0x00000000  uint16                num_variants    Number of variants defined for this background in THIS file
+0x00000002  char[num_variants][]  variant_labels  All the defined variant labels for this background in order
+For each sprite:
+0x00000000  uint16                num_variants    Number of variants defined for this sprite in THIS file
+0x00000002  char[num_variants][]  variant_labels  All the defined variant labels for this sprite in order

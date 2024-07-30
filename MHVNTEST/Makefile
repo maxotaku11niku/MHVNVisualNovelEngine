@@ -11,8 +11,8 @@ export GBENGLISHFILES	:= $(foreach dir,$(ENGBTEXT),$(wildcard $(dir)/*.txt))
 export JAPANESEFILES	:= $(foreach dir,$(JAJPTEXT),$(wildcard $(dir)/*.txt))
 export OBJFILESTXA	:= EN_GB.otxa JA_JP.otxa
 export OBJFILESSCX	:= SCENE.odat
-export OBJFILESIMG	:= BGIMAGE.odat
-export OBJFILES	:= $(addprefix $(BUILD)/, $(OBJFILESTXA) $(OBJFILESSCX))
+export OBJFILESIMG	:= BGIMAGE.odat SPRITE.odat
+export OBJFILES	:= $(addprefix $(BUILD)/, $(OBJFILESTXA) $(OBJFILESSCX) $(OBJFILESIMG))
 
 all : $(OBJFILES)
 	tools/mhvnlink -o $(TARGET) -d masterdesc.txt -s $(BUILD)/SCENE.odat -t $(BUILD)/EN_GB.otxa -t $(BUILD)/JA_JP.otxa -bg $(BUILD)/BGIMAGE.odat -spr $(BUILD)/SPRITE.odat -m $(BUILD)/MUSIC.odat -sfx $(BUILD)/SOUNDFX.odat -sys $(BUILD)/SYSTEM.odat
@@ -23,9 +23,8 @@ $(BUILD)/SCENE.odat : $(SCENEFILES)
 $(BUILD)/BGIMAGE.odat : $(IMAGES)/bglist.txt
 	tools/mhvnimgp -o $@ -b $^
 
-# For later, haven't yet created a sprite image to use just yet so I'll do that first
-#$(BUILD)/SPRITE.odat : $(IMAGES)/sprlist.txt
-#	tools/mhvnimgp -o $@ -s $^
+$(BUILD)/SPRITE.odat : $(IMAGES)/sprlist.txt
+	tools/mhvnimgp -o $@ -s $^
 
 $(BUILD)/EN_GB.otxa : $(GBENGLISHFILES)
 	tools/mhvntxar -o $@ $^

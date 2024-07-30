@@ -29,10 +29,10 @@
 #include <unordered_map>
 #include <string>
 
-#define GLOBAL_VAR_BASE 0x0080
+#define GLOBAL_VAR_BASE  0x0020
 #define GLOBAL_FLAG_BASE 0x0100
-#define LOCAL_VAR_BASE 0x0400
-#define LOCAL_FLAG_BASE 0x0600
+#define LOCAL_VAR_BASE   0x0400
+#define LOCAL_FLAG_BASE  0x0600
 
 typedef struct
 {
@@ -40,10 +40,20 @@ typedef struct
     std::unordered_map<std::string, int>* sceneDataTextsMap;
 } SceneData;
 
+typedef struct
+{
+    int numVariantsInImage;
+    std::unordered_map<std::string, int>* imageDataVariantsMap;
+} ImageData;
+
 SceneData scenes[65536];
+ImageData bgs[65536];
+ImageData sprs[65536];
 std::unordered_map<std::string, int>* sceneDataSceneNamesMap;
 std::unordered_map<std::string, int>* sceneDataCharNamesMap;
 std::unordered_map<std::string, int>* sceneDataVarNamesMap;
+std::unordered_map<std::string, int>* sceneDataBgNamesMap;
+std::unordered_map<std::string, int>* sceneDataSprNamesMap;
 
 int numChars;
 int numScenes;
@@ -51,10 +61,15 @@ int numGlobVars;
 int numGlobFlags;
 int numLocalVars;
 int numLocalFlags;
+int numBg;
+int numSpr;
 
 uint16_t Ptr16TempArray[65536];
 uint32_t Ptr32TempArray[65536];
+uint64_t Ptr64TempArray[65536];
 int sceneIndexArray[65536];
+int bgIndexArray[65536];
+int sprIndexArray[66536];
 
 unsigned char* sceneObjectData;
 
@@ -423,10 +438,14 @@ int LinkVN(const char* dir, const char* masterDesc, const char* fontData, const 
     numGlobFlags = *((uint16_t*)(&sceneObjectLinkInfoPtr[0x6]));
     numLocalVars = *((uint16_t*)(&sceneObjectLinkInfoPtr[0x8]));
     numLocalFlags = *((uint16_t*)(&sceneObjectLinkInfoPtr[0xA]));
-    sceneObjectLinkInfoPtr += 0xC;
+    numBg = *((uint16_t*)(&sceneObjectLinkInfoPtr[0xC]));
+    numSpr = *((uint16_t*)(&sceneObjectLinkInfoPtr[0xE]));
+    sceneObjectLinkInfoPtr += 0x10;
     sceneDataSceneNamesMap = new std::unordered_map<std::string, int>();
     sceneDataCharNamesMap = new std::unordered_map<std::string, int>();
     sceneDataVarNamesMap = new std::unordered_map<std::string, int>();
+    sceneDataBgNamesMap = new std::unordered_map<std::string, int>();
+    sceneDataSprNamesMap = new std::unordered_map<std::string, int>();
     //Character names
     for (int i = 0; i < numChars; i++)
     {
@@ -459,13 +478,25 @@ int LinkVN(const char* dir, const char* masterDesc, const char* fontData, const 
         (*sceneDataVarNamesMap)[str] = i + LOCAL_FLAG_BASE;
         sceneObjectLinkInfoPtr += str.size() + 1;
     }
-    uint64_t* sceneDatPtrs = (uint64_t*)sceneObjectLinkInfoPtr;
-    sceneObjectLinkInfoPtr += 8 * numScenes;
     //Scene names
     for (int i = 0; i < numScenes; i++)
     {
         std::string str = std::string((char*)sceneObjectLinkInfoPtr);
         (*sceneDataSceneNamesMap)[str] = i;
+        sceneObjectLinkInfoPtr += str.size() + 1;
+    }
+    //Background names
+    for (int i = 0; i < numBg; i++)
+    {
+        std::string str = std::string((char*)sceneObjectLinkInfoPtr);
+        (*sceneDataBgNamesMap)[str] = i;
+        sceneObjectLinkInfoPtr += str.size() + 1;
+    }
+    //Sprite names
+    for (int i = 0; i < numSpr; i++)
+    {
+        std::string str = std::string((char*)sceneObjectLinkInfoPtr);
+        (*sceneDataSprNamesMap)[str] = i;
         sceneObjectLinkInfoPtr += str.size() + 1;
     }
     //Individual scenes
@@ -482,6 +513,36 @@ int LinkVN(const char* dir, const char* masterDesc, const char* fontData, const 
         }
         scenes[i].sceneDataTextsMap = scdTextsMap;
         scenes[i].numTextsInScene = numTexts;
+    }
+    //Individual backgrounds
+    for (int i = 0; i < numBg; i++)
+    {
+        int numVariants = *((uint16_t*)sceneObjectLinkInfoPtr);
+        sceneObjectLinkInfoPtr += 2;
+        std::unordered_map<std::string, int>* bgVariantsMap = new std::unordered_map<std::string, int>();
+        for (int j = 0; j < numVariants; j++)
+        {
+            std::string str = std::string((char*)sceneObjectLinkInfoPtr);
+            (*bgVariantsMap)[str] = j;
+            sceneObjectLinkInfoPtr += str.size() + 1;
+        }
+        bgs[i].imageDataVariantsMap = bgVariantsMap;
+        bgs[i].numVariantsInImage= numVariants;
+    }
+    //Individual sprites
+    for (int i = 0; i < numSpr; i++)
+    {
+        int numVariants = *((uint16_t*)sceneObjectLinkInfoPtr);
+        sceneObjectLinkInfoPtr += 2;
+        std::unordered_map<std::string, int>* sprVariantsMap = new std::unordered_map<std::string, int>();
+        for (int j = 0; j < numVariants; j++)
+        {
+            std::string str = std::string((char*)sceneObjectLinkInfoPtr);
+            (*sprVariantsMap)[str] = j;
+            sceneObjectLinkInfoPtr += str.size() + 1;
+        }
+        sprs[i].imageDataVariantsMap = sprVariantsMap;
+        sprs[i].numVariantsInImage= numVariants;
     }
 
     //Write language metadata file
@@ -535,9 +596,19 @@ int LinkVN(const char* dir, const char* masterDesc, const char* fontData, const 
             {
                 delete scenes[i].sceneDataTextsMap;
             }
+            for (int i = 0; i < numBg; i++)
+            {
+                delete bgs[i].imageDataVariantsMap;
+            }
+            for (int i = 0; i < numSpr; i++)
+            {
+                delete sprs[i].imageDataVariantsMap;
+            }
             delete sceneDataSceneNamesMap;
             delete sceneDataCharNamesMap;
             delete sceneDataVarNamesMap;
+            delete sceneDataBgNamesMap;
+            delete sceneDataSprNamesMap;
             free(sceneObjectData);
             return result;
         }
@@ -545,14 +616,380 @@ int LinkVN(const char* dir, const char* masterDesc, const char* fontData, const 
     free(textFilenamePtrs);
     free(textOutputFilenamesNoDir);
 
+    //Link background archive file with scene data
+    //Read in background data object
+    FILE* bgObjectFilePtr = fopen(bgData, "rb");
+    if (bgObjectFilePtr == NULL)
+    {
+        printf("CRITICAL ERROR - Background data object file %s could not be opened!\n", bgData);
+        for (int i = 0; i < numScenes; i++)
+        {
+            delete scenes[i].sceneDataTextsMap;
+        }
+        for (int i = 0; i < numBg; i++)
+        {
+            delete bgs[i].imageDataVariantsMap;
+        }
+        for (int i = 0; i < numSpr; i++)
+        {
+            delete sprs[i].imageDataVariantsMap;
+        }
+        delete sceneDataSceneNamesMap;
+        delete sceneDataCharNamesMap;
+        delete sceneDataVarNamesMap;
+        delete sceneDataBgNamesMap;
+        delete sceneDataSprNamesMap;
+        free(sceneObjectData);
+        return 1;
+    }
+    const long bgObjectFileLen = GetFileLength(bgObjectFilePtr);
+    unsigned char* bgObjectData = (unsigned char*)malloc(bgObjectFileLen);
+    fread(bgObjectData, 1, bgObjectFileLen, bgObjectFilePtr);
+    fclose(bgObjectFilePtr);
+    uint64_t bgLinkInfoPtr = *((uint64_t*)(bgObjectData));
+    unsigned char* bgObjectLinkInfoPtr = bgObjectData + bgLinkInfoPtr;
+
+    //Link background data based on scene data
+    int numBgsInArchive = *((uint16_t*)bgObjectLinkInfoPtr);
+    uint32_t* bgPtrs = (uint32_t*)(&bgObjectData[8 + *((uint32_t*)(&bgObjectData[8]))]);
+    bgObjectLinkInfoPtr += 2;
+
+    //Fix background name pointers
+    uint64_t* bgVariantLinkPtrs = (uint64_t*)bgObjectLinkInfoPtr;
+    bgObjectLinkInfoPtr += 8 * numBgsInArchive;
+    if (numBgsInArchive < numBg)
+    {
+        printf("CRITICAL ERROR - Some backgrounds have not been given in %s!\n", bgData);
+        for (int i = 0; i < numScenes; i++)
+        {
+            delete scenes[i].sceneDataTextsMap;
+        }
+        for (int i = 0; i < numBg; i++)
+        {
+            delete bgs[i].imageDataVariantsMap;
+        }
+        for (int i = 0; i < numSpr; i++)
+        {
+            delete sprs[i].imageDataVariantsMap;
+        }
+        delete sceneDataSceneNamesMap;
+        delete sceneDataCharNamesMap;
+        delete sceneDataVarNamesMap;
+        delete sceneDataBgNamesMap;
+        delete sceneDataSprNamesMap;
+        free(bgObjectData);
+        free(sceneObjectData);
+        return 1;
+    }
+    for (int i = 0; i < numBg; i++)
+    {
+        uint32_t bptr = bgPtrs[i];
+        std::string str = std::string((char*)bgObjectLinkInfoPtr);
+        int newIndex = (*sceneDataBgNamesMap)[str];
+        bgIndexArray[i] = newIndex;
+        Ptr32TempArray[newIndex] = bptr;
+        bgObjectLinkInfoPtr += str.size()+ 1;
+    }
+    memcpy(bgPtrs, Ptr32TempArray, sizeof(uint32_t) * numBg);
+    if (numBgsInArchive > numBg)
+    {
+        printf("WARNING - Some names in %s correspond to unused backgrounds!\n", bgData);
+        for (int i = numBg; i < numBgsInArchive; i++) //Skip over unused background names
+        {
+            while (1)
+            {
+                if (*bgObjectLinkInfoPtr++ == 0)
+                {
+                    break;
+                }
+            }
+        }
+    }
+    unsigned char* bgVariantsLinkInfoBasePtr = bgObjectLinkInfoPtr;
+
+    //Fix background variants
+    for (int i = 0; i < numBg; i++)
+    {
+        bgObjectLinkInfoPtr = bgVariantsLinkInfoBasePtr + bgVariantLinkPtrs[i];
+        int numVariantsInBgInBg = *((uint16_t*)bgObjectLinkInfoPtr);
+        bgObjectLinkInfoPtr += 2;
+        int realIndex = bgIndexArray[i];
+        int numVariantsInBg = bgs[realIndex].numVariantsInImage;
+        if (numVariantsInBgInBg < numVariantsInBg)
+        {
+            printf("CRITICAL ERROR - Some variants in background %u in %s have not been written!\n", i, bgData);
+            for (int i = 0; i < numScenes; i++)
+            {
+                delete scenes[i].sceneDataTextsMap;
+            }
+            for (int i = 0; i < numBg; i++)
+            {
+                delete bgs[i].imageDataVariantsMap;
+            }
+            for (int i = 0; i < numSpr; i++)
+            {
+                delete sprs[i].imageDataVariantsMap;
+            }
+            delete sceneDataSceneNamesMap;
+            delete sceneDataCharNamesMap;
+            delete sceneDataVarNamesMap;
+            delete sceneDataBgNamesMap;
+            delete sceneDataSprNamesMap;
+            free(bgObjectData);
+            free(sceneObjectData);
+            return 1;
+        }
+        std::unordered_map<std::string, int>* variantsMap = bgs[realIndex].imageDataVariantsMap;
+        uint64_t* curBgVariants = ((uint64_t*)(((unsigned char*)(bgPtrs + numBgsInArchive)) + bgPtrs[i] + 8));
+        for (int j = 0; j < numVariantsInBg; j++)
+        {
+            uint64_t vptr = curBgVariants[j];
+            std::string str = std::string((char*)bgObjectLinkInfoPtr);
+            int newIndex = (*variantsMap)[str];
+            Ptr64TempArray[newIndex] = vptr;
+            bgObjectLinkInfoPtr += str.size()+ 1;
+        }
+        memcpy(curBgVariants, Ptr64TempArray, sizeof(uint64_t) * numVariantsInBg);
+        if (numVariantsInBgInBg > numVariantsInBg)
+        {
+            printf("WARNING - Some variants in background %u in %s correspond to unused variants!\n", i, bgData);
+        }
+    }
+
+
+    //Write out linked background data
+    char bgDataFilename[512];
+    char bgDataFilenameNoDir[16];
+    memset(bgDataFilename, 0, 512);
+    strcpy(bgDataFilename, fullDir);
+    const char* bgFilenameNoDirPtr = GetFilenameNoDir(bgData);
+    MakeOutputFilename(bgFilenameNoDirPtr, bgDataFilenameNoDir, "DAT");
+    strcat(bgDataFilename, bgDataFilenameNoDir);
+    FILE* bgDataOutputFilePtr = fopen(bgDataFilename, "wb");
+    if (bgDataOutputFilePtr == NULL)
+    {
+        printf("CRITICAL ERROR - Background data output file %s could not be opened!\n", bgDataFilename);
+        for (int i = 0; i < numScenes; i++)
+        {
+            delete scenes[i].sceneDataTextsMap;
+        }
+        for (int i = 0; i < numBg; i++)
+        {
+            delete bgs[i].imageDataVariantsMap;
+        }
+        for (int i = 0; i < numSpr; i++)
+        {
+            delete sprs[i].imageDataVariantsMap;
+        }
+        delete sceneDataSceneNamesMap;
+        delete sceneDataCharNamesMap;
+        delete sceneDataVarNamesMap;
+        delete sceneDataBgNamesMap;
+        delete sceneDataSprNamesMap;
+        free(bgObjectData);
+        free(sceneObjectData);
+        return 1;
+    }
+    fwrite(bgObjectData + 8, 1, bgLinkInfoPtr - 8, bgDataOutputFilePtr);
+    fclose(bgDataOutputFilePtr);
+    free(bgObjectData);
+
+    //Link sprite archive file with scene data
+    //Read in sprite data object
+    FILE* sprObjectFilePtr = fopen(spriteData, "rb");
+    if (sprObjectFilePtr == NULL)
+    {
+        printf("CRITICAL ERROR - Sprite data object file %s could not be opened!\n", spriteData);
+        for (int i = 0; i < numScenes; i++)
+        {
+            delete scenes[i].sceneDataTextsMap;
+        }
+        for (int i = 0; i < numBg; i++)
+        {
+            delete bgs[i].imageDataVariantsMap;
+        }
+        for (int i = 0; i < numSpr; i++)
+        {
+            delete sprs[i].imageDataVariantsMap;
+        }
+        delete sceneDataSceneNamesMap;
+        delete sceneDataCharNamesMap;
+        delete sceneDataVarNamesMap;
+        delete sceneDataBgNamesMap;
+        delete sceneDataSprNamesMap;
+        free(sceneObjectData);
+        return 1;
+    }
+    const long sprObjectFileLen = GetFileLength(sprObjectFilePtr);
+    unsigned char* sprObjectData = (unsigned char*)malloc(sprObjectFileLen);
+    fread(sprObjectData, 1, sprObjectFileLen, sprObjectFilePtr);
+    fclose(sprObjectFilePtr);
+    uint64_t sprLinkInfoPtr = *((uint64_t*)(sprObjectData));
+    unsigned char* sprObjectLinkInfoPtr = sprObjectData + sprLinkInfoPtr;
+
+    //Link sprite data based on scene data
+    int numSprsInArchive = *((uint16_t*)sprObjectLinkInfoPtr);
+    uint32_t* sprPtrs = (uint32_t*)(&sprObjectData[8 + 2]);
+    sprObjectLinkInfoPtr += 2;
+
+    //Fix sprite name pointers
+    uint64_t* sprVariantLinkPtrs = (uint64_t*)sprObjectLinkInfoPtr;
+    sprObjectLinkInfoPtr += 8 * numSprsInArchive;
+    if (numSprsInArchive < numSpr)
+    {
+        printf("CRITICAL ERROR - Some sprites have not been given in %s!\n", spriteData);
+        for (int i = 0; i < numScenes; i++)
+        {
+            delete scenes[i].sceneDataTextsMap;
+        }
+        for (int i = 0; i < numBg; i++)
+        {
+            delete bgs[i].imageDataVariantsMap;
+        }
+        for (int i = 0; i < numSpr; i++)
+        {
+            delete sprs[i].imageDataVariantsMap;
+        }
+        delete sceneDataSceneNamesMap;
+        delete sceneDataCharNamesMap;
+        delete sceneDataVarNamesMap;
+        delete sceneDataBgNamesMap;
+        delete sceneDataSprNamesMap;
+        free(sprObjectData);
+        free(sceneObjectData);
+        return 1;
+    }
+    for (int i = 0; i < numSpr; i++)
+    {
+        uint32_t sptr = sprPtrs[i];
+        std::string str = std::string((char*)sprObjectLinkInfoPtr);
+        int newIndex = (*sceneDataSprNamesMap)[str];
+        sprIndexArray[i] = newIndex;
+        Ptr32TempArray[newIndex] = sptr;
+        sprObjectLinkInfoPtr += str.size()+ 1;
+    }
+    memcpy(sprPtrs, Ptr32TempArray, sizeof(uint32_t) * numSpr);
+    if (numSprsInArchive > numSpr)
+    {
+        printf("WARNING - Some names in %s correspond to unused sprites!\n", spriteData);
+        for (int i = numSpr; i < numSprsInArchive; i++) //Skip over unused sprite names
+        {
+            while (1)
+            {
+                if (*sprObjectLinkInfoPtr++ == 0)
+                {
+                    break;
+                }
+            }
+        }
+    }
+    unsigned char* sprVariantsLinkInfoBasePtr = sprObjectLinkInfoPtr;
+
+    //Fix sprite variants
+    for (int i = 0; i < numSpr; i++)
+    {
+        sprObjectLinkInfoPtr = sprVariantsLinkInfoBasePtr + sprVariantLinkPtrs[i];
+        int numVariantsInSprInSpr = *((uint16_t*)sprObjectLinkInfoPtr);
+        sprObjectLinkInfoPtr += 2;
+        int realIndex = sprIndexArray[i];
+        int numVariantsInSpr = sprs[realIndex].numVariantsInImage;
+        if (numVariantsInSprInSpr < numVariantsInSpr)
+        {
+            printf("CRITICAL ERROR - Some variants in sprite %u in %s have not been written!\n", i, spriteData);
+            for (int i = 0; i < numScenes; i++)
+            {
+                delete scenes[i].sceneDataTextsMap;
+            }
+            for (int i = 0; i < numBg; i++)
+            {
+                delete bgs[i].imageDataVariantsMap;
+            }
+            for (int i = 0; i < numSpr; i++)
+            {
+                delete sprs[i].imageDataVariantsMap;
+            }
+            delete sceneDataSceneNamesMap;
+            delete sceneDataCharNamesMap;
+            delete sceneDataVarNamesMap;
+            delete sceneDataBgNamesMap;
+            delete sceneDataSprNamesMap;
+            free(sprObjectData);
+            free(sceneObjectData);
+            return 1;
+        }
+        std::unordered_map<std::string, int>* variantsMap = sprs[realIndex].imageDataVariantsMap;
+        uint64_t* curSprVariants = ((uint64_t*)(((unsigned char*)(sprPtrs + numSprsInArchive)) + sprPtrs[i] + 6));
+        for (int j = 0; j < numVariantsInSpr; j++)
+        {
+            uint64_t vptr = curSprVariants[j];
+            std::string str = std::string((char*)sprObjectLinkInfoPtr);
+            int newIndex = (*variantsMap)[str];
+            Ptr64TempArray[newIndex] = vptr;
+            sprObjectLinkInfoPtr += str.size()+ 1;
+        }
+        memcpy(curSprVariants, Ptr64TempArray, sizeof(uint64_t) * numVariantsInSpr);
+        if (numVariantsInSprInSpr > numVariantsInSpr)
+        {
+            printf("WARNING - Some variants in sprite %u in %s correspond to unused variants!\n", i, spriteData);
+        }
+    }
+
+
+    //Write out linked sprite data
+    char spriteDataFilename[512];
+    char spriteDataFilenameNoDir[16];
+    memset(spriteDataFilename, 0, 512);
+    strcpy(spriteDataFilename, fullDir);
+    const char* spriteFilenameNoDirPtr = GetFilenameNoDir(spriteData);
+    MakeOutputFilename(spriteFilenameNoDirPtr, spriteDataFilenameNoDir, "DAT");
+    strcat(spriteDataFilename, spriteDataFilenameNoDir);
+    FILE* sprDataOutputFilePtr = fopen(spriteDataFilename, "wb");
+    if (sprDataOutputFilePtr == NULL)
+    {
+        printf("CRITICAL ERROR - Sprite data output file %s could not be opened!\n", spriteDataFilename);
+        for (int i = 0; i < numScenes; i++)
+        {
+            delete scenes[i].sceneDataTextsMap;
+        }
+        for (int i = 0; i < numBg; i++)
+        {
+            delete bgs[i].imageDataVariantsMap;
+        }
+        for (int i = 0; i < numSpr; i++)
+        {
+            delete sprs[i].imageDataVariantsMap;
+        }
+        delete sceneDataSceneNamesMap;
+        delete sceneDataCharNamesMap;
+        delete sceneDataVarNamesMap;
+        delete sceneDataBgNamesMap;
+        delete sceneDataSprNamesMap;
+        free(sprObjectData);
+        free(sceneObjectData);
+        return 1;
+    }
+    fwrite(sprObjectData + 8, 1, sprLinkInfoPtr - 8, sprDataOutputFilePtr);
+    fclose(sprDataOutputFilePtr);
+    free(sprObjectData);
+
     //Linking done
     for (int i = 0; i < numScenes; i++)
     {
         delete scenes[i].sceneDataTextsMap;
     }
+    for (int i = 0; i < numBg; i++)
+    {
+        delete bgs[i].imageDataVariantsMap;
+    }
+    for (int i = 0; i < numSpr; i++)
+    {
+        delete sprs[i].imageDataVariantsMap;
+    }
     delete sceneDataSceneNamesMap;
     delete sceneDataCharNamesMap;
     delete sceneDataVarNamesMap;
+    delete sceneDataBgNamesMap;
+    delete sceneDataSprNamesMap;
     free(sceneObjectData);
 
     //Write root info
@@ -609,13 +1046,6 @@ int LinkVN(const char* dir, const char* masterDesc, const char* fontData, const 
 
     strcpy((char*)(&rootinfo[0x2E]), "LANGUAGE.DAT"); //fixed by design
 
-    char bgDataFilename[512];
-    char bgDataFilenameNoDir[16];
-    memset(bgDataFilename, 0, 512);
-    strcpy(bgDataFilename, fullDir);
-    const char* bgFilenameNoDirPtr = GetFilenameNoDir(bgData);
-    MakeOutputFilename(bgFilenameNoDirPtr, bgDataFilenameNoDir, "DAT");
-    strcat(bgDataFilename, bgDataFilenameNoDir);
     filenameptr = (char*)(&rootinfo[0x3A]);
     pch = bgDataFilenameNoDir;
     ch = *pch++;
@@ -625,13 +1055,6 @@ int LinkVN(const char* dir, const char* masterDesc, const char* fontData, const 
         ch = *pch++;
     }
 
-    char spriteDataFilename[512];
-    char spriteDataFilenameNoDir[16];
-    memset(spriteDataFilename, 0, 512);
-    strcpy(spriteDataFilename, fullDir);
-    const char* spriteFilenameNoDirPtr = GetFilenameNoDir(spriteData);
-    MakeOutputFilename(spriteFilenameNoDirPtr, spriteDataFilenameNoDir, "DAT");
-    strcat(spriteDataFilename, spriteDataFilenameNoDir);
     filenameptr = (char*)(&rootinfo[0x46]);
     pch = spriteDataFilenameNoDir;
     ch = *pch++;
